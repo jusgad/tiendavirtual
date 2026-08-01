@@ -1,0 +1,175 @@
+import request from 'supertest'
+import { createApp } from '../../src/app'
+import { prisma } from '../../src/shared/database/prisma'
+import { redis } from '../../src/shared/cache/redis'
+
+// Flujo end-to-end: requiere Postgres migrado y con seed (productos).
+const app = createApp(prisma)
+
+const user = {
+  email: `checkout-${Date.now()}@test.com`,
+  password: 'Password1',
+  firstName: 'Check',
+  lastName: 'Out',
+  ageConfirmed: true,
+}
+
+let token = ''
+
+describe('Checkout end-to-end (integración)', () => {
+  afterAll(async () => {
+    const u = await prisma.user.findUnique({ where: { email: user.email } })
+    if (u) {
+      await prisma.couponRedemption.deleteMany({ where: { userId: u.id } })
+      await prisma.order.deleteMany({ where: { userId: u.id } })
+      await prisma.user.delete({ where: { id: u.id } })
+    }
+    await prisma.$disconnect()
+    redis.disconnect()
+  })
+
+  it('registra, agrega al carrito, hace checkout y cancela el pedido', async () => {
+    // 1) Registro
+    const reg = await request(app).post('/api/auth/register').send(user)
+    expect(reg.status).toBe(201)
+    token = reg.body.tokens.accessToken
+
+    // 2) Toma un producto del catálogo (viene del seed)
+    const list = await request(app).get('/api/products?pageSize=1')
+    expect(list.status).toBe(200)
+    expect(list.body.items.length).toBeGreaterThan(0)
+    const product = list.body.items[0]
+
+    // 3) Agrega al carrito (usuario autenticado -> carrito en DB)
+    const add = await request(app)
+      .post('/api/cart/items')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ productId: product.id, quantity: 1 })
+    expect(add.status).toBe(201)
+    expect(add.body.cart.itemCount).toBe(1)
+
+    // 4) Crea una dirección
+    const addr = await request(app)
+      .post('/api/addresses')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        fullName: 'Check Out',
+        phone: '3105676187',
+        line1: 'Calle 1 # 2-3',
+        city: 'Medellín',
+        department: 'Antioquia',
+      })
+    expect(addr.status).toBe(201)
+
+    // 5) Checkout con empaque discreto
+    const checkout = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ addressId: addr.body.address.id, discreetPackaging: true })
+    expect(checkout.status).toBe(201)
+    const order = checkout.body.order
+    expect(order.status).toBe('PENDING')
+    expect(order.items).toHaveLength(1)
+    expect(order.discreetPackaging).toBe(true)
+    expect(order.total).toBe(order.subtotal - order.discountTotal + order.shippingTotal)
+
+    // 6) Aparece en mis pedidos
+    const myOrders = await request(app).get('/api/orders').set('Authorization', `Bearer ${token}`)
+    expect(myOrders.status).toBe(200)
+    expect(myOrders.body.total).toBeGreaterThanOrEqual(1)
+
+    // 7) Cancela (restaura stock)
+    const cancel = await request(app)
+      .post(`/api/orders/${order.id}/cancel`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(cancel.status).toBe(200)
+    expect(cancel.body.order.status).toBe('CANCELLED')
+  })
+
+  it('rechaza checkout con carrito vacío (400)', async () => {
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ shippingAddress: { fullName: 'X', phone: '3000000000', line1: 'Y', city: 'Z', department: 'W' } })
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('Checkout de invitado (sin usuario ni contraseña)', () => {
+  const guestId = `guest-${Date.now()}`
+
+  afterAll(async () => {
+    await prisma.$disconnect()
+    redis.disconnect()
+  })
+
+  it('agrega al carrito, hace checkout y paga sin sesión', async () => {
+    // 1) Toma un producto del catálogo (viene del seed)
+    const list = await request(app).get('/api/products?pageSize=1')
+    expect(list.status).toBe(200)
+    const product = list.body.items[0]
+
+    // 2) Agrega al carrito de invitado (sin Authorization, con x-guest-id -> Redis)
+    const add = await request(app)
+      .post('/api/cart/items')
+      .set('x-guest-id', guestId)
+      .send({ productId: product.id, quantity: 1 })
+    expect(add.status).toBe(201)
+    expect(add.body.cart.itemCount).toBe(1)
+
+    // 3) Checkout sin sesión: requiere correo de contacto y dirección inline
+    const checkout = await request(app)
+      .post('/api/orders')
+      .set('x-guest-id', guestId)
+      .send({
+        shippingAddress: {
+          fullName: 'Invitada Demo',
+          phone: '3105676187',
+          line1: 'Calle 1 # 2-3',
+          city: 'Medellín',
+          department: 'Antioquia',
+        },
+        guestEmail: 'invitada@correo.com',
+      })
+    expect(checkout.status).toBe(201)
+    const order = checkout.body.order
+    expect(order.status).toBe('PENDING')
+
+    // 4) El carrito de invitado quedó vacío tras el checkout
+    const cart = await request(app).get('/api/cart').set('x-guest-id', guestId)
+    expect(cart.body.cart.itemCount).toBe(0)
+
+    // 5) Paga el pedido sin sesión (el pedido no tiene dueño -> se permite)
+    const pay = await request(app).post('/api/payments').send({
+      orderId: order.id,
+      method: 'NEQUI',
+      phone: '3105676187',
+    })
+    expect(pay.status).toBe(201)
+    expect(pay.body.payment.status).toBe('PENDING')
+  })
+
+  it('rechaza (400) el checkout de invitado sin correo de contacto', async () => {
+    const otherGuestId = `${guestId}-sin-correo`
+    const list = await request(app).get('/api/products?pageSize=1')
+    const product = list.body.items[0]
+    await request(app)
+      .post('/api/cart/items')
+      .set('x-guest-id', otherGuestId)
+      .send({ productId: product.id, quantity: 1 })
+
+    const res = await request(app)
+      .post('/api/orders')
+      .set('x-guest-id', otherGuestId)
+      .send({
+        shippingAddress: {
+          fullName: 'X',
+          phone: '3000000000',
+          line1: 'Y',
+          city: 'Z',
+          department: 'W',
+        },
+      })
+    expect(res.status).toBe(400)
+  })
+})
