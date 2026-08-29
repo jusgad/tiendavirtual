@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { clearSession, getStoredUser, setOnSessionExpired } from '../checkout/api.js'
 import LoginGate from './LoginGate.jsx'
+import OrdersPage from './orders/OrdersPage.jsx'
 import { navigate, useRoute } from './router.js'
 
 const SECCIONES = [
@@ -84,7 +85,7 @@ export default function AdminApp() {
         </header>
 
         <main className="min-w-0 flex-1 p-4 sm:p-6">
-          {route.name === 'pedidos' && <EnConstruccion titulo="Pedidos" />}
+          {route.name === 'pedidos' && <OrdersPage />}
           {route.name === 'pedido' && <EnConstruccion titulo="Detalle de pedido" />}
           {route.name === 'productos' && <EnConstruccion titulo="Productos" />}
           {route.name === 'taxonomia' && <EnConstruccion titulo="Categorías y marcas" />}
