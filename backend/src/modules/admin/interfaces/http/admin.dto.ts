@@ -24,4 +24,8 @@ export const listOrdersQuerySchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   status: z.enum(ORDER_STATUSES),
+  // Solo válidos al pasar a SHIPPED; el dominio impone esa regla y la
+  // obligatoriedad. Aquí solo se valida la forma.
+  carrier: z.string().trim().min(1).max(80).optional(),
+  trackingNumber: z.string().trim().min(1).max(80).optional(),
 })

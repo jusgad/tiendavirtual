@@ -54,7 +54,17 @@ export class AdminOrdersController {
   }
 
   updateOrderStatus = async (req: Request, res: Response) => {
-    const order = await this.updateStatus.execute(req.params.id, req.body.status)
+    const { status, carrier, trackingNumber } = req.body as {
+      status: OrderStatus
+      carrier?: string
+      trackingNumber?: string
+    }
+
+    // Se pasa el objeto en cuanto llega CUALQUIERA de los dos campos: así el
+    // dominio puede rechazar un despacho a medias en vez de ignorarlo.
+    const shipment = carrier || trackingNumber ? { carrier: carrier!, trackingNumber: trackingNumber! } : undefined
+
+    const order = await this.updateStatus.execute(req.params.id, status, shipment)
     res.json({ order, allowedTransitions: allowedTransitionsFrom(order.status) })
   }
 }

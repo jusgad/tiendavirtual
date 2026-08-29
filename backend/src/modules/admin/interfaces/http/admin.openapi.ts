@@ -116,6 +116,18 @@ registerPaths({
                   type: 'string',
                   enum: ['PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED'],
                 },
+                carrier: {
+                  type: 'string',
+                  description:
+                    'Transportadora. Obligatoria junto con trackingNumber al pasar a SHIPPED; ' +
+                    'prohibida en cualquier otra transición.',
+                  example: 'Servientrega',
+                },
+                trackingNumber: {
+                  type: 'string',
+                  description: 'Número de guía. Obligatorio junto con carrier al pasar a SHIPPED.',
+                  example: 'ABC123456789',
+                },
               },
             },
           },
@@ -123,7 +135,11 @@ registerPaths({
       },
       responses: {
         200: { description: 'Pedido actualizado, con sus nuevas transiciones posibles' },
-        400: { description: 'Ya está en ese estado, o se intentó marcar PAID a mano' },
+        400: {
+          description:
+            'Ya está en ese estado, se intentó marcar PAID a mano, se despachó sin transportadora ' +
+            'o guía, o se enviaron datos de despacho en una transición que no es el envío',
+        },
         404: { description: 'Pedido no encontrado' },
         409: { description: 'Transición no permitida desde el estado actual' },
       },
