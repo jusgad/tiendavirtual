@@ -78,6 +78,8 @@ const seguimiento: OrderTrackingView = {
   total: 58800,
   currency: 'COP',
   shipCity: 'Medellín',
+  carrier: 'Servientrega',
+  trackingNumber: 'ABC123',
   items: [{ productName: 'Estuche PomAss Día + Noche', quantity: 1, lineTotal: 79900 }],
   createdAt: new Date('2026-08-01T10:00:00Z'),
 }
@@ -169,6 +171,14 @@ describe('TrackOrderUseCase', () => {
       statusCode: 404,
       message: 'No encontramos un pedido con ese número y correo',
     })
+  })
+
+  it('devuelve la guía cuando el pedido ya se despachó', async () => {
+    const repo = new FakeTrackingRepo(seguimiento)
+
+    const res = await new TrackOrderUseCase(repo).execute('PA-2026-000001', 'ana@correo.com')
+
+    expect(res).toMatchObject({ carrier: 'Servientrega', trackingNumber: 'ABC123' })
   })
 
   it('no expone dirección completa, teléfono ni ids internos', async () => {

@@ -75,7 +75,8 @@ registerPaths({
         'Exige **número de pedido Y correo**: el número por sí solo permitiría recorrer pedidos ' +
         'ajenos. Si el correo no coincide responde 404, no 403, para no confirmar que ese ' +
         'número exista. Devuelve un subconjunto reducido: sin dirección completa, sin teléfono, ' +
-        'sin datos de pago y sin ids internos. Limitado a 30 peticiones cada 15 minutos por IP.',
+        'sin datos de pago y sin ids internos. Incluye la transportadora y el número de guía ' +
+        'una vez que el pedido se despacha. Limitado a 30 peticiones cada 15 minutos por IP.',
       parameters: [
         { name: 'orderNumber', in: 'query', required: true, schema: { type: 'string' }, example: 'PA-2026-A3F91C' },
         { name: 'email', in: 'query', required: true, schema: { type: 'string', format: 'email' } },
@@ -99,6 +100,8 @@ registerPaths({
                       total: { type: 'number' },
                       currency: { type: 'string' },
                       shipCity: { type: 'string', nullable: true },
+                      carrier: { type: 'string', nullable: true },
+                      trackingNumber: { type: 'string', nullable: true },
                       items: {
                         type: 'array',
                         items: {

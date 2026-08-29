@@ -198,6 +198,8 @@ export class PrismaOrderRepository implements OrderRepository {
       total: Number(order.total),
       currency: order.currency,
       shipCity: order.shipCity,
+      carrier: order.carrier,
+      trackingNumber: order.trackingNumber,
       items: order.items.map((it) => ({
         productName: it.productName,
         quantity: it.quantity,

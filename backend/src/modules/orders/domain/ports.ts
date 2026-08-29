@@ -126,6 +126,9 @@ export interface OrderTrackingView {
   currency: string
   /** Solo la ciudad de destino: suficiente para reconocer el pedido. */
   shipCity: string | null
+  /** Rastreo: null mientras el pedido no se haya despachado. */
+  carrier: string | null
+  trackingNumber: string | null
   items: { productName: string; quantity: number; lineTotal: number }[]
   createdAt: Date
 }
