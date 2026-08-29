@@ -4,7 +4,9 @@ import { navigate } from '../router.js'
 import { formatCOP, formatFecha } from '../../shared/format.js'
 import { ErrorBanner } from '../../shared/ui.jsx'
 import { Badge } from '../components/ui.jsx'
-import { etiquetaEstado, tonoEstado } from './ordersModel.js'
+import CancelDialog from './CancelDialog.jsx'
+import ShipDialog from './ShipDialog.jsx'
+import { accionesPara, etiquetaEstado, tonoEstado } from './ordersModel.js'
 
 function Dato({ etiqueta, valor }) {
   return (
@@ -29,6 +31,10 @@ export default function OrderDetailPage({ id }) {
   const [transiciones, setTransiciones] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  // Acción con diálogo abierto: 'SHIPPED', 'CANCELLED' o null.
+  const [dialogo, setDialogo] = useState(null)
+  const [guardando, setGuardando] = useState(false)
+  const [errorAccion, setErrorAccion] = useState('')
 
   useEffect(() => {
     let vigente = true
@@ -49,6 +55,21 @@ export default function OrderDetailPage({ id }) {
       vigente = false
     }
   }, [id])
+
+  const aplicar = async (status, shipment) => {
+    setGuardando(true)
+    setErrorAccion('')
+    try {
+      const res = await adminApi.updateOrderStatus(id, { status, ...shipment })
+      setOrder(res.order)
+      setTransiciones(res.allowedTransitions)
+      setDialogo(null)
+    } catch (err) {
+      setErrorAccion(err.message)
+    } finally {
+      setGuardando(false)
+    }
+  }
 
   if (cargando) return <p className="text-sm text-[#8A6A4A]">Cargando pedido…</p>
   if (error) return <ErrorBanner message={error} />
@@ -108,9 +129,53 @@ export default function OrderDetailPage({ id }) {
         </div>
       </section>
 
-      {/* Las acciones llegan en la Task 14. */}
-      {transiciones.length === 0 && (
-        <p className="text-sm text-[#8A6A4A]">Este pedido está en un estado final: no admite más cambios.</p>
+      <section className="space-y-3">
+        <ErrorBanner message={errorAccion} />
+        <div className="flex flex-wrap gap-3">
+          {accionesPara(transiciones).map((accion) => (
+            <button
+              key={accion.status}
+              onClick={() =>
+                accion.esEnvio || accion.esCancelacion
+                  ? setDialogo(accion.status)
+                  : aplicar(accion.status)
+              }
+              disabled={guardando}
+              className={
+                'rounded-full px-5 py-2.5 text-sm font-extrabold transition disabled:opacity-50 ' +
+                (accion.esCancelacion
+                  ? 'border border-red-200 text-red-700 hover:bg-red-50'
+                  : 'bg-gradient-to-r from-peach-500 to-peach-600 text-white shadow-lg shadow-peach-500/30')
+              }
+            >
+              {accion.label}
+            </button>
+          ))}
+        </div>
+        {transiciones.length === 0 && (
+          <p className="text-sm text-[#8A6A4A]">
+            Este pedido está en un estado final: no admite más cambios.
+          </p>
+        )}
+      </section>
+
+      {dialogo === 'SHIPPED' && (
+        <ShipDialog
+          enviando={guardando}
+          error={errorAccion}
+          onCerrar={() => setDialogo(null)}
+          onConfirmar={(shipment) => aplicar('SHIPPED', shipment)}
+        />
+      )}
+
+      {dialogo === 'CANCELLED' && (
+        <CancelDialog
+          devuelveStock={order.status !== 'SHIPPED'}
+          enviando={guardando}
+          error={errorAccion}
+          onCerrar={() => setDialogo(null)}
+          onConfirmar={() => aplicar('CANCELLED')}
+        />
       )}
     </div>
   )

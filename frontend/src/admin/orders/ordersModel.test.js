@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ESTADOS, accionesPara, etiquetaEstado, totalPaginas } from './ordersModel.js'
+import { ESTADOS, accionesPara, envioCompleto, etiquetaEstado, totalPaginas } from './ordersModel.js'
 
 describe('etiquetaEstado', () => {
   it('traduce los estados del backend al español', () => {
@@ -52,5 +52,21 @@ describe('accionesPara', () => {
 
   it('un estado final no ofrece ninguna acción', () => {
     expect(accionesPara([])).toEqual([])
+  })
+})
+
+describe('envioCompleto', () => {
+  it('exige transportadora y guía, ambas con contenido', () => {
+    expect(envioCompleto({ carrier: 'Servientrega', trackingNumber: 'ABC123' })).toBe(true)
+  })
+
+  it('rechaza los datos incompletos', () => {
+    expect(envioCompleto({ carrier: 'Servientrega', trackingNumber: '' })).toBe(false)
+    expect(envioCompleto({ carrier: '', trackingNumber: 'ABC123' })).toBe(false)
+    expect(envioCompleto({})).toBe(false)
+  })
+
+  it('no acepta espacios en blanco como valor', () => {
+    expect(envioCompleto({ carrier: '   ', trackingNumber: 'ABC123' })).toBe(false)
   })
 })

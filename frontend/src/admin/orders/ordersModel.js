@@ -57,3 +57,11 @@ export function accionesPara(allowedTransitions = []) {
     esCancelacion: status === 'CANCELLED',
   }))
 }
+
+/**
+ * ¿Están completos los datos de despacho? El backend los exige al pasar a
+ * SHIPPED; esto solo evita mandar una petición que se sabe que va a fallar.
+ */
+export function envioCompleto({ carrier, trackingNumber } = {}) {
+  return Boolean(carrier?.trim() && trackingNumber?.trim())
+}
