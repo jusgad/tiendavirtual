@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ESTADOS, etiquetaEstado, totalPaginas } from './ordersModel.js'
+import { ESTADOS, accionesPara, etiquetaEstado, totalPaginas } from './ordersModel.js'
 
 describe('etiquetaEstado', () => {
   it('traduce los estados del backend al español', () => {
@@ -33,5 +33,24 @@ describe('totalPaginas', () => {
     expect(totalPaginas(20, 20)).toBe(1)
     expect(totalPaginas(21, 20)).toBe(2)
     expect(totalPaginas(41, 20)).toBe(3)
+  })
+})
+
+describe('accionesPara', () => {
+  it('traduce las transiciones que autoriza el backend', () => {
+    expect(accionesPara(['PREPARING', 'CANCELLED'])).toEqual([
+      { status: 'PREPARING', label: 'Marcar en preparación', esEnvio: false, esCancelacion: false },
+      { status: 'CANCELLED', label: 'Cancelar pedido', esEnvio: false, esCancelacion: true },
+    ])
+  })
+
+  it('marca el envío, que exige transportadora y guía', () => {
+    expect(accionesPara(['SHIPPED'])).toEqual([
+      { status: 'SHIPPED', label: 'Marcar enviado', esEnvio: true, esCancelacion: false },
+    ])
+  })
+
+  it('un estado final no ofrece ninguna acción', () => {
+    expect(accionesPara([])).toEqual([])
   })
 })

@@ -37,3 +37,23 @@ export function tonoEstado(status) {
 export function totalPaginas(total, pageSize) {
   return Math.max(1, Math.ceil(total / pageSize))
 }
+
+const ACCIONES = {
+  PREPARING: 'Marcar en preparación',
+  SHIPPED: 'Marcar enviado',
+  DELIVERED: 'Marcar entregado',
+  CANCELLED: 'Cancelar pedido',
+}
+
+/**
+ * Traduce a botones el `allowedTransitions` que devuelve el backend.
+ * La regla de qué transiciones caben NO se duplica aquí: es del servidor.
+ */
+export function accionesPara(allowedTransitions = []) {
+  return allowedTransitions.map((status) => ({
+    status,
+    label: ACCIONES[status] ?? etiquetaEstado(status),
+    esEnvio: status === 'SHIPPED',
+    esCancelacion: status === 'CANCELLED',
+  }))
+}
