@@ -37,3 +37,12 @@ export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(10),
 })
+
+/**
+ * Seguimiento público. Ambos parámetros son obligatorios: el número de pedido
+ * por sí solo permitiría recorrer pedidos ajenos.
+ */
+export const trackOrderQuerySchema = z.object({
+  orderNumber: z.string().trim().min(1, 'Número de pedido requerido').max(40),
+  email: z.string().trim().email('Correo inválido').max(180),
+})

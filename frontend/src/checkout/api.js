@@ -29,9 +29,18 @@ export function getAccessToken() {
   return localStorage.getItem(STORAGE_KEYS.access)
 }
 
-export function storeSession({ user, tokens }) {
+export function getRefreshToken() {
+  return localStorage.getItem(STORAGE_KEYS.refresh)
+}
+
+/** Guarda solo el par de tokens (lo que devuelve /auth/refresh). */
+export function storeTokens(tokens) {
   localStorage.setItem(STORAGE_KEYS.access, tokens.accessToken)
   localStorage.setItem(STORAGE_KEYS.refresh, tokens.refreshToken)
+}
+
+export function storeSession({ user, tokens }) {
+  storeTokens(tokens)
   localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user))
 }
 
@@ -55,7 +64,62 @@ export function clearGuestId() {
   localStorage.removeItem(STORAGE_KEYS.guest)
 }
 
-async function request(path, { method = 'GET', body, auth = true } = {}) {
+// ---------------------------------------------------------------------------
+// Renovación del access token
+//
+// El access token vive 15 minutos; el refresh token, 7 días. Sin renovación, la
+// sesión se caía a los 15 minutos aunque el usuario siguiera comprando.
+//
+// El backend ROTA el refresh token en cada uso y RECHAZA reutilizar uno ya
+// consumido (es su defensa contra robo de tokens). Por eso las renovaciones se
+// deduplican: si dos peticiones caducan a la vez, ambas esperan la MISMA
+// renovación en vuelo. Lanzar dos consumiría el token dos veces y la segunda
+// invalidaría la sesión recién renovada.
+// ---------------------------------------------------------------------------
+
+let refreshInFlight = null
+
+/** Aviso a la aplicación de que la sesión se perdió y no se pudo recuperar. */
+let onSessionExpired = null
+
+export function setOnSessionExpired(handler) {
+  onSessionExpired = handler
+}
+
+async function doRefresh() {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) return false
+
+  try {
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    })
+    if (!res.ok) return false
+
+    const data = await res.json()
+    if (!data?.tokens?.accessToken) return false
+
+    storeTokens(data.tokens)
+    return true
+  } catch {
+    // Sin red: no es una sesión inválida, pero tampoco se pudo renovar.
+    return false
+  }
+}
+
+function refreshAccessToken() {
+  // Una sola renovación a la vez; el resto se cuelga de la misma promesa.
+  if (!refreshInFlight) {
+    refreshInFlight = doRefresh().finally(() => {
+      refreshInFlight = null
+    })
+  }
+  return refreshInFlight
+}
+
+async function attempt(path, { method, body, auth }) {
   const headers = { 'Content-Type': 'application/json' }
   if (auth) {
     const token = getAccessToken()
@@ -66,9 +130,8 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
     if (guestId) headers['x-guest-id'] = guestId
   }
 
-  let res
   try {
-    res = await fetch(`${BASE_URL}${path}`, {
+    return await fetch(`${BASE_URL}${path}`, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -78,6 +141,24 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
       `No se pudo conectar con la API (${BASE_URL}). ¿Está el backend corriendo?`,
       0,
     )
+  }
+}
+
+async function request(path, { method = 'GET', body, auth = true } = {}) {
+  const options = { method, body, auth }
+  let res = await attempt(path, options)
+
+  // 401 con sesión iniciada = access token vencido. Se renueva y se reintenta
+  // UNA vez. Si la renovación falla, el refresh token también caducó (o fue
+  // revocado): la sesión se acabó de verdad.
+  if (res.status === 401 && auth && getRefreshToken()) {
+    const renovado = await refreshAccessToken()
+    if (renovado) {
+      res = await attempt(path, options)
+    } else {
+      clearSession()
+      onSessionExpired?.()
+    }
   }
 
   const data = await res.json().catch(() => ({}))
@@ -110,6 +191,10 @@ export const api = {
 
   checkout: (payload) => request('/orders', { method: 'POST', body: payload }),
   getOrder: (id) => request(`/orders/${id}`),
+
+  // Seguimiento público: sin sesión, con nº de pedido + correo.
+  trackOrder: ({ orderNumber, email }) =>
+    request(`/orders/track?${new URLSearchParams({ orderNumber, email })}`, { auth: false }),
 
   initiatePayment: (payload) => request('/payments', { method: 'POST', body: payload }),
 }

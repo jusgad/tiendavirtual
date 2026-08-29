@@ -1,92 +1,101 @@
 import { ConflictError, NotFoundError, UnauthorizedError } from '../../../shared/errors/AppError'
 import {
+  CheckoutConfig,
   OrderPaymentGateway,
-  PaymentProviderRegistry,
+  PaymentGateway,
   PaymentRecord,
   PaymentRepository,
 } from '../domain/ports'
 import { PaymentMethod } from '../domain/paymentMethod'
 import { PaymentStatus } from '../domain/paymentStatus'
-import { providerKeyToMethod } from '../infrastructure/providers'
 
-export interface InitiatePaymentInput {
-  orderId: string
-  method: PaymentMethod
-  methodData: Record<string, unknown>
-}
-
-export class InitiatePaymentUseCase {
+/**
+ * Prepara el pago de un pedido: crea (o reutiliza) el registro de pago y
+ * devuelve la configuración firmada que el widget de Wompi necesita en el
+ * navegador. No cobra nada: el cobro ocurre dentro del widget.
+ */
+export class StartPaymentUseCase {
   constructor(
     private readonly orders: OrderPaymentGateway,
     private readonly payments: PaymentRepository,
-    private readonly registry: PaymentProviderRegistry,
+    private readonly gateway: PaymentGateway,
   ) {}
 
   async execute(
     userId: string | null,
-    input: InitiatePaymentInput,
-  ): Promise<{ payment: PaymentRecord; instructions: string }> {
-    const order = await this.orders.getForPayment(input.orderId, userId)
+    orderId: string,
+  ): Promise<{ payment: PaymentRecord; checkout: CheckoutConfig }> {
+    const order = await this.orders.getForPayment(orderId, userId)
     if (!order) throw new NotFoundError('Pedido no encontrado')
     if (order.status !== 'PENDING') {
       throw new ConflictError('El pedido no está pendiente de pago')
     }
 
-    const provider = this.registry.get(input.method)
-    const charge = await provider.createCharge({
-      orderReference: order.orderNumber,
+    // Si el cliente vuelve a intentar (cerró el widget, le rechazaron la
+    // tarjeta), se reutiliza el mismo registro en vez de acumular filas: la
+    // referencia que ve Wompi es el número de pedido y debe resolver a un
+    // único pago.
+    const existing = await this.payments.findPendingByOrderId(order.id)
+    const payment =
+      existing ??
+      (await this.payments.create({
+        orderId: order.id,
+        method: PaymentMethod.WOMPI,
+        amount: order.total,
+        currency: order.currency,
+        externalReference: order.orderNumber,
+      }))
+
+    const checkout = this.gateway.buildCheckout({
+      reference: order.orderNumber,
       amount: order.total,
       currency: order.currency,
-      methodData: input.methodData,
     })
 
-    const payment = await this.payments.create({
-      orderId: order.id,
-      method: input.method,
-      amount: order.total,
-      currency: order.currency,
-      externalReference: charge.externalReference,
-    })
-
-    return { payment, instructions: charge.instructions }
+    return { payment, checkout }
   }
 }
 
+export interface WebhookOutcome {
+  status: PaymentStatus
+  idempotent?: boolean
+}
+
+/**
+ * Procesa un evento `transaction.updated` de Wompi. Es la ÚNICA fuente de
+ * verdad de un pago: nunca se confía en el redirect del navegador.
+ */
 export class HandleWebhookUseCase {
   constructor(
     private readonly payments: PaymentRepository,
     private readonly orders: OrderPaymentGateway,
-    private readonly registry: PaymentProviderRegistry,
+    private readonly gateway: PaymentGateway,
   ) {}
 
-  async execute(
-    providerKey: string,
-    payload: unknown,
-    signature: string | undefined,
-  ): Promise<{ status: PaymentStatus; idempotent?: boolean }> {
-    const method = providerKeyToMethod(providerKey)
-    if (!method) throw new NotFoundError('Proveedor de pago no válido')
+  async execute(payload: unknown): Promise<WebhookOutcome> {
+    const result = this.gateway.verifyEvent(payload)
+    if (!result) throw new UnauthorizedError('Checksum de evento inválido')
 
-    const provider = this.registry.get(method)
-    const result = provider.verifyWebhook(payload, signature)
-    if (!result) throw new UnauthorizedError('Firma de webhook inválida')
-
-    const payment = await this.payments.findByExternalReference(result.externalReference)
+    const payment = await this.payments.findByExternalReference(result.reference)
     if (!payment) throw new NotFoundError('Pago no encontrado')
 
-    // Idempotencia: si ya se procesó, no se reprocesa.
-    if (payment.status !== PaymentStatus.PENDING) {
+    // Un pago ya aprobado no se degrada nunca, llegue lo que llegue después.
+    if (payment.status === PaymentStatus.APPROVED) {
+      return { status: PaymentStatus.APPROVED, idempotent: true }
+    }
+
+    // Reentrega del mismo evento (Wompi reintenta si no recibe 200 a tiempo).
+    if (payment.status === result.status && payment.wompiTransactionId === result.transactionId) {
       return { status: payment.status, idempotent: true }
     }
 
-    const newStatus = result.approved ? PaymentStatus.APPROVED : PaymentStatus.DECLINED
-    await this.payments.markStatus(payment.id, newStatus, payload)
+    await this.payments.markStatus(payment.id, result.status, payload, result.transactionId)
 
-    if (result.approved) {
+    if (result.status === PaymentStatus.APPROVED) {
       await this.orders.markPaid(payment.orderId)
     }
 
-    return { status: newStatus }
+    return { status: result.status }
   }
 }
 

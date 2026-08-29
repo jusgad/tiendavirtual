@@ -32,6 +32,7 @@ export default function CheckoutFormStep({ user, onBack, onPlaced }) {
     setError(null)
     setLoading(true)
     try {
+      const correo = user ? user.email : guestEmail.trim()
       const { order } = await api.checkout({
         shippingAddress: {
           ...address,
@@ -40,9 +41,11 @@ export default function CheckoutFormStep({ user, onBack, onPlaced }) {
         },
         couponCode: couponCode.trim() || undefined,
         discreetPackaging,
-        guestEmail: user ? undefined : guestEmail.trim(),
+        guestEmail: user ? undefined : correo,
       })
-      onPlaced(order)
+      // El correo se propaga: es lo que permite consultar el seguimiento del
+      // pedido después, tanto para invitados como para usuarios con sesión.
+      onPlaced(order, correo)
     } catch (err) {
       setError(err.message)
     } finally {

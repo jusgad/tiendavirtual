@@ -26,6 +26,7 @@ import {
   CancelOrderUseCase,
   GetMyOrderUseCase,
   ListMyOrdersUseCase,
+  TrackOrderUseCase,
 } from './application/orderQueries.usecase'
 import {
   CreateAddressUseCase,
@@ -40,8 +41,10 @@ import {
   createAddressSchema,
   idParamSchema,
   listOrdersQuerySchema,
+  trackOrderQuerySchema,
   updateAddressSchema,
 } from './interfaces/http/orders.dto'
+import { trackingRateLimiter } from '../../shared/middlewares/rateLimit'
 
 export function buildOrdersModule(prisma: PrismaClient, redis: Redis): Router {
   const cart = new HybridCartGateway(prisma, redis)
@@ -64,6 +67,7 @@ export function buildOrdersModule(prisma: PrismaClient, redis: Redis): Router {
     new ListMyOrdersUseCase(orders),
     new GetMyOrderUseCase(orders),
     new CancelOrderUseCase(orders, catalogCache),
+    new TrackOrderUseCase(orders),
   )
 
   const addressController = new AddressController(
@@ -79,6 +83,14 @@ export function buildOrdersModule(prisma: PrismaClient, redis: Redis): Router {
   // El checkout admite invitados (sin cuenta); el resto de rutas de pedidos sigue exigiendo sesión.
   router.post('/orders', optionalAuth, validate({ body: checkoutSchema }), asyncHandler(ordersController.create))
   router.get('/orders', authGuard, validate({ query: listOrdersQuerySchema }), asyncHandler(ordersController.list))
+  // OJO: va ANTES de '/orders/:id'. Si se registrara después, el authGuard de
+  // esa ruta atendería primero a "track" y devolvería 401 en vez del pedido.
+  router.get(
+    '/orders/track',
+    trackingRateLimiter,
+    validate({ query: trackOrderQuerySchema }),
+    asyncHandler(ordersController.track),
+  )
   router.get('/orders/:id', authGuard, validate({ params: idParamSchema }), asyncHandler(ordersController.get))
   router.post('/orders/:id/cancel', authGuard, validate({ params: idParamSchema }), asyncHandler(ordersController.cancel))
 

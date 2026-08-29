@@ -8,51 +8,38 @@ import { optionalAuth } from '../../shared/middlewares/optionalAuth'
 
 import { PrismaPaymentRepository } from './infrastructure/prismaPaymentRepository'
 import { PrismaOrderPaymentGateway } from './infrastructure/prismaOrderPaymentGateway'
-import {
-  CreditCardProvider,
-  DaviplataProvider,
-  NequiProvider,
-  ProviderRegistry,
-} from './infrastructure/providers'
+import { WompiGateway } from './infrastructure/wompiGateway'
 import {
   GetPaymentUseCase,
   HandleWebhookUseCase,
-  InitiatePaymentUseCase,
+  StartPaymentUseCase,
 } from './application/paymentUseCases'
 import { PaymentsController } from './interfaces/http/payments.controller'
-import {
-  initiatePaymentSchema,
-  paymentIdParamSchema,
-  webhookProviderParamSchema,
-} from './interfaces/http/payments.dto'
+import { paymentIdParamSchema, startPaymentSchema } from './interfaces/http/payments.dto'
 
 export function buildPaymentsModule(prisma: PrismaClient): Router {
-  const secret = env.PAYMENTS_WEBHOOK_SECRET
-  const registry = new ProviderRegistry([
-    new NequiProvider(secret),
-    new DaviplataProvider(secret),
-    new CreditCardProvider(secret),
-  ])
+  const gateway = new WompiGateway({
+    publicKey: env.WOMPI_PUBLIC_KEY,
+    integritySecret: env.WOMPI_INTEGRITY_SECRET,
+    eventsSecret: env.WOMPI_EVENTS_SECRET,
+    redirectUrl: env.WOMPI_REDIRECT_URL,
+  })
 
   const payments = new PrismaPaymentRepository(prisma)
   const orders = new PrismaOrderPaymentGateway(prisma)
 
   const controller = new PaymentsController(
-    new InitiatePaymentUseCase(orders, payments, registry),
-    new HandleWebhookUseCase(payments, orders, registry),
+    new StartPaymentUseCase(orders, payments, gateway),
+    new HandleWebhookUseCase(payments, orders, gateway),
     new GetPaymentUseCase(payments),
   )
 
   const router = Router()
-  // Admite iniciar pago sin sesión: solo funciona si el pedido también es de invitado (ver getForPayment).
-  router.post('/', optionalAuth, validate({ body: initiatePaymentSchema }), asyncHandler(controller.create))
+  // Admite invitados: solo funciona si el pedido también es de invitado (ver getForPayment).
+  router.post('/', optionalAuth, validate({ body: startPaymentSchema }), asyncHandler(controller.create))
   router.get('/:id', authGuard, validate({ params: paymentIdParamSchema }), asyncHandler(controller.get))
-  // Webhook: sin auth de usuario; se verifica por firma HMAC (header x-signature).
-  router.post(
-    '/webhook/:provider',
-    validate({ params: webhookProviderParamSchema }),
-    asyncHandler(controller.handleWebhook),
-  )
+  // Webhook de Wompi: sin auth de usuario, se verifica por el checksum del evento.
+  router.post('/webhook/wompi', asyncHandler(controller.handleWebhook))
 
   return router
 }

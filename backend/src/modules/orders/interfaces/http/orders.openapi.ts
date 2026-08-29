@@ -66,6 +66,63 @@ registerPaths({
     },
     get: { tags: ['Pedidos'], summary: 'Listar mis pedidos', security: auth, responses: { 200: { description: 'Página de pedidos' } } },
   },
+  '/orders/track': {
+    get: {
+      tags: ['Pedidos'],
+      summary: 'Seguimiento público de un pedido (sin cuenta)',
+      description:
+        'Permite a quien compró como invitado ver el estado de su pedido sin iniciar sesión. ' +
+        'Exige **número de pedido Y correo**: el número por sí solo permitiría recorrer pedidos ' +
+        'ajenos. Si el correo no coincide responde 404, no 403, para no confirmar que ese ' +
+        'número exista. Devuelve un subconjunto reducido: sin dirección completa, sin teléfono, ' +
+        'sin datos de pago y sin ids internos. Limitado a 30 peticiones cada 15 minutos por IP.',
+      parameters: [
+        { name: 'orderNumber', in: 'query', required: true, schema: { type: 'string' }, example: 'PA-2026-A3F91C' },
+        { name: 'email', in: 'query', required: true, schema: { type: 'string', format: 'email' } },
+      ],
+      responses: {
+        200: {
+          description: 'Estado del pedido',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  order: {
+                    type: 'object',
+                    properties: {
+                      orderNumber: { type: 'string' },
+                      status: {
+                        type: 'string',
+                        enum: ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED'],
+                      },
+                      total: { type: 'number' },
+                      currency: { type: 'string' },
+                      shipCity: { type: 'string', nullable: true },
+                      items: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            productName: { type: 'string' },
+                            quantity: { type: 'integer' },
+                            lineTotal: { type: 'number' },
+                          },
+                        },
+                      },
+                      createdAt: { type: 'string', format: 'date-time' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        404: { description: 'No hay pedido con ese número y correo' },
+        429: { description: 'Demasiadas consultas' },
+      },
+    },
+  },
   '/orders/{id}': {
     get: {
       tags: ['Pedidos'],

@@ -40,10 +40,68 @@ export interface OrdersByStatus {
   count: number
 }
 
-// -------- Puerto --------
+// -------- Gestión de pedidos --------
+
+export interface AdminOrderItem {
+  productId: string
+  productName: string
+  quantity: number
+  lineTotal: number
+}
+
+export interface AdminOrderSummary {
+  id: string
+  orderNumber: string
+  status: OrderStatus
+  total: number
+  currency: string
+  /** Correo de contacto: del usuario dueño, o `guestEmail` si es de invitado. */
+  contactEmail: string | null
+  shipCity: string | null
+  createdAt: Date
+}
+
+export interface AdminOrderDetail extends AdminOrderSummary {
+  subtotal: number
+  discountTotal: number
+  shippingTotal: number
+  discreetPackaging: boolean
+  items: AdminOrderItem[]
+}
+
+export interface AdminOrderFilter {
+  status?: OrderStatus
+  page: number
+  pageSize: number
+}
+
+export interface Paginated<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+// -------- Puertos --------
 
 export interface AdminReportsRepository {
   salesReport(filter: SalesReportFilter): Promise<SalesReport>
   topProducts(limit: number): Promise<TopProduct[]>
   ordersByStatus(): Promise<OrdersByStatus[]>
+}
+
+export interface AdminOrderRepository {
+  list(filter: AdminOrderFilter): Promise<Paginated<AdminOrderSummary>>
+  findById(id: string): Promise<AdminOrderDetail | null>
+  /**
+   * Cambia el estado del pedido. `restoreStock` devuelve las unidades al
+   * catálogo (cancelaciones antes del despacho); debe ocurrir en la misma
+   * transacción que el cambio de estado.
+   */
+  updateStatus(id: string, status: OrderStatus, restoreStock: boolean): Promise<AdminOrderDetail>
+}
+
+/** El cambio de estado invalida el caché del catálogo si devolvió stock. */
+export interface CatalogCacheInvalidator {
+  invalidate(): Promise<void>
 }

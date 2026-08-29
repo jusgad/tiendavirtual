@@ -1,39 +1,51 @@
 import { PaymentMethod } from './paymentMethod'
 import { PaymentStatus } from './paymentStatus'
 
-// -------- Proveedor de pago (adaptador por método) --------
+// -------- Pasarela de pago (Wompi) --------
 
-export interface CreateChargeInput {
-  orderReference: string // número de pedido legible
+export interface BuildCheckoutInput {
+  /** Referencia que verá la pasarela. Usamos el número de pedido legible. */
+  reference: string
+  /** Monto en la unidad principal (COP). La pasarela lo quiere en centavos. */
   amount: number
   currency: string
-  methodData: Record<string, unknown> // teléfono (Nequi/Daviplata) o tarjeta
-}
-
-export interface CreateChargeResult {
-  externalReference: string // id de la transacción del proveedor
-  instructions: string // qué debe hacer el usuario para completar el pago
-}
-
-export interface WebhookResult {
-  externalReference: string
-  approved: boolean
 }
 
 /**
- * Puerto de proveedor de pago. Cada método (Nequi, Daviplata, tarjeta) lo
- * implementa con la forma real de su API, pero con llamadas simuladas (stub).
+ * Datos que el widget de Wompi necesita en el navegador. `signature` es la firma
+ * de integridad: impide que el cliente altere el monto antes de pagar.
+ * Aquí NO viaja ningún secreto — solo la llave pública y el hash ya calculado.
  */
-export interface PaymentProvider {
-  readonly method: PaymentMethod
-  /** Crea el cobro. Puede lanzar BadRequestError si los datos del método son inválidos. */
-  createCharge(input: CreateChargeInput): Promise<CreateChargeResult>
-  /** Verifica la firma del webhook y extrae el resultado. Devuelve null si la firma es inválida. */
-  verifyWebhook(payload: unknown, signature: string | undefined): WebhookResult | null
+export interface CheckoutConfig {
+  publicKey: string
+  currency: string
+  amountInCents: number
+  reference: string
+  signature: string
+  redirectUrl: string | null
 }
 
-export interface PaymentProviderRegistry {
-  get(method: PaymentMethod): PaymentProvider
+/** Resultado de un evento `transaction.updated` ya verificado. */
+export interface PaymentEventResult {
+  /** Referencia del comercio: nuestro `orderNumber`. */
+  reference: string
+  /** Id de la transacción en Wompi. */
+  transactionId: string
+  status: PaymentStatus
+}
+
+/**
+ * Puerto de la pasarela de pago. Un solo proveedor (Wompi), no un registro por
+ * método: el dominio no sabe nada de HTTP ni del formato de sus payloads.
+ */
+export interface PaymentGateway {
+  /** Arma la configuración firmada que consumirá el widget en el navegador. */
+  buildCheckout(input: BuildCheckoutInput): CheckoutConfig
+  /**
+   * Verifica el checksum del evento y extrae el resultado.
+   * Devuelve null si el checksum no cuadra o el evento no es interpretable.
+   */
+  verifyEvent(payload: unknown): PaymentEventResult | null
 }
 
 // -------- Persistencia y pedido --------
@@ -46,6 +58,7 @@ export interface PaymentRecord {
   amount: number
   currency: string
   externalReference: string | null
+  wompiTransactionId: string | null
 }
 
 export interface PaymentRepository {
@@ -58,7 +71,14 @@ export interface PaymentRepository {
   }): Promise<PaymentRecord>
   findByIdForUser(id: string, userId: string): Promise<PaymentRecord | null>
   findByExternalReference(ref: string): Promise<PaymentRecord | null>
-  markStatus(id: string, status: PaymentStatus, rawPayload: unknown): Promise<PaymentRecord>
+  /** Pago aún sin resolver de un pedido. Permite reintentar sin duplicar filas. */
+  findPendingByOrderId(orderId: string): Promise<PaymentRecord | null>
+  markStatus(
+    id: string,
+    status: PaymentStatus,
+    rawPayload: unknown,
+    wompiTransactionId: string | null,
+  ): Promise<PaymentRecord>
 }
 
 export interface OrderForPayment {

@@ -22,3 +22,10 @@ export const globalRateLimiter = rateLimit({ ...base, windowMs: 60_000, limit: 3
 
 /** Límite estricto para endpoints sensibles de autenticación (anti fuerza bruta). */
 export const authRateLimiter = rateLimit({ ...base, windowMs: 15 * 60_000, limit: 20 })
+
+/**
+ * Límite para el seguimiento público de pedidos. Es un endpoint sin sesión que
+ * responde a "nº de pedido + correo": sin este tope, alguien podría probar
+ * combinaciones hasta acertar con el pedido de otra persona.
+ */
+export const trackingRateLimiter = rateLimit({ ...base, windowMs: 15 * 60_000, limit: 30 })

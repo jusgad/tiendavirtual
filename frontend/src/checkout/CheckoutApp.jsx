@@ -6,6 +6,7 @@ import {
   getAccessToken,
   getGuestId,
   getStoredUser,
+  setOnSessionExpired,
   storeSession,
 } from './api'
 import StepIndicator from './components/StepIndicator'
@@ -22,10 +23,28 @@ export default function CheckoutApp() {
   const [user, setUser] = useState(null)
   const [step, setStep] = useState(0) // índice sobre STEPS
   const [order, setOrder] = useState(null) // pedido creado en el paso "Envío"
-  const [payment, setPayment] = useState(null) // { payment, instructions }
+  const [contactEmail, setContactEmail] = useState('') // para consultar el seguimiento
+  const [payment, setPayment] = useState(null) // { payment, transaction, orderStatus }
   const [cartVersion, setCartVersion] = useState(0) // fuerza recarga del carrito tras fusionar
+  const [sessionExpired, setSessionExpired] = useState(false)
+
+  // El cliente HTTP renueva el access token solo. Si además falla la renovación,
+  // el refresh token caducó (7 días) o fue revocado: la sesión se acabó y hay
+  // que devolver al usuario al primer paso avisándole por qué.
+  useEffect(() => {
+    setOnSessionExpired(() => {
+      setUser(null)
+      setOrder(null)
+      setPayment(null)
+      setStep(0)
+      setSessionExpired(true)
+    })
+    return () => setOnSessionExpired(null)
+  }, [])
 
   // Al cargar, si hay una sesión guardada, valida el access token contra /auth/me.
+  // Si el access token venció pero el refresh sigue vivo, `api.me()` lo renueva
+  // por dentro y la sesión continúa: recargar la página ya no cierra sesión.
   useEffect(() => {
     const stored = getStoredUser()
     const token = getAccessToken()
@@ -46,6 +65,7 @@ export default function CheckoutApp() {
   const handleAuthenticated = async ({ user: loggedUser, tokens }) => {
     storeSession({ user: loggedUser, tokens })
     setUser(loggedUser)
+    setSessionExpired(false)
     // Si ya había carrito de invitado, se fusiona con el del usuario recién logueado.
     const guestId = getGuestId()
     if (guestId) {
@@ -59,7 +79,10 @@ export default function CheckoutApp() {
     setStep(1)
   }
 
-  const handleSkipAuth = () => setStep(1)
+  const handleSkipAuth = () => {
+    setSessionExpired(false)
+    setStep(1)
+  }
 
   const handleLogout = () => {
     clearSession()
@@ -67,14 +90,16 @@ export default function CheckoutApp() {
     setOrder(null)
     setPayment(null)
     setStep(0)
+    setSessionExpired(false)
   }
 
-  const handleOrderPlaced = (createdOrder) => {
+  const handleOrderPlaced = (createdOrder, email) => {
     setOrder(createdOrder)
+    setContactEmail(email)
     setStep(3)
   }
 
-  const handlePaymentInitiated = (result) => {
+  const handlePaymentResult = (result) => {
     setPayment(result)
     setStep(4)
   }
@@ -112,6 +137,13 @@ export default function CheckoutApp() {
       <main className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
         <StepIndicator steps={STEPS} current={step} />
 
+        {sessionExpired && (
+          <div className="mx-auto mt-6 max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+            ⏱️ Tu sesión expiró. Vuelve a entrar para recuperar tu carrito, o
+            continúa como invitado y empieza uno nuevo.
+          </div>
+        )}
+
         <div className="mt-8">
           {checkingSession ? (
             <div className="py-20 text-center text-[#8A7A65]">Cargando…</div>
@@ -122,9 +154,14 @@ export default function CheckoutApp() {
           ) : step === 2 ? (
             <CheckoutFormStep user={user} onBack={() => setStep(1)} onPlaced={handleOrderPlaced} />
           ) : step === 3 && order ? (
-            <PaymentStep order={order} onPaid={handlePaymentInitiated} />
+            <PaymentStep order={order} contactEmail={contactEmail} onPaid={handlePaymentResult} />
           ) : step === 4 && order && payment ? (
-            <ConfirmationStep order={order} payment={payment} onRestart={restart} />
+            <ConfirmationStep
+              order={order}
+              payment={payment}
+              contactEmail={contactEmail}
+              onRestart={restart}
+            />
           ) : (
             <ShopStep key={cartVersion} onContinue={() => setStep(2)} />
           )}

@@ -22,6 +22,7 @@ type Row = {
   amount: unknown
   currency: string
   externalReference: string | null
+  wompiTransactionId: string | null
 }
 
 const toRecord = (p: Row): PaymentRecord => ({
@@ -32,6 +33,7 @@ const toRecord = (p: Row): PaymentRecord => ({
   amount: Number(p.amount),
   currency: p.currency,
   externalReference: p.externalReference,
+  wompiTransactionId: p.wompiTransactionId,
 })
 
 export class PrismaPaymentRepository implements PaymentRepository {
@@ -56,14 +58,35 @@ export class PrismaPaymentRepository implements PaymentRepository {
   }
 
   async findByExternalReference(ref: string): Promise<PaymentRecord | null> {
-    const p = await this.prisma.payment.findFirst({ where: { externalReference: ref } })
+    // Si hubo varios intentos con la misma referencia, gana el más reciente.
+    const p = await this.prisma.payment.findFirst({
+      where: { externalReference: ref },
+      orderBy: { createdAt: 'desc' },
+    })
     return p ? toRecord(p) : null
   }
 
-  async markStatus(id: string, status: PaymentStatus, rawPayload: unknown): Promise<PaymentRecord> {
+  async findPendingByOrderId(orderId: string): Promise<PaymentRecord | null> {
+    const p = await this.prisma.payment.findFirst({
+      where: { orderId, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+    })
+    return p ? toRecord(p) : null
+  }
+
+  async markStatus(
+    id: string,
+    status: PaymentStatus,
+    rawPayload: unknown,
+    wompiTransactionId: string | null,
+  ): Promise<PaymentRecord> {
     const p = await this.prisma.payment.update({
       where: { id },
-      data: { status: toPrismaPaymentStatus(status), rawPayload: rawPayload as Prisma.InputJsonValue },
+      data: {
+        status: toPrismaPaymentStatus(status),
+        rawPayload: rawPayload as Prisma.InputJsonValue,
+        wompiTransactionId,
+      },
     })
     return toRecord(p)
   }

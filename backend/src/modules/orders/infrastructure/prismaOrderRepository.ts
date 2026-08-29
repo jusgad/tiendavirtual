@@ -3,6 +3,7 @@ import { ConflictError, NotFoundError } from '../../../shared/errors/AppError'
 import {
   OrderRepository,
   OrderSummary,
+  OrderTrackingView,
   OrderView,
   Paginated,
   PlaceOrderData,
@@ -173,6 +174,37 @@ export class PrismaOrderRepository implements OrderRepository {
   async findByIdForUser(id: string, userId: string): Promise<OrderView | null> {
     const order = await this.prisma.order.findFirst({ where: { id, userId }, include: { items: true } })
     return order ? toOrderView(order) : null
+  }
+
+  async findForTracking(orderNumber: string, email: string): Promise<OrderTrackingView | null> {
+    // El correo se compara en la consulta, no después: así una respuesta vacía
+    // es indistinguible de "el pedido no existe".
+    const order = await this.prisma.order.findFirst({
+      where: {
+        orderNumber,
+        OR: [
+          { guestEmail: { equals: email, mode: 'insensitive' } },
+          { user: { email: { equals: email, mode: 'insensitive' } } },
+        ],
+      },
+      include: { items: { select: { productName: true, quantity: true, lineTotal: true } } },
+    })
+    if (!order) return null
+
+    // Subconjunto seguro: sin dirección completa, sin teléfono, sin ids internos.
+    return {
+      orderNumber: order.orderNumber,
+      status: toDomainOrderStatus(order.status),
+      total: Number(order.total),
+      currency: order.currency,
+      shipCity: order.shipCity,
+      items: order.items.map((it) => ({
+        productName: it.productName,
+        quantity: it.quantity,
+        lineTotal: Number(it.lineTotal),
+      })),
+      createdAt: order.createdAt,
+    }
   }
 
   async cancel(id: string, userId: string): Promise<OrderView> {

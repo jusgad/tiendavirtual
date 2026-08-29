@@ -7,6 +7,7 @@ import {
   CancelOrderUseCase,
   GetMyOrderUseCase,
   ListMyOrdersUseCase,
+  TrackOrderUseCase,
 } from '../../application/orderQueries.usecase'
 import {
   CreateAddressUseCase,
@@ -36,7 +37,14 @@ export class OrdersController {
     private readonly listOrders: ListMyOrdersUseCase,
     private readonly getOrder: GetMyOrderUseCase,
     private readonly cancelOrder: CancelOrderUseCase,
+    private readonly trackOrder: TrackOrderUseCase,
   ) {}
+
+  // Público: seguimiento sin cuenta con nº de pedido + correo.
+  track = async (req: Request, res: Response) => {
+    const { orderNumber, email } = req.query as unknown as { orderNumber: string; email: string }
+    res.json({ order: await this.trackOrder.execute(orderNumber, email) })
+  }
 
   create = async (req: Request, res: Response) => {
     const owner = resolveOwner(req)

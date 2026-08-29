@@ -9,15 +9,11 @@ import { PaymentStatus as DomainPaymentStatus } from '../domain/paymentStatus'
 // (PaymentMethod, PaymentStatus) y los enums generados por Prisma.
 
 const methodToDomain: Record<PrismaPaymentMethod, DomainPaymentMethod> = {
-  NEQUI: DomainPaymentMethod.NEQUI,
-  DAVIPLATA: DomainPaymentMethod.DAVIPLATA,
-  CREDIT_CARD: DomainPaymentMethod.CREDIT_CARD,
+  WOMPI: DomainPaymentMethod.WOMPI,
 }
 
 const methodToPrisma: Record<DomainPaymentMethod, PrismaPaymentMethod> = {
-  NEQUI: 'NEQUI',
-  DAVIPLATA: 'DAVIPLATA',
-  CREDIT_CARD: 'CREDIT_CARD',
+  WOMPI: 'WOMPI',
 }
 
 export function toDomainPaymentMethod(method: PrismaPaymentMethod): DomainPaymentMethod {

@@ -139,14 +139,35 @@ describe('Checkout de invitado (sin usuario ni contraseña)', () => {
     const cart = await request(app).get('/api/cart').set('x-guest-id', guestId)
     expect(cart.body.cart.itemCount).toBe(0)
 
-    // 5) Paga el pedido sin sesión (el pedido no tiene dueño -> se permite)
-    const pay = await request(app).post('/api/payments').send({
-      orderId: order.id,
-      method: 'NEQUI',
-      phone: '3105676187',
-    })
+    // 5) Prepara el pago sin sesión (el pedido no tiene dueño -> se permite).
+    // Solo se envía el pedido: los datos de tarjeta los captura el widget de
+    // Wompi en el navegador, este backend ya no los recibe.
+    const pay = await request(app).post('/api/payments').send({ orderId: order.id })
     expect(pay.status).toBe(201)
     expect(pay.body.payment.status).toBe('PENDING')
+    expect(pay.body.payment.method).toBe('WOMPI')
+
+    // La configuración del widget viaja firmada y con el monto en centavos.
+    expect(pay.body.checkout.reference).toBe(order.orderNumber)
+    expect(pay.body.checkout.amountInCents).toBe(order.total * 100)
+    expect(pay.body.checkout.signature).toMatch(/^[a-f0-9]{64}$/)
+
+    // 6) Seguimiento público: con nº de pedido + correo, sin sesión
+    const track = await request(app)
+      .get('/api/orders/track')
+      .query({ orderNumber: order.orderNumber, email: 'invitada@correo.com' })
+    expect(track.status).toBe(200)
+    expect(track.body.order.status).toBe('PENDING')
+    expect(track.body.order.shipCity).toBe('Medellín')
+    // No expone dirección completa ni ids internos
+    expect(track.body.order.id).toBeUndefined()
+    expect(track.body.order.shipLine1).toBeUndefined()
+
+    // 7) Con un correo que no corresponde, responde 404 (no confirma que exista)
+    const ajeno = await request(app)
+      .get('/api/orders/track')
+      .query({ orderNumber: order.orderNumber, email: 'otra@correo.com' })
+    expect(ajeno.status).toBe(404)
   })
 
   it('rechaza (400) el checkout de invitado sin correo de contacto', async () => {

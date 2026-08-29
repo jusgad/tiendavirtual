@@ -3,7 +3,8 @@ import { z } from 'zod'
 
 // Valores por defecto SOLO aptos para desarrollo. En producción se prohíben
 // explícitamente (ver superRefine) para evitar desplegar con secretos conocidos.
-export const INSECURE_WEBHOOK_SECRET = 'dev_webhook_secret_change_me'
+export const INSECURE_WOMPI_INTEGRITY_SECRET = 'dev_wompi_integrity_change_me'
+export const INSECURE_WOMPI_EVENTS_SECRET = 'dev_wompi_events_change_me'
 export const INSECURE_ADMIN_PASSWORD = 'Admin123*'
 
 // Validación centralizada de variables de entorno. Si algo falta o es inválido,
@@ -17,6 +18,9 @@ const envSchema = z
     TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 
     DATABASE_URL: z.string().url(),
+    // Conexión directa a Postgres, solo para migraciones (ver schema.prisma).
+    // Si no se define, cae a DATABASE_URL: en local ambas son la misma.
+    DIRECT_URL: z.string().url().optional(),
     REDIS_URL: z.string().url(),
 
     JWT_ACCESS_SECRET: z.string().min(16),
@@ -32,8 +36,24 @@ const envSchema = z
     SHIPPING_FLAT_RATE: z.coerce.number().nonnegative().default(12900),
     FREE_SHIPPING_THRESHOLD: z.coerce.number().nonnegative().default(150000),
 
-    // Secreto para verificar la firma de los webhooks de pago (HMAC-SHA256).
-    PAYMENTS_WEBHOOK_SECRET: z.string().min(8).default(INSECURE_WEBHOOK_SECRET),
+    // ---- Wompi (pasarela de pago) ----
+    // Llave pública: viaja al navegador para inicializar el widget. No es secreta.
+    WOMPI_PUBLIC_KEY: z.string().min(1).default('pub_test_000000000000000000000000'),
+    // Llave privada: solo para consultar transacciones contra la API de Wompi.
+    WOMPI_PRIVATE_KEY: z.string().min(1).default('prv_test_000000000000000000000000'),
+    // Secreto de integridad: firma referencia+monto+moneda que consume el widget.
+    WOMPI_INTEGRITY_SECRET: z.string().min(8).default(INSECURE_WOMPI_INTEGRITY_SECRET),
+    // Secreto de eventos: verifica el checksum de los webhooks de Wompi.
+    WOMPI_EVENTS_SECRET: z.string().min(8).default(INSECURE_WOMPI_EVENTS_SECRET),
+    // A dónde vuelve el cliente tras pagar en el widget. Debe apuntar al frontend.
+    WOMPI_REDIRECT_URL: z.string().url().optional(),
+    // Permite desplegar un entorno de PRUEBAS con NODE_ENV=production y llaves
+    // de sandbox de Wompi. Sin esto no se podría montar un staging realista.
+    // En la tienda real debe quedar en false: con true no entra dinero.
+    PAYMENTS_SANDBOX: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
 
     ADMIN_EMAIL: z.string().email().default('admin@pomass.co'),
     ADMIN_PASSWORD: z.string().min(8).default(INSECURE_ADMIN_PASSWORD),
@@ -48,11 +68,30 @@ const envSchema = z
       }
     }
     requireSecret(
-      cfg.PAYMENTS_WEBHOOK_SECRET,
-      INSECURE_WEBHOOK_SECRET,
-      'PAYMENTS_WEBHOOK_SECRET',
-      'Define un PAYMENTS_WEBHOOK_SECRET propio en producción (el valor por defecto permite falsificar webhooks de pago)',
+      cfg.WOMPI_INTEGRITY_SECRET,
+      INSECURE_WOMPI_INTEGRITY_SECRET,
+      'WOMPI_INTEGRITY_SECRET',
+      'Define el WOMPI_INTEGRITY_SECRET de tu cuenta de Wompi en producción (el valor por defecto permite alterar el monto del cobro)',
     )
+    requireSecret(
+      cfg.WOMPI_EVENTS_SECRET,
+      INSECURE_WOMPI_EVENTS_SECRET,
+      'WOMPI_EVENTS_SECRET',
+      'Define el WOMPI_EVENTS_SECRET de tu cuenta de Wompi en producción (el valor por defecto permite falsificar confirmaciones de pago)',
+    )
+    // Las llaves de prueba de Wompi no cobran de verdad. Se bloquean salvo que
+    // se declare explícitamente que este despliegue ES un entorno de pruebas.
+    const usaSandbox =
+      cfg.WOMPI_PUBLIC_KEY.startsWith('pub_test_') || cfg.WOMPI_PRIVATE_KEY.startsWith('prv_test_')
+    if (usaSandbox && !cfg.PAYMENTS_SANDBOX) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['WOMPI_PUBLIC_KEY'],
+        message:
+          'Estás usando llaves de sandbox de Wompi con NODE_ENV=production: ningún pago real entraría. ' +
+          'Usa las llaves pub_prod_/prv_prod_, o declara PAYMENTS_SANDBOX=true si esto es un entorno de pruebas.',
+      })
+    }
     requireSecret(
       cfg.ADMIN_PASSWORD,
       INSECURE_ADMIN_PASSWORD,

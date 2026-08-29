@@ -3,7 +3,7 @@ import { UnauthorizedError } from '../../../../shared/errors/AppError'
 import {
   GetPaymentUseCase,
   HandleWebhookUseCase,
-  InitiatePaymentUseCase,
+  StartPaymentUseCase,
 } from '../../application/paymentUseCases'
 
 function userId(req: Request): string {
@@ -13,24 +13,19 @@ function userId(req: Request): string {
 
 export class PaymentsController {
   constructor(
-    private readonly initiate: InitiatePaymentUseCase,
+    private readonly startPayment: StartPaymentUseCase,
     private readonly webhook: HandleWebhookUseCase,
     private readonly getPayment: GetPaymentUseCase,
   ) {}
 
   create = async (req: Request, res: Response) => {
-    const { orderId, method, phone, card } = req.body
-    const result = await this.initiate.execute(req.user?.id ?? null, {
-      orderId,
-      method,
-      methodData: { phone, card },
-    })
+    const result = await this.startPayment.execute(req.user?.id ?? null, req.body.orderId)
     res.status(201).json(result)
   }
 
+  // Sin auth de usuario: la confianza viene del checksum del propio evento.
   handleWebhook = async (req: Request, res: Response) => {
-    const signature = req.header('x-signature')
-    const result = await this.webhook.execute(req.params.provider, req.body, signature)
+    const result = await this.webhook.execute(req.body)
     res.status(200).json({ received: true, ...result })
   }
 

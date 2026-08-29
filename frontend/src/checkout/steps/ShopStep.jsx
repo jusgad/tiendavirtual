@@ -9,6 +9,9 @@ export default function ShopStep({ onContinue }) {
   const [busyId, setBusyId] = useState(null)
 
   const loadAll = async () => {
+    // Se limpia antes de reintentar: si no, un error viejo seguía visible
+    // aunque la recarga hubiera funcionado.
+    setError(null)
     try {
       const [productsRes, cartRes] = await Promise.all([
         api.listProducts({ pageSize: 12 }),

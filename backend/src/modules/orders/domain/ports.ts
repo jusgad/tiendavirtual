@@ -113,6 +113,23 @@ export interface Paginated<T> {
   pageSize: number
 }
 
+/**
+ * Vista pública de seguimiento. Deliberadamente MÁS POBRE que `OrderView`:
+ * este endpoint no exige sesión, así que solo expone lo imprescindible para
+ * que el cliente sepa en qué va su pedido. Sin dirección completa, sin
+ * teléfono, sin datos de pago y sin ids internos.
+ */
+export interface OrderTrackingView {
+  orderNumber: string
+  status: OrderStatus
+  total: number
+  currency: string
+  /** Solo la ciudad de destino: suficiente para reconocer el pedido. */
+  shipCity: string | null
+  items: { productName: string; quantity: number; lineTotal: number }[]
+  createdAt: Date
+}
+
 export interface OrderRepository {
   /** Transacción atómica: descuenta stock (con guarda), crea el pedido + ítems,
    *  registra el canje del cupón y vacía el carrito del usuario. */
@@ -121,6 +138,12 @@ export interface OrderRepository {
   findByIdForUser(id: string, userId: string): Promise<OrderView | null>
   /** Transacción: restaura stock y marca CANCELLED (solo si el estado lo permite). */
   cancel(id: string, userId: string): Promise<OrderView>
+  /**
+   * Búsqueda para el seguimiento público. Exige que el correo coincida con el
+   * del pedido (`guestEmail` o el del usuario dueño): el número de pedido por
+   * sí solo nunca basta.
+   */
+  findForTracking(orderNumber: string, email: string): Promise<OrderTrackingView | null>
 }
 
 /**

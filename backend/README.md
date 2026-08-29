@@ -2,6 +2,14 @@
 
 API de la tienda virtual **PomAss** (cremas y productos de cuidado/higiene íntima).
 
+> **Documentación completa**: [`docs/`](../docs/README.md) —
+> [tutorial](../docs/tutorial-primer-pedido.md) ·
+> [referencia de API](../docs/referencia-api.md) ·
+> [modelo de datos](../docs/referencia-modelo-datos.md) ·
+> [configuración](../docs/referencia-configuracion.md) ·
+> [decisiones de diseño](../docs/explicacion-decisiones.md) ·
+> [seguridad](../docs/explicacion-seguridad.md)
+
 ## Stack
 
 - **Node.js + TypeScript + Express**
@@ -116,7 +124,12 @@ Health check (fuera del prefijo `/api`) en **http://localhost:3000/health**.
 ## Referencia de endpoints
 
 Todas las rutas cuelgan de `API_PREFIX` (`/api` por defecto). 🔒 = requiere
-`Authorization: Bearer <accessToken>`. 👑 = además requiere rol `ADMIN`.
+`Authorization: Bearer <accessToken>`. 👑 = además requiere rol `ADMIN`. Sin
+símbolo = público, o con autenticación **opcional** (sirve a usuarios y a
+invitados).
+
+> Referencia completa con contratos de entrada/salida, códigos de error y
+> ejemplos ejecutables: **[docs/referencia-api.md](../docs/referencia-api.md)**.
 
 **Auth** (`/auth`)
 
@@ -153,22 +166,22 @@ Todas las rutas cuelgan de `API_PREFIX` (`/api` por defecto). 🔒 = requiere
 | DELETE | `/cart` | Vaciar el carrito |
 | POST | `/cart/merge` 🔒 | Fusiona el carrito de invitado (`guestId`) en el del usuario |
 
-**Pedidos y direcciones** (`/orders`, `/addresses`) — todo 🔒
+**Pedidos y direcciones** (`/orders`, `/addresses`)
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| POST | `/orders` | Checkout: crea el pedido desde el carrito (`addressId` o `shippingAddress`, `couponCode?`, `discreetPackaging?`) |
-| GET | `/orders` | Lista paginada de mis pedidos |
-| GET | `/orders/:id` | Detalle de un pedido propio |
-| POST | `/orders/:id/cancel` | Cancela (solo si está `PENDING`/`PAID`) y restaura stock |
-| GET / POST | `/addresses` | Listar / crear direcciones de envío |
-| PATCH / DELETE | `/addresses/:id` | Actualizar / eliminar una dirección propia |
+| POST | `/orders` | Checkout: crea el pedido desde el carrito (`addressId` o `shippingAddress`, `couponCode?`, `discreetPackaging?`). **Admite invitados**: sin sesión exige `guestEmail` y `shippingAddress` |
+| GET | `/orders` 🔒 | Lista paginada de mis pedidos |
+| GET | `/orders/:id` 🔒 | Detalle de un pedido propio |
+| POST | `/orders/:id/cancel` 🔒 | Cancela (solo si está `PENDING`/`PAID`) y restaura stock |
+| GET / POST | `/addresses` 🔒 | Listar / crear direcciones de envío |
+| PATCH / DELETE | `/addresses/:id` 🔒 | Actualizar / eliminar una dirección propia |
 
 **Pagos** (`/payments`)
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| POST | `/payments` 🔒 | Inicia el pago de un pedido `PENDING` (`orderId`, `method`, datos del método) |
+| POST | `/payments` | Inicia el pago de un pedido `PENDING` (`orderId`, `method`, datos del método). Sin sesión solo funciona si el pedido también es de invitado |
 | GET | `/payments/:id` 🔒 | Consulta un pago propio |
 | POST | `/payments/webhook/:provider` | Webhook de confirmación (`nequi`/`daviplata`/`card`), verificado por firma `x-signature` (HMAC-SHA256 con `PAYMENTS_WEBHOOK_SECRET`) |
 

@@ -26,7 +26,7 @@ export const openApiDocument: {
     { name: 'Pagos', description: 'Pagos y webhooks' },
     { name: 'Reseñas', description: 'Calificaciones y comentarios' },
     { name: 'Cupones', description: 'Cupones y descuentos' },
-    { name: 'Admin', description: 'Endpoints de administración' },
+    { name: 'Admin', description: 'Reportes y gestión de pedidos' },
   ],
   components: {
     securitySchemes: {

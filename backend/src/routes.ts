@@ -31,7 +31,7 @@ export function buildApiRouter(prisma: PrismaClient): Router {
   router.use('/payments', buildPaymentsModule(prisma))
   router.use('/coupons', buildCouponsModule(prisma))
   router.use('/', buildReviewsModule(prisma)) // /products/:productId/reviews
-  router.use('/admin', buildAdminModule(prisma))
+  router.use('/admin', buildAdminModule(prisma, redis))
 
   return router
 }

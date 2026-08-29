@@ -101,6 +101,9 @@ class CapturingOrders implements OrderRepository {
   cancel(): Promise<never> {
     throw new Error('no usado')
   }
+  findForTracking(): Promise<never> {
+    throw new Error('no usado')
+  }
 }
 class FakeCatalogCache implements CatalogCacheInvalidator {
   invalidations = 0

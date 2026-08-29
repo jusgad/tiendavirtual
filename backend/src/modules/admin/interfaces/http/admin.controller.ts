@@ -1,5 +1,12 @@
 import { Request, Response } from 'express'
 import { GetOrdersByStatusUseCase, GetSalesReportUseCase, GetTopProductsUseCase } from '../../application/reportUseCases'
+import {
+  GetOrderUseCase,
+  ListOrdersUseCase,
+  UpdateOrderStatusUseCase,
+} from '../../application/orderAdminUseCases'
+import { OrderStatus } from '../../domain/orderStatus'
+import { allowedTransitionsFrom } from '../../domain/orderTransitions'
 
 export class AdminReportsController {
   constructor(
@@ -20,5 +27,34 @@ export class AdminReportsController {
 
   ordersByStatus = async (_req: Request, res: Response) => {
     res.json({ statuses: await this.getOrdersByStatus.execute() })
+  }
+}
+
+export class AdminOrdersController {
+  constructor(
+    private readonly listOrders: ListOrdersUseCase,
+    private readonly getOrder: GetOrderUseCase,
+    private readonly updateStatus: UpdateOrderStatusUseCase,
+  ) {}
+
+  list = async (req: Request, res: Response) => {
+    const { status, page, pageSize } = req.query as unknown as {
+      status?: OrderStatus
+      page: number
+      pageSize: number
+    }
+    res.json(await this.listOrders.execute(status, page, pageSize))
+  }
+
+  get = async (req: Request, res: Response) => {
+    const order = await this.getOrder.execute(req.params.id)
+    // Se expone qué transiciones caben desde el estado actual: evita que el
+    // panel tenga que duplicar la regla de negocio para pintar los botones.
+    res.json({ order, allowedTransitions: allowedTransitionsFrom(order.status) })
+  }
+
+  updateOrderStatus = async (req: Request, res: Response) => {
+    const order = await this.updateStatus.execute(req.params.id, req.body.status)
+    res.json({ order, allowedTransitions: allowedTransitionsFrom(order.status) })
   }
 }

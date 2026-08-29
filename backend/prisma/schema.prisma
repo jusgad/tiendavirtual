@@ -10,7 +10,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Conexión agrupada (PgBouncer, puerto 6543 en Supabase). Es la que usa la app.
+  url       = env("DATABASE_URL")
+  // Conexión directa (puerto 5432). Solo la usan las migraciones: el pooler en
+  // modo transacción no soporta bien los comandos DDL. En local ambas pueden
+  // apuntar a la misma base.
+  directUrl = env("DIRECT_URL")
 }
 
 // ------------------------------ Enums --------------------------------------
@@ -29,10 +34,11 @@ enum OrderStatus {
   CANCELLED // cancelado
 }
 
+// Wompi es un único proveedor que internamente ofrece varios medios (tarjeta,
+// Nequi, PSE, Bancolombia). El medio concreto que eligió el cliente llega en el
+// evento del webhook y se guarda en `Payment.rawPayload`, no se modela aquí.
 enum PaymentMethod {
-  NEQUI
-  DAVIPLATA
-  CREDIT_CARD
+  WOMPI
 }
 
 enum PaymentStatus {
@@ -341,21 +347,26 @@ model OrderItem {
 // ------------------------------ Pagos --------------------------------------
 
 model Payment {
-  id                String        @id @default(uuid())
-  orderId           String
-  method            PaymentMethod
-  status            PaymentStatus @default(PENDING)
-  amount            Decimal       @db.Decimal(12, 2)
-  currency          String        @default("COP")
-  externalReference String? // id de la transacción del proveedor
-  rawPayload        Json? // payload del webhook para trazabilidad
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id     String        @id @default(uuid())
+  orderId String
+  method PaymentMethod
+  status PaymentStatus @default(PENDING)
+  amount Decimal       @db.Decimal(12, 2)
+  currency String      @default("COP")
+  // Referencia que ve la pasarela. Con Wompi es el `orderNumber` del pedido:
+  // es lo que viaja al widget y lo que devuelve el evento del webhook.
+  externalReference String?
+  // Id de la transacción que asigna Wompi. Llega en el evento, no antes.
+  wompiTransactionId String?
+  rawPayload Json? // payload del webhook para trazabilidad
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([externalReference])
+  @@index([wompiTransactionId])
   @@map("payments")
 }
 

@@ -6,56 +6,68 @@ registerSchemas({
     properties: {
       id: { type: 'string', format: 'uuid' },
       orderId: { type: 'string', format: 'uuid' },
-      method: { type: 'string', enum: ['NEQUI', 'DAVIPLATA', 'CREDIT_CARD'] },
+      method: { type: 'string', enum: ['WOMPI'] },
       status: { type: 'string', enum: ['PENDING', 'APPROVED', 'DECLINED', 'REFUNDED'] },
       amount: { type: 'number' },
       currency: { type: 'string', example: 'COP' },
-      externalReference: { type: 'string', nullable: true },
+      externalReference: { type: 'string', nullable: true, description: 'Número de pedido; es la referencia que ve Wompi' },
+      wompiTransactionId: { type: 'string', nullable: true },
+    },
+  },
+  CheckoutConfig: {
+    type: 'object',
+    description: 'Datos firmados para inicializar el widget de Wompi en el navegador.',
+    properties: {
+      publicKey: { type: 'string' },
+      currency: { type: 'string', example: 'COP' },
+      amountInCents: { type: 'integer' },
+      reference: { type: 'string' },
+      signature: { type: 'string', description: 'Firma de integridad SHA-256' },
+      redirectUrl: { type: 'string', nullable: true },
     },
   },
 })
 
-const auth = [{ bearerAuth: [] }]
+const authed = [{ bearerAuth: [] }]
 
 registerPaths({
   '/payments': {
     post: {
       tags: ['Pagos'],
-      summary: 'Iniciar el pago de un pedido',
+      summary: 'Preparar el pago de un pedido (devuelve la configuración del widget de Wompi)',
       description:
-        'Crea un cobro con el proveedor (simulado) y devuelve las instrucciones. ' +
-        'El pago queda PENDING hasta que llegue el webhook de confirmación.',
-      security: auth,
+        'Crea o reutiliza el registro de pago del pedido y devuelve los datos firmados que el ' +
+        'widget de Wompi necesita. **No recibe datos de tarjeta**: el cliente los teclea dentro ' +
+        'del widget, en su navegador. Admite invitados si el pedido también es de invitado.',
+      security: authed,
       requestBody: {
         required: true,
         content: {
           'application/json': {
             schema: {
               type: 'object',
-              required: ['orderId', 'method'],
-              properties: {
-                orderId: { type: 'string', format: 'uuid' },
-                method: { type: 'string', enum: ['NEQUI', 'DAVIPLATA', 'CREDIT_CARD'] },
-                phone: { type: 'string', description: 'Celular (Nequi/Daviplata)' },
-                card: {
-                  type: 'object',
-                  description: 'Datos de tarjeta (CREDIT_CARD)',
-                  properties: {
-                    number: { type: 'string' },
-                    expMonth: { type: 'integer' },
-                    expYear: { type: 'integer' },
-                    cvv: { type: 'string' },
-                    holder: { type: 'string' },
-                  },
-                },
-              },
+              required: ['orderId'],
+              properties: { orderId: { type: 'string', format: 'uuid' } },
             },
           },
         },
       },
       responses: {
-        201: { description: 'Cobro creado (PENDING) con instrucciones' },
-        400: { description: 'Datos del método inválidos' },
+        201: {
+          description: 'Pago preparado',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  payment: { $ref: '#/components/schemas/Payment' },
+                  checkout: { $ref: '#/components/schemas/CheckoutConfig' },
+                },
+              },
+            },
+          },
+        },
+        404: { description: 'Pedido no encontrado' },
         409: { description: 'El pedido no está pendiente de pago' },
       },
     },
@@ -64,41 +76,63 @@ registerPaths({
     get: {
       tags: ['Pagos'],
       summary: 'Consultar un pago propio',
-      security: auth,
+      security: authed,
       parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-      responses: { 200: { description: 'Pago' }, 404: { description: 'No encontrado' } },
+      responses: {
+        200: { description: 'Pago' },
+        401: { description: 'No autenticado' },
+        404: { description: 'Pago no encontrado' },
+      },
     },
   },
-  '/payments/webhook/{provider}': {
+  '/payments/webhook/wompi': {
     post: {
       tags: ['Pagos'],
-      summary: 'Webhook de confirmación del proveedor',
+      summary: 'Webhook de Wompi (evento transaction.updated)',
       description:
-        'Verificado por firma HMAC-SHA256 en el header `x-signature` (sobre el JSON del cuerpo, ' +
-        'con PAYMENTS_WEBHOOK_SECRET). Si el pago es aprobado, el pedido pasa a PAID.',
-      parameters: [
-        { name: 'provider', in: 'path', required: true, schema: { type: 'string', enum: ['nequi', 'daviplata', 'card'] } },
-        { name: 'x-signature', in: 'header', required: true, schema: { type: 'string' } },
-      ],
+        'Única fuente de verdad de un pago. No lleva autenticación de usuario: se verifica el ' +
+        'checksum que Wompi incluye en `signature.checksum` del propio cuerpo. Es idempotente: ' +
+        'reentregas del mismo evento responden `idempotent: true` sin reprocesar, y un pago ya ' +
+        'aprobado nunca se degrada.',
       requestBody: {
         required: true,
         content: {
           'application/json': {
             schema: {
               type: 'object',
-              required: ['externalReference', 'status'],
               properties: {
-                externalReference: { type: 'string' },
-                status: { type: 'string', enum: ['APPROVED', 'DECLINED'] },
+                event: { type: 'string', example: 'transaction.updated' },
+                data: {
+                  type: 'object',
+                  properties: {
+                    transaction: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        reference: { type: 'string' },
+                        status: { type: 'string', enum: ['APPROVED', 'DECLINED', 'VOIDED', 'ERROR', 'PENDING'] },
+                        amount_in_cents: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+                timestamp: { type: 'integer' },
+                signature: {
+                  type: 'object',
+                  properties: {
+                    properties: { type: 'array', items: { type: 'string' } },
+                    checksum: { type: 'string' },
+                  },
+                },
               },
             },
           },
         },
       },
       responses: {
-        200: { description: 'Webhook procesado' },
-        401: { description: 'Firma inválida' },
-        404: { description: 'Pago o proveedor no encontrado' },
+        200: { description: 'Evento procesado (o ignorado por idempotencia)' },
+        401: { description: 'Checksum de evento inválido' },
+        404: { description: 'Pago no encontrado para esa referencia' },
       },
     },
   },
