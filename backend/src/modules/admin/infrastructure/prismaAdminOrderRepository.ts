@@ -7,6 +7,7 @@ import {
   Paginated,
 } from '../domain/ports'
 import { OrderStatus } from '../domain/orderStatus'
+import { ShipmentData } from '../domain/orderTransitions'
 import { toDomainOrderStatus, toPrismaOrderStatus } from './orderStatusMapper'
 
 type OrderRow = Prisma.OrderGetPayload<{
@@ -83,7 +84,12 @@ export class PrismaAdminOrderRepository implements AdminOrderRepository {
     return order ? toDetail(order) : null
   }
 
-  async updateStatus(id: string, status: OrderStatus, restoreStock: boolean): Promise<AdminOrderDetail> {
+  async updateStatus(
+    id: string,
+    status: OrderStatus,
+    restoreStock: boolean,
+    shipment?: ShipmentData,
+  ): Promise<AdminOrderDetail> {
     const order = await this.prisma.$transaction(async (tx) => {
       if (restoreStock) {
         // Devuelve las unidades al inventario antes de marcar el estado, dentro
@@ -102,7 +108,10 @@ export class PrismaAdminOrderRepository implements AdminOrderRepository {
 
       return tx.order.update({
         where: { id },
-        data: { status: toPrismaOrderStatus(status) },
+        data: {
+          status: toPrismaOrderStatus(status),
+          ...(shipment ? { carrier: shipment.carrier, trackingNumber: shipment.trackingNumber } : {}),
+        },
         include: INCLUDE,
       })
     })

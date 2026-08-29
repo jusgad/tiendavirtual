@@ -51,7 +51,10 @@ describe('UpdateOrderStatusUseCase', () => {
     const repo = repoConPedido(OrderStatus.PREPARING)
     const cache = new SpyCatalogCache()
 
-    await new UpdateOrderStatusUseCase(repo, cache).execute('order-1', OrderStatus.SHIPPED)
+    await new UpdateOrderStatusUseCase(repo, cache).execute('order-1', OrderStatus.SHIPPED, {
+      carrier: 'Servientrega',
+      trackingNumber: 'ABC123',
+    })
 
     expect(repo.lastRestoreStock).toBe(false)
     expect(cache.invalidations).toBe(0)
@@ -64,6 +67,41 @@ describe('UpdateOrderStatusUseCase', () => {
       OrderStatus.DELIVERED,
     )
     expect(res.status).toBe(OrderStatus.DELIVERED)
+  })
+
+  it('guarda transportadora y guía al despachar', async () => {
+    const repo = repoConPedido(OrderStatus.PREPARING)
+
+    const res = await new UpdateOrderStatusUseCase(repo, new SpyCatalogCache()).execute(
+      'order-1',
+      OrderStatus.SHIPPED,
+      { carrier: 'Servientrega', trackingNumber: 'ABC123' },
+    )
+
+    expect(res.status).toBe(OrderStatus.SHIPPED)
+    expect(res.carrier).toBe('Servientrega')
+    expect(res.trackingNumber).toBe('ABC123')
+  })
+
+  it('rechaza (400) despachar sin guía', async () => {
+    const useCase = new UpdateOrderStatusUseCase(repoConPedido(OrderStatus.PREPARING), new SpyCatalogCache())
+
+    await expect(useCase.execute('order-1', OrderStatus.SHIPPED)).rejects.toMatchObject({ statusCode: 400 })
+  })
+
+  it('rechaza (400) datos de despacho en una transición que no es el envío', async () => {
+    const useCase = new UpdateOrderStatusUseCase(repoConPedido(OrderStatus.PAID), new SpyCatalogCache())
+
+    await expect(
+      useCase.execute('order-1', OrderStatus.PREPARING, { carrier: 'Servientrega', trackingNumber: 'ABC123' }),
+    ).rejects.toMatchObject({ statusCode: 400 })
+  })
+
+  it('valida la transición ANTES que los datos de despacho', async () => {
+    // PAID → SHIPPED se salta un paso: debe dar 409 aunque falte también la guía.
+    const useCase = new UpdateOrderStatusUseCase(repoConPedido(OrderStatus.PAID), new SpyCatalogCache())
+
+    await expect(useCase.execute('order-1', OrderStatus.SHIPPED)).rejects.toMatchObject({ statusCode: 409 })
   })
 })
 

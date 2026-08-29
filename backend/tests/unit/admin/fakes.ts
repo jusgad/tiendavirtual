@@ -13,6 +13,7 @@ import {
   TopProduct,
 } from '../../../src/modules/admin/domain/ports'
 import { OrderStatus } from '../../../src/modules/admin/domain/orderStatus'
+import { ShipmentData } from '../../../src/modules/admin/domain/orderTransitions'
 
 export class FakeAdminReportsRepository implements AdminReportsRepository {
   salesReportCalls: SalesReportFilter[] = []
@@ -86,10 +87,19 @@ export class InMemoryAdminOrderRepository implements AdminOrderRepository {
     return this.orders.find((o) => o.id === id) ?? null
   }
 
-  async updateStatus(id: string, status: OrderStatus, restoreStock: boolean): Promise<AdminOrderDetail> {
+  async updateStatus(
+    id: string,
+    status: OrderStatus,
+    restoreStock: boolean,
+    shipment?: ShipmentData,
+  ): Promise<AdminOrderDetail> {
     this.lastRestoreStock = restoreStock
     const order = this.orders.find((o) => o.id === id)!
     order.status = status
+    if (shipment) {
+      order.carrier = shipment.carrier
+      order.trackingNumber = shipment.trackingNumber
+    }
     return order
   }
 }

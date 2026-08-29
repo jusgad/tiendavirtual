@@ -7,7 +7,12 @@ import {
   Paginated,
 } from '../domain/ports'
 import { OrderStatus } from '../domain/orderStatus'
-import { assertTransitionAllowed, cancellationRestoresStock } from '../domain/orderTransitions'
+import {
+  assertShipmentDataFor,
+  assertTransitionAllowed,
+  cancellationRestoresStock,
+  ShipmentData,
+} from '../domain/orderTransitions'
 
 export class ListOrdersUseCase {
   constructor(private readonly orders: AdminOrderRepository) {}
@@ -38,14 +43,18 @@ export class UpdateOrderStatusUseCase {
     private readonly catalogCache: CatalogCacheInvalidator,
   ) {}
 
-  async execute(id: string, to: OrderStatus): Promise<AdminOrderDetail> {
+  async execute(id: string, to: OrderStatus, shipment?: ShipmentData): Promise<AdminOrderDetail> {
     const order = await this.orders.findById(id)
     if (!order) throw new NotFoundError('Pedido no encontrado')
 
+    // El orden importa: primero si la transición cabe, después si los datos que
+    // la acompañan son los correctos. Al revés, un salto de estado se reportaría
+    // como "falta la guía", que despista a quien opera.
     assertTransitionAllowed(order.status, to)
+    assertShipmentDataFor(to, shipment)
 
     const restoreStock = to === OrderStatus.CANCELLED && cancellationRestoresStock(order.status)
-    const updated = await this.orders.updateStatus(id, to, restoreStock)
+    const updated = await this.orders.updateStatus(id, to, restoreStock, shipment)
 
     // Solo si volvieron unidades al inventario cambia lo que el catálogo
     // muestra; invalidar siempre sería tirar el caché sin motivo.

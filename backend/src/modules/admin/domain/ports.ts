@@ -1,4 +1,5 @@
 import { OrderStatus } from './orderStatus'
+import { ShipmentData } from './orderTransitions'
 
 /** Estados que cuentan como venta real (excluye PENDING sin pagar y CANCELLED). */
 export const SALE_STATUSES: OrderStatus[] = [
@@ -106,9 +107,14 @@ export interface AdminOrderRepository {
   /**
    * Cambia el estado del pedido. `restoreStock` devuelve las unidades al
    * catálogo (cancelaciones antes del despacho); debe ocurrir en la misma
-   * transacción que el cambio de estado.
+   * transacción que el cambio de estado. `shipment` solo llega al despachar.
    */
-  updateStatus(id: string, status: OrderStatus, restoreStock: boolean): Promise<AdminOrderDetail>
+  updateStatus(
+    id: string,
+    status: OrderStatus,
+    restoreStock: boolean,
+    shipment?: ShipmentData,
+  ): Promise<AdminOrderDetail>
 }
 
 /** El cambio de estado invalida el caché del catálogo si devolvió stock. */
