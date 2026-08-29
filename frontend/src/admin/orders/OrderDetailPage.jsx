@@ -56,6 +56,19 @@ export default function OrderDetailPage({ id }) {
     }
   }, [id])
 
+  // Abrir/cerrar un diálogo siempre limpia el error de la acción anterior:
+  // si no, el mensaje de un intento fallido de despacho aparecería, sin que
+  // el operador haya hecho nada, dentro del diálogo de cancelación.
+  const abrirDialogo = (status) => {
+    setErrorAccion('')
+    setDialogo(status)
+  }
+
+  const cerrarDialogo = () => {
+    setErrorAccion('')
+    setDialogo(null)
+  }
+
   const aplicar = async (status, shipment) => {
     setGuardando(true)
     setErrorAccion('')
@@ -137,7 +150,7 @@ export default function OrderDetailPage({ id }) {
               key={accion.status}
               onClick={() =>
                 accion.esEnvio || accion.esCancelacion
-                  ? setDialogo(accion.status)
+                  ? abrirDialogo(accion.status)
                   : aplicar(accion.status)
               }
               disabled={guardando}
@@ -163,7 +176,7 @@ export default function OrderDetailPage({ id }) {
         <ShipDialog
           enviando={guardando}
           error={errorAccion}
-          onCerrar={() => setDialogo(null)}
+          onCerrar={cerrarDialogo}
           onConfirmar={(shipment) => aplicar('SHIPPED', shipment)}
         />
       )}
@@ -173,7 +186,7 @@ export default function OrderDetailPage({ id }) {
           devuelveStock={order.status !== 'SHIPPED'}
           enviando={guardando}
           error={errorAccion}
-          onCerrar={() => setDialogo(null)}
+          onCerrar={cerrarDialogo}
           onConfirmar={() => aplicar('CANCELLED')}
         />
       )}
