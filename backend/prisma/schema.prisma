@@ -311,6 +311,9 @@ model Order {
   shipDepartment    String?
   shipPostalCode    String?
   guestEmail        String? // correo de contacto cuando el pedido es de invitado
+  // Rastreo del envío. Nullables: un pedido solo tiene guía a partir de SHIPPED.
+  carrier           String? // transportadora (Servientrega, Interrapidísimo, …)
+  trackingNumber    String? // número de guía que el cliente usa para rastrear
   placedAt          DateTime?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
