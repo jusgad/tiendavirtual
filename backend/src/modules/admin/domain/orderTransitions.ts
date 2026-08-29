@@ -51,3 +51,35 @@ export function cancellationRestoresStock(from: OrderStatus): boolean {
   // Mientras el pedido no se haya despachado, las unidades vuelven al inventario.
   return from === OrderStatus.PENDING || from === OrderStatus.PAID || from === OrderStatus.PREPARING
 }
+
+/** Datos del despacho. Solo existen a partir de que el pedido se envía. */
+export interface ShipmentData {
+  carrier: string
+  trackingNumber: string
+}
+
+/**
+ * Valida los datos de despacho contra la transición destino.
+ *
+ * Son obligatorios al pasar a SHIPPED —un pedido enviado sin guía deja al
+ * cliente sin nada que rastrear— y están prohibidos en cualquier otra
+ * transición: la guía se conoce al despachar, no antes ni después.
+ */
+export function assertShipmentDataFor(to: OrderStatus, shipment?: Partial<ShipmentData>): void {
+  const tieneDatos = Boolean(shipment?.carrier || shipment?.trackingNumber)
+
+  if (to !== OrderStatus.SHIPPED) {
+    if (tieneDatos) {
+      throw new BadRequestError(
+        'La transportadora y el número de guía solo se registran al marcar el pedido como enviado',
+      )
+    }
+    return
+  }
+
+  if (!shipment?.carrier || !shipment?.trackingNumber) {
+    throw new BadRequestError(
+      'Para marcar el pedido como enviado debes registrar la transportadora y el número de guía',
+    )
+  }
+}

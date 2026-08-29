@@ -1,5 +1,6 @@
 import {
   allowedTransitionsFrom,
+  assertShipmentDataFor,
   assertTransitionAllowed,
   cancellationRestoresStock,
 } from '../../../src/modules/admin/domain/orderTransitions'
@@ -64,6 +65,38 @@ describe('cancellationRestoresStock', () => {
   it('no devuelve stock de un pedido ya despachado o entregado', () => {
     expect(cancellationRestoresStock(OrderStatus.SHIPPED)).toBe(false)
     expect(cancellationRestoresStock(OrderStatus.DELIVERED)).toBe(false)
+  })
+})
+
+describe('assertShipmentDataFor', () => {
+  it('exige transportadora y guía al marcar como enviado', () => {
+    expect(() =>
+      assertShipmentDataFor(OrderStatus.SHIPPED, { carrier: 'Servientrega', trackingNumber: 'ABC123' }),
+    ).not.toThrow()
+  })
+
+  it('rechaza (400) despachar sin datos de despacho', () => {
+    expect(() => assertShipmentDataFor(OrderStatus.SHIPPED)).toMatchErrorStatus(400)
+    expect(() => assertShipmentDataFor(OrderStatus.SHIPPED, {})).toMatchErrorStatus(400)
+  })
+
+  it('rechaza (400) despachar con solo uno de los dos campos', () => {
+    expect(() => assertShipmentDataFor(OrderStatus.SHIPPED, { carrier: 'Servientrega' })).toMatchErrorStatus(400)
+    expect(() => assertShipmentDataFor(OrderStatus.SHIPPED, { trackingNumber: 'ABC123' })).toMatchErrorStatus(400)
+  })
+
+  it('rechaza (400) datos de despacho en cualquier otra transición', () => {
+    expect(() =>
+      assertShipmentDataFor(OrderStatus.PREPARING, { carrier: 'Servientrega', trackingNumber: 'ABC123' }),
+    ).toMatchErrorStatus(400)
+    expect(() =>
+      assertShipmentDataFor(OrderStatus.CANCELLED, { trackingNumber: 'ABC123' }),
+    ).toMatchErrorStatus(400)
+  })
+
+  it('acepta transiciones sin datos de despacho', () => {
+    expect(() => assertShipmentDataFor(OrderStatus.PREPARING)).not.toThrow()
+    expect(() => assertShipmentDataFor(OrderStatus.DELIVERED)).not.toThrow()
   })
 })
 
