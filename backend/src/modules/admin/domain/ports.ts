@@ -66,6 +66,16 @@ export interface AdminOrderDetail extends AdminOrderSummary {
   discountTotal: number
   shippingTotal: number
   discreetPackaging: boolean
+  // Snapshot de envío: es lo que se necesita para empacar y despachar.
+  shipFullName: string | null
+  shipPhone: string | null
+  shipLine1: string | null
+  shipLine2: string | null
+  shipDepartment: string | null
+  shipPostalCode: string | null
+  // Rastreo: se llenan al pasar el pedido a SHIPPED.
+  carrier: string | null
+  trackingNumber: string | null
   items: AdminOrderItem[]
 }
 

@@ -50,6 +50,14 @@ function detalle(base: { id: string; orderNumber: string; status: OrderStatus })
     discountTotal: 0,
     shippingTotal: 0,
     discreetPackaging: false,
+    shipFullName: 'Ana Gómez',
+    shipPhone: '3001234567',
+    shipLine1: 'Calle 10 # 20-30',
+    shipLine2: 'Apto 501',
+    shipDepartment: 'Antioquia',
+    shipPostalCode: '050001',
+    carrier: null,
+    trackingNumber: null,
     items: [{ productId: 'prod-1', productName: 'Estuche PomAss Día + Noche', quantity: 1, lineTotal: 79900 }],
   }
 }

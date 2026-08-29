@@ -90,3 +90,27 @@ describe('GetOrderUseCase', () => {
     ).rejects.toMatchObject({ statusCode: 404 })
   })
 })
+
+describe('GetOrderUseCase · datos de despacho', () => {
+  it('expone el snapshot de envío completo, necesario para empacar', async () => {
+    const repo = repoConPedido(OrderStatus.PAID)
+
+    const order = await new GetOrderUseCase(repo).execute('order-1')
+
+    expect(order).toMatchObject({
+      shipFullName: 'Ana Gómez',
+      shipPhone: '3001234567',
+      shipLine1: 'Calle 10 # 20-30',
+      shipDepartment: 'Antioquia',
+    })
+  })
+
+  it('un pedido sin despachar no tiene transportadora ni guía', async () => {
+    const repo = repoConPedido(OrderStatus.PAID)
+
+    const order = await new GetOrderUseCase(repo).execute('order-1')
+
+    expect(order.carrier).toBeNull()
+    expect(order.trackingNumber).toBeNull()
+  })
+})
