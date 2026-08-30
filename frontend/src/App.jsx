@@ -61,7 +61,7 @@ export default function App() {
   // Se usan las versiones ligeras: los PNG originales pesaban varios MB cada
   // uno, y esta es la primera pantalla que carga quien llega.
   const products = {
-    tubeDay: '/images/tubo_dia.jpeg',
+    tubeDay: '/images/tubo_dia.png',
     tubeNight: '/images/tubo_noche.png',
   }
 

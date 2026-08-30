@@ -114,12 +114,14 @@ async function main() {
   // ----- Imágenes del producto -----
   // `position` es la clave estable para re-sembrar sin duplicar (ProductImage
   // no tiene restricción de unicidad propia).
-  // Se usan las versiones ligeras (720px, ~78 KB). El PNG original del tubo
-  // Día pesa 5,2 MB: como miniatura de catálogo son varios segundos de espera
-  // en datos móviles, que es como se compra esto.
+  // PNG con fondo transparente, a 400px de ancho (~250-310 KB). El ancho sale
+  // de dónde se muestran: 150px en la landing y ~300px en la tarjeta del
+  // checkout, así que 400 deja margen para pantallas retina sin cargar de más.
+  // Los originales rondaban los 5 MB, inviables como miniatura en datos
+  // móviles, que es como se compra esto.
   const images = [
-    { position: 0, url: `${IMAGE_BASE}/tubo_dia.jpeg`, alt: 'Estuche PomAss · crema Día' },
-    { position: 1, url: `${IMAGE_BASE}/tubo_noche.jpeg`, alt: 'Estuche PomAss · crema Noche' },
+    { position: 0, url: `${IMAGE_BASE}/tubo_dia.png`, alt: 'Estuche PomAss · crema Día' },
+    { position: 1, url: `${IMAGE_BASE}/tubo_noche.png`, alt: 'Estuche PomAss · crema Noche' },
   ]
   for (const img of images) {
     const existing = await prisma.productImage.findFirst({
