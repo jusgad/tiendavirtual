@@ -62,7 +62,7 @@ export default function App() {
   // uno, y esta es la primera pantalla que carga quien llega.
   const products = {
     tubeDay: '/images/tubo_dia.jpeg',
-    tubeNight: '/images/tubo_noche.jpeg',
+    tubeNight: '/images/tubo_noche.png',
   }
 
   return (
