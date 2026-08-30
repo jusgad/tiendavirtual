@@ -1,4 +1,4 @@
-const logo = '/images/logo.jpeg'
+const logo = '/images/logo.png'
 
 // Fixed top bar: centered logo + a Día/Noche pill toggle on the right.
 export default function Header({ isDay, onToggle }) {
@@ -28,8 +28,18 @@ export default function Header({ isDay, onToggle }) {
             height: '56px',
             width: 'auto',
             display: 'block',
-            borderRadius: '14px',
-            boxShadow: '0 6px 18px rgba(0,0,0,.16)',
+            // El logo es un PNG transparente: de día se asienta solo sobre el
+            // degradado claro. De noche, en cambio, su tipografía azul marino
+            // («Ass», «by Pao Díaz») se pierde contra el morado oscuro, así que
+            // se le pone una placa clara con la misma forma de píldora que el
+            // propio logo dibuja. Sin ella la marca queda a medio leer.
+            ...(isDay
+              ? {}
+              : {
+                  background: 'rgba(255,243,222,.94)',
+                  borderRadius: '999px',
+                  padding: '2px 10px',
+                }),
           }}
         />
       </div>

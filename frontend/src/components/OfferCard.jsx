@@ -1,7 +1,7 @@
 import { PRICE, CURRENCY, whatsappUrl } from '../site'
 import ImageSlot from './ImageSlot'
 
-const sealMascot = '/images/logo.jpeg'
+const sealMascot = '/images/logo.png'
 
 // Glass offer card with price, buy + WhatsApp buttons, trust seal and socials.
 export default function OfferCard({ isDay, onBuy }) {
