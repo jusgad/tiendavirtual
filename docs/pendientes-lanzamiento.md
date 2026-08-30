@@ -7,7 +7,7 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 |---|---|
 | **Creada** | 2026-08-29 |
 | **Rama** | `feat/wompi-seguimiento-pedido` |
-| **Estado base** | 138 tests unitarios ✅ · typecheck ✅ · lint ✅ · backend completo |
+| **Estado** | 151 tests backend · 51 frontend · typecheck ✅ · lint ✅ · 4 páginas compilando |
 
 ---
 
@@ -30,24 +30,33 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
   mientras el pago no se confirma. El checkout recuerda el pedido para que al
   volver de PSE la consulta salga sola. Verificado en navegador.
 
-- [ ] **B2 · La landing todavía vende por WhatsApp**
-  `FloatingCta.jsx` apunta a `whatsappUrl()`. Además hay que decidir qué pasa
-  con los dos botones que dicen «COMPRAR POR WHATSAPP» en `OfferCard.jsx` y
-  `StickyBar.jsx`.
+- [x] **B2 · La landing vende en el sitio** — hecho
+  Los tres botones de compra llevan al checkout. WhatsApp queda como canal de
+  soporte: se recopiaron los botones y el mensaje por defecto ahora pregunta
+  en vez de pedir comprar.
 
-- [ ] **B3 · El checkout no muestra imágenes del producto**
-  El seed ya crea `ProductImage`, pero `ShopStep.jsx` no renderiza ninguna:
-  el cliente compra a ciegas. Falta también el alojamiento real de las fotos
-  (bucket / CDN).
+- [x] **B3 · El checkout muestra el producto** — hecho
+  `ShopStep` pinta la foto del producto. Se creó `tubo_dia.jpeg` (78 KB) a
+  partir del PNG de 5,2 MB, inviable como miniatura en datos móviles. Las
+  fotos se sirven desde el propio frontend vía `PRODUCT_IMAGE_BASE_URL`: no
+  hace falta bucket aparte.
 
-- [ ] **B4 · Infraestructura viva**
-  No hay Postgres ni Redis provisionados, ni backend ni frontend desplegados.
-  Las configuraciones sí están listas: `backend/railway.json`,
-  `frontend/vercel.json`, Dockerfile multietapa.
+- [x] **Rótulos de demo** — hecho
+  El checkout se anunciaba como «demo de checkout» y «Demo conectada a la API
+  real». Ya no.
 
-- [ ] **B5 · Credenciales reales de Wompi**
-  Las cuatro llaves son placeholders (`pub_test_000…`). Falta además registrar
-  la URL del webhook en el panel de Wompi.
+- [ ] **B4 · Infraestructura viva** — a medias
+  Proyecto de Supabase creado (`us-east-1`). Falta: pegar las dos cadenas de
+  conexión en `.env` y aplicar migraciones; Redis (lo da Railway); desplegar
+  backend en Railway y frontend en Vercel. Las configuraciones ya están.
+  Verificado: la conexión directa de Supabase es IPv6 y no resuelve desde
+  esta máquina — hay que usar el pooler para ambas cadenas.
+
+- [ ] **B5 · Credenciales de Wompi** — a medias
+  Las cuatro llaves de **producción** ya están en `.env`. Falta: cambiar a las
+  de sandbox para probar sin cobrar de verdad, y registrar la URL de Eventos
+  en el panel de Wompi — hoy está vacía, así que **ningún pago se
+  confirmaría**: el pedido se quedaría en PENDING para siempre.
 
 - [ ] **B6 · QA end-to-end en sandbox**
   Los tests de integración compilan pero nunca se han ejecutado aquí (Docker
@@ -81,10 +90,11 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 
 ## 3. Riesgos a cerrar antes de escalar
 
-- [ ] **R1 · Redis es punto único de fallo de las ventas**
-  `RedisCartStore` no tiene `try/catch`, a diferencia de la caché de catálogo.
-  Si Redis cae, nadie puede añadir al carrito ni comprar. Mínimo: monitoreo y
-  alerta; idealmente, una decisión explícita sobre la degradación.
+- [x] **R1 · Tolerancia a fallos de Redis** — hecho
+  El defecto grave era que `cart.clear()` corría tras crear el pedido sin
+  `try/catch`: un corte de Redis en ese instante devolvía error por un pedido
+  que sí existía y ya había descontado inventario. Ahora se ignora ese fallo,
+  y el resto del carrito responde 503 con mensaje claro en vez de 500.
 
 - [ ] **R2 · `perUserLimit` de cupones no es exigible sin cuentas**
   Solo funciona el tope global `maxUses`. Un cupón «uno por cliente» hoy es
@@ -97,10 +107,13 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 
 ## Orden sugerido
 
+Todo lo que era código puro ya está cerrado. Lo que queda depende de cuentas
+externas o de contenido tuyo, salvo O1 y R2.
+
 ```
-Panel admin (P0) ✅  →  B1 track.html ✅  →  B3 imágenes  →  B2 landing
-      →  O1 emails  →  B4 infra  →  B5 llaves sandbox  →  B6 QA
-      →  O3 legales  →  llaves de producción  →  R1-R3 en paralelo
+O1 emails  →  B4 infra (Supabase + Redis + despliegue)  →  B5 llaves sandbox
+      →  B6 QA de punta a punta  →  O3 legales  →  llaves de producción
+      →  R2-R3 cuando haya tráfico
 ```
 
 ## Relacionado
