@@ -133,7 +133,19 @@ export class CheckoutUseCase {
     // El carrito de usuario se vacía atómicamente dentro de la transacción de
     // `place`. El de invitado vive en Redis (fuera de esa transacción), así
     // que se limpia aparte, ya con el pedido creado.
-    if (owner.type === 'guest') await this.cart.clear(owner)
+    //
+    // Y por eso NO puede tumbar la respuesta: a estas alturas el pedido existe,
+    // el stock ya se descontó y el cupón ya se canjeó. Si Redis cayó justo
+    // ahora, devolver un error haría creer al cliente que la compra falló, y
+    // volvería a comprar. Un carrito que queda con restos es molesto; un pedido
+    // fantasma cobrado dos veces, no.
+    if (owner.type === 'guest') {
+      try {
+        await this.cart.clear(owner)
+      } catch {
+        // Se ignora a propósito: el carrito de invitado caduca solo por TTL.
+      }
+    }
 
     // El stock cambió: el caché de catálogo (listados/detalle de producto)
     // queda desactualizado. Se invalida tras confirmar el pedido (nunca antes,

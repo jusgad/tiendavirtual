@@ -49,3 +49,14 @@ export class UnprocessableError extends AppError {
     super(422, message, 'UNPROCESSABLE', details)
   }
 }
+
+/**
+ * Una dependencia externa no responde y la operación no se puede completar
+ * ahora, pero probablemente sí en un momento. A diferencia de un 500, le dice
+ * al cliente que reintente en vez de dejarlo pensando que algo se rompió.
+ */
+export class ServiceUnavailableError extends AppError {
+  constructor(message = 'Servicio no disponible temporalmente') {
+    super(503, message, 'SERVICE_UNAVAILABLE')
+  }
+}

@@ -30,11 +30,14 @@ const address = {
 
 class FakeCart implements CartGateway {
   cleared: CartOwner[] = []
+  /** Simula que Redis no responde al vaciar el carrito del invitado. */
+  fallaAlLimpiar = false
   constructor(private items: { productId: string; quantity: number }[]) {}
   async getItems() {
     return this.items
   }
   async clear(owner: CartOwner) {
+    if (this.fallaAlLimpiar) throw new Error('Redis no responde')
     this.cleared.push(owner)
   }
 }
@@ -242,6 +245,27 @@ describe('CheckoutUseCase', () => {
       expect(orders.captured!.guestEmail).toBe('ana@correo.com')
       expect(order.items).toHaveLength(1)
       expect(cart.cleared).toEqual([owner])
+    })
+
+    it('si falla vaciar el carrito, el pedido YA creado no se pierde', async () => {
+      // El carrito de invitado vive en Redis, fuera de la transacción del
+      // pedido. Si Redis cae justo después de crearlo, devolver un error haría
+      // creer al cliente que la compra falló —y volvería a comprar— cuando en
+      // realidad ya se le descontó el inventario.
+      const { useCase, cart, orders } = makeUseCase({
+        cart: [{ productId: 'p1', quantity: 1 }],
+        products: [product({ id: 'p1' })],
+      })
+      cart.fallaAlLimpiar = true
+      const owner: CartOwner = { type: 'guest', id: 'invitado-1' }
+
+      const order = await useCase.execute(owner, {
+        shippingAddress: address,
+        guestEmail: 'ana@correo.com',
+      })
+
+      expect(order.items).toHaveLength(1)
+      expect(orders.captured).not.toBeNull()
     })
 
     it('rechaza (400) si el invitado no indica correo de contacto', async () => {
