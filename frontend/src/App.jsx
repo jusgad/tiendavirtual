@@ -70,7 +70,7 @@ export default function App() {
       <Background isDay={isDay} />
       <SunMoon isDay={isDay} onToggle={toggle} />
       <Header isDay={isDay} onToggle={toggle} />
-      <Hero isDay={isDay} products={products} />
+      <Hero isDay={isDay} products={products} onBuy={buy} />
       <OfferCard isDay={isDay} onBuy={buy} />
       <StickyBar isDay={isDay} onBuy={buy} />
       <Toast show={toast} />

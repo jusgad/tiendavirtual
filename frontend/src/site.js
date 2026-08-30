@@ -5,8 +5,14 @@ export const CURRENCY = 'COP'
 
 export const WHATSAPP_PHONE = '573105676187'
 
+/**
+ * Enlace de WhatsApp. Es el canal de **soporte**, no de venta: la compra se
+ * cierra en el checkout, donde queda registrada, descuenta inventario y
+ * aparece en el panel. Un pedido cerrado a mano por chat no hace nada de eso.
+ * Por eso el mensaje por defecto pregunta, no pide comprar.
+ */
 export function whatsappUrl(
-  message = '¡Hola! 🍑 Quiero el combo PomAss Día + Noche ($79.900 COP). ¿Me ayudas con la compra?',
+  message = '¡Hola! 🍑 Tengo una duda sobre el combo PomAss Día + Noche.',
 ) {
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`
 }

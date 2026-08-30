@@ -1,16 +1,19 @@
-import { whatsappUrl } from '../site'
-
-// Right hero column: pulsing pill CTA that opens WhatsApp.
-export default function FloatingCta({ isDay }) {
+// Columna derecha del hero: píldora pulsante que lleva al checkout.
+//
+// Antes abría WhatsApp, igual que los otros dos botones de la landing. Se
+// cambió a la compra en el sitio: es la que registra el pedido, descuenta
+// inventario y lo hace visible en el panel.
+export default function FloatingCta({ isDay, onBuy }) {
   const ctaTop = isDay ? 'CREMA ÍNTIMA' : 'CREMA ÍNTIMA BLANQUEADORA'
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <a
-        href={whatsappUrl()}
-        target="_blank"
-        rel="noreferrer"
+      <button
+        onClick={onBuy}
+        type="button"
         style={{
+          border: 'none',
+          font: 'inherit',
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
@@ -47,7 +50,7 @@ export default function FloatingCta({ isDay }) {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontWeight: 900, fontSize: '13px', marginTop: '8px' }}>
           CLIC AQUÍ <span style={{ display: 'inline-block', animation: 'bobArrow 1.1s ease-in-out infinite' }}>→</span>
         </span>
-      </a>
+      </button>
     </div>
   )
 }

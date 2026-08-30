@@ -81,10 +81,10 @@ export default function OfferCard({ isDay, onBuy }) {
             }}
           >
             <WhatsAppIcon />
-            COMPRAR POR WHATSAPP
+            ESCRÍBENOS POR WHATSAPP
           </a>
           <p style={{ textAlign: 'center', color: '#9587A0', fontWeight: 700, fontSize: '12px', margin: 0 }}>
-            Respuesta inmediata por WhatsApp
+            ¿Dudas antes de comprar? Te respondemos
           </p>
         </div>
       </div>

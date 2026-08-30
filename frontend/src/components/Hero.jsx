@@ -3,7 +3,7 @@ import ProductStage from './ProductStage'
 import FloatingCta from './FloatingCta'
 
 // Three-column hero: benefits · product · CTA.
-export default function Hero({ isDay, products }) {
+export default function Hero({ isDay, products, onBuy }) {
   return (
     <main
       className="hero-grid"
@@ -22,7 +22,7 @@ export default function Hero({ isDay, products }) {
     >
       <BenefitsPanel isDay={isDay} />
       <ProductStage isDay={isDay} products={products} />
-      <FloatingCta isDay={isDay} />
+      <FloatingCta isDay={isDay} onBuy={onBuy} />
     </main>
   )
 }
