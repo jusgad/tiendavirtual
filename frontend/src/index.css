@@ -149,14 +149,6 @@
     padding-right: 18px !important;
   }
 
-  /* Keep the peeking mascot fully inside the viewport (it sits at the column
-     edge on desktop, which runs off-screen once the grid is one column). */
-  .stage-mascot {
-    right: -8px !important;
-    width: 108px !important;
-    height: 108px !important;
-  }
-
   /* Extra bottom room so the fixed sticky bar never covers the last content. */
   .offer-section {
     padding-left: 16px !important;

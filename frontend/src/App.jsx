@@ -57,11 +57,11 @@ export default function App() {
 
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
-  // Real product photos, served as static assets from public/images.
+  // Fotos del producto, servidas como estáticos desde public/images.
+  // Se usan las versiones ligeras: los PNG originales pesaban varios MB cada
+  // uno, y esta es la primera pantalla que carga quien llega.
   const products = {
-    mascotDay: '/images/fondo-dia.png',
-    mascotNight: '/images/fondo-mascota-noche.png',
-    tubeDay: '/images/fondo-tubo-dia.png',
+    tubeDay: '/images/tubo_dia.jpeg',
     tubeNight: '/images/tubo_noche.jpeg',
   }
 

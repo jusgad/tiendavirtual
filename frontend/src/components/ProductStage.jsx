@@ -2,9 +2,9 @@ import ImageSlot from './ImageSlot'
 
 const T = 'opacity .5s ease, transform .55s cubic-bezier(.34,1.56,.64,1)'
 
-// Center hero column: big DÍA / NOCHE title, product tube on a podium, and a
-// crossfading mascot. Tubes/mascots use ImageSlot so real photos can be dropped
-// in via the `products` prop; otherwise soft placeholders show (as in the design).
+// Columna central del hero: título DÍA / NOCHE, el tubo sobre un podio y su
+// sombra. Los tubos usan ImageSlot, así que la foto entra por la prop
+// `products` y, si falta, se ve un marcador en vez de un hueco roto.
 export default function ProductStage({ isDay, products = {} }) {
   return (
     <div style={{ position: 'relative', textAlign: 'center' }}>
@@ -22,14 +22,6 @@ export default function ProductStage({ isDay, products = {} }) {
 
       {/* Product stage */}
       <div style={{ position: 'relative', height: '330px', marginTop: '74px' }}>
-        {/* mascots */}
-        <div className="stage-mascot" style={{ ...mascotBase, opacity: isDay ? 1 : 0, transform: isDay ? 'scale(1) rotate(4deg)' : 'scale(.7) rotate(-8deg)', transition: T, animation: 'breathe 4s ease-in-out infinite' }}>
-          <ImageSlot src={products.mascotDay} shape="rounded" radius={18} placeholder="Mascota durazno guiñando 🍑" />
-        </div>
-        <div className="stage-mascot" style={{ ...mascotBase, opacity: isDay ? 0 : 1, transform: isDay ? 'scale(.7) rotate(8deg)' : 'scale(1) rotate(-4deg)', transition: T, animation: 'breathe 4.5s ease-in-out infinite' }}>
-          <ImageSlot src={products.mascotNight} shape="rounded" radius={18} placeholder="Durazno durmiendo 😴" />
-        </div>
-
         {/* tubes */}
         <div style={{ ...tubeBase, opacity: isDay ? 1 : 0, transform: isDay ? 'scale(1) translateY(0)' : 'scale(.7) translateY(14px)', transition: T }}>
           <div style={{ width: '150px', height: '230px' }}>
@@ -75,15 +67,6 @@ export default function ProductStage({ isDay, products = {} }) {
       </div>
     </div>
   )
-}
-
-const mascotBase = {
-  position: 'absolute',
-  right: '-52px',
-  bottom: '128px',
-  width: '128px',
-  height: '128px',
-  zIndex: 3,
 }
 
 const tubeBase = {
