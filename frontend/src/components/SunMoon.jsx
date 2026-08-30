@@ -3,6 +3,17 @@
 
 const T = 'opacity .5s ease, transform .55s cubic-bezier(.34,1.56,.64,1)'
 
+// Geometría de los rayos. El disco del sol mide 64px (radio 32) y está
+// centrado en la caja de 120px, o sea en (60, 60).
+//
+// Cada rayo se coloca por debajo del centro y gira alrededor de él: para eso
+// su `transformOrigin` tiene que caer justo en el centro del disco, que está
+// RADIO_INTERNO píxeles por encima del borde superior del rayo. De ahí el
+// valor negativo: el origen queda fuera de la propia caja del rayo, sobre el
+// centro del sol.
+const RADIO_INTERNO = 36 // 32 del disco + 4 de aire, para que no lo toquen
+const ALTO_RAYO = 15
+
 export default function SunMoon({ isDay, onToggle }) {
   const rays = Array.from({ length: 12 }, (_, i) => ({
     '--r': `${i * 30}deg`,
@@ -45,12 +56,12 @@ export default function SunMoon({ isDay, onToggle }) {
               left: '50%',
               top: '50%',
               width: '6px',
-              height: '15px',
+              height: `${ALTO_RAYO}px`,
               marginLeft: '-3px',
-              marginTop: '-3px',
+              marginTop: `${RADIO_INTERNO}px`,
               background: 'linear-gradient(#FFD873,#FFB43D)',
               borderRadius: '4px',
-              transformOrigin: '50% 48px',
+              transformOrigin: `50% -${RADIO_INTERNO}px`,
               ...r,
             }}
           />
