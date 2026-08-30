@@ -10,6 +10,8 @@ export const productListQuerySchema = z.object({
   usageType: z.string().trim().min(1).optional(),
   skinType: z.string().trim().min(1).optional(),
   sort: z.enum(['price_asc', 'price_desc', 'newest']).optional(),
+  // Solo lo honra el panel de administración; ver el controlador.
+  includeInactive: z.coerce.boolean().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 })

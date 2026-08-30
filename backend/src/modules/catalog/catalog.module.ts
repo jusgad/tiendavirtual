@@ -4,6 +4,7 @@ import type { Redis } from 'ioredis'
 import { asyncHandler } from '../../shared/http/asyncHandler'
 import { validate } from '../../shared/middlewares/validate'
 import { authGuard, roleGuard } from '../../shared/middlewares/auth'
+import { optionalAuth } from '../../shared/middlewares/optionalAuth'
 
 import { PrismaProductRepository } from './infrastructure/prismaProductRepository'
 import { PrismaCategoryRepository } from './infrastructure/prismaCategoryRepository'
@@ -82,6 +83,7 @@ export function buildCatalogModule(prisma: PrismaClient, redis: Redis): Router {
   // ---- Productos ----
   router.get(
     '/products',
+    optionalAuth,
     validate({ query: productListQuerySchema }),
     asyncHandler(productController.list),
   )

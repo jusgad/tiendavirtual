@@ -40,7 +40,10 @@ export class ProductController {
       usageType: q.usageType as string | undefined,
       skinType: q.skinType as string | undefined,
       sort: q.sort as ProductFilter['sort'],
-      activeOnly: true, // el listado público solo muestra productos activos
+      // El listado es público: un visitante nunca debe ver productos
+      // desactivados, aunque mande `includeInactive`. Solo el panel, que va
+      // autenticado como ADMIN, puede pedirlos.
+      activeOnly: !(q.includeInactive && req.user?.role === 'ADMIN'),
       page: q.page as number,
       pageSize: q.pageSize as number,
     }
