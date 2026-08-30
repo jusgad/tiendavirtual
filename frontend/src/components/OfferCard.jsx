@@ -95,7 +95,10 @@ export default function OfferCard({ isDay, onBuy }) {
           <div style={{ width: '64px', height: '64px', flex: 'none' }}>
             <ImageSlot src={sealMascot} shape="circle" placeholder="Mascota 🇨🇴" />
           </div>
-          <div style={{ color: isDay ? '#5A2E12' : '#2A1836' }}>
+          {/* Este bloque va FUERA de la tarjeta blanca, directamente sobre el
+              fondo. De noche ese fondo es morado oscuro, así que el texto va
+              en blanco: el morado que usaba antes era casi del mismo tono. */}
+          <div style={{ color: isDay ? '#5A2E12' : '#FFFFFF' }}>
             <div style={{ fontFamily: "'DM Serif Display',serif", fontSize: '18px' }}>Hecho con amor en Colombia 🇨🇴</div>
             <div style={{ fontWeight: 700, fontSize: '13px', opacity: 0.75 }}>Marca colombiana · Pao Díaz</div>
           </div>
