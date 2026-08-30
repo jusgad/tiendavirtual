@@ -88,6 +88,12 @@ export interface CreateProductData {
 
 export type UpdateProductData = Partial<Omit<CreateProductData, 'images'>> & {
   isActive?: boolean
+  /**
+   * Cuando llega, REEMPLAZA el juego completo de imágenes del producto.
+   * Cuando no llega, las deja como estaban. No hay actualización parcial:
+   * `ProductImage` no tiene clave natural con la que casar filas sueltas.
+   */
+  images?: { url: string; alt?: string | null; position?: number }[]
 }
 
 // -------- Puertos --------

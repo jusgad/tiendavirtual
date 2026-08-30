@@ -1,4 +1,5 @@
-import { CreateProductUseCase } from '../../../src/modules/catalog/application/productUseCases'
+import { CreateProductUseCase, UpdateProductUseCase } from '../../../src/modules/catalog/application/productUseCases'
+import { Product } from '../../../src/modules/catalog/domain/ports'
 import {
   FakeCatalogCache,
   InMemoryBrandRepository,
@@ -54,5 +55,63 @@ describe('CreateProductUseCase', () => {
     await expect(
       useCase.execute({ ...baseData, brandId: brand.id, categoryId: 'inexistente' }),
     ).rejects.toMatchObject({ statusCode: 400 })
+  })
+})
+
+// Este archivo no crea productos vía `repo.create()` para las pruebas de
+// actualización porque necesitamos un producto ya persistido con un id
+// conocido; se arma el objeto directamente, igual que hace `listProducts.test.ts`
+// con su propio `productoBase()`.
+function productoBase(): Product {
+  return {
+    id: 'p-base',
+    name: 'Base',
+    slug: 'base',
+    sku: 'SKU-BASE',
+    description: 'x',
+    brandId: 'b',
+    categoryId: 'c',
+    price: 10000,
+    currency: 'COP',
+    presentation: null,
+    sizeMl: null,
+    usageType: null,
+    skinType: null,
+    ingredients: null,
+    warnings: null,
+    stock: 5,
+    isActive: true,
+  }
+}
+
+describe('UpdateProductUseCase · imágenes', () => {
+  function repoConProducto() {
+    const repo = new InMemoryProductRepository()
+    repo.products.push({ ...productoBase(), id: 'p1', slug: 'p1' })
+    return repo
+  }
+
+  it('pasa las imágenes nuevas al repositorio', async () => {
+    const repo = repoConProducto()
+    const useCase = new UpdateProductUseCase(repo, new FakeCatalogCache())
+
+    await useCase.execute('p1', {
+      images: [
+        { url: 'nueva1.png', alt: 'Frente', position: 0 },
+        { url: 'nueva2.png', alt: null, position: 1 },
+      ],
+    })
+
+    expect(repo.ultimaActualizacion?.images).toHaveLength(2)
+    expect(repo.ultimaActualizacion?.images?.[0].url).toBe('nueva1.png')
+  })
+
+  it('no manda imágenes si la actualización no las trae', async () => {
+    const repo = repoConProducto()
+    const useCase = new UpdateProductUseCase(repo, new FakeCatalogCache())
+
+    await useCase.execute('p1', { price: 89900 })
+
+    expect(repo.ultimaActualizacion?.images).toBeUndefined()
   })
 })

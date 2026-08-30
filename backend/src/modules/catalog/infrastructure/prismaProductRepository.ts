@@ -128,11 +128,28 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async update(id: string, data: UpdateProductData): Promise<Product> {
-    const p = await this.prisma.product.update({
-      where: { id },
-      data,
-      include: withRelations,
+    const { images, ...campos } = data
+
+    // Las imágenes se reemplazan en bloque dentro de la misma transacción que
+    // el resto de campos: si algo falla, el producto no queda a medias con las
+    // fotos viejas borradas y las nuevas sin escribir.
+    const p = await this.prisma.$transaction(async (tx) => {
+      if (images) {
+        await tx.productImage.deleteMany({ where: { productId: id } })
+        if (images.length > 0) {
+          await tx.productImage.createMany({
+            data: images.map((img, i) => ({
+              productId: id,
+              url: img.url,
+              alt: img.alt ?? null,
+              position: img.position ?? i,
+            })),
+          })
+        }
+      }
+      return tx.product.update({ where: { id }, data: campos, include: withRelations })
     })
+
     return toProduct(p)
   }
 

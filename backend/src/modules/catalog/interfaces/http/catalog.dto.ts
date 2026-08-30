@@ -63,6 +63,7 @@ export const updateProductSchema = z
     warnings: z.string().nullable(),
     stock: z.number().int().nonnegative(),
     isActive: z.boolean(),
+    images: z.array(imageSchema),
   })
   .partial()
 

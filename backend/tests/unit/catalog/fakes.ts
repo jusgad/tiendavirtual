@@ -17,6 +17,8 @@ const id = (p: string) => `${p}-${++seq}`
 
 export class InMemoryProductRepository implements ProductRepository {
   products: Product[] = []
+  /** Última carga recibida por `update`: permite comprobar qué se pidió cambiar. */
+  ultimaActualizacion: UpdateProductData | null = null
 
   async list(filter: ProductFilter): Promise<Paginated<Product>> {
     let items = this.products
@@ -58,6 +60,7 @@ export class InMemoryProductRepository implements ProductRepository {
     return product
   }
   async update(pid: string, data: UpdateProductData): Promise<Product> {
+    this.ultimaActualizacion = data
     const p = this.products.find((x) => x.id === pid)!
     Object.assign(p, data)
     return p
