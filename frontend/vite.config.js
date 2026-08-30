@@ -15,6 +15,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         checkout: resolve(__dirname, 'checkout.html'),
         admin: resolve(__dirname, 'admin.html'),
+        track: resolve(__dirname, 'track.html'),
       },
     },
   },

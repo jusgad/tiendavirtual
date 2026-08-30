@@ -9,6 +9,7 @@ import {
   setOnSessionExpired,
   storeSession,
 } from './api'
+import { recordarPedido } from '../shared/seguimiento.js'
 import StepIndicator from './components/StepIndicator'
 import AuthStep from './steps/AuthStep'
 import ShopStep from './steps/ShopStep'
@@ -96,6 +97,10 @@ export default function CheckoutApp() {
   const handleOrderPlaced = (createdOrder, email) => {
     setOrder(createdOrder)
     setContactEmail(email)
+    // PSE y Bancolombia sacan al cliente del sitio y lo devuelven a track.html
+    // en una carga nueva, donde este estado ya no existe. Se recuerdan los dos
+    // datos que necesita el seguimiento para no obligarlo a teclearlos.
+    recordarPedido(createdOrder.orderNumber, email)
     setStep(3)
   }
 
