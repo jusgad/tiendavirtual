@@ -130,14 +130,18 @@ ruta absoluta en el objeto `products` de `App.jsx`:
 
 ```js
 const products = {
-  mascotDay:   '/images/fondo-dia.png',
-  mascotNight: '/images/fondo-mascota-noche.png',
-  tubeDay:     '/images/fondo-tubo-dia.png',
-  tubeNight:   '/images/tubo_noche.jpeg',
+  tubeDay:   '/images/tubo_dia.png',
+  tubeNight: '/images/tubo_noche.png',
 }
 ```
 
-El favicon de ambas páginas es `/images/logo.jpeg`.
+Son PNG con fondo transparente, a 400 px de ancho (~250-290 KB cada uno).
+El ancho sale de dónde se muestran —150 px en la landing, ~300 px en la
+tarjeta del checkout—, así que deja margen para pantallas retina sin cargar
+de más. Los originales rondaban los 5 MB cada uno.
+
+El favicon de las cuatro páginas es `/images/logo.png`, y el mismo archivo
+es el logotipo que usa [`shared/Logo.jsx`](../frontend/src/shared/Logo.jsx).
 
 > No se importan desde `src/`, así que Vite no las procesa ni les pone hash.
 > Para añadir una imagen, ponla en `public/images/` y referénciala con

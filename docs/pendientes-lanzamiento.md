@@ -36,10 +36,10 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
   en vez de pedir comprar.
 
 - [x] **B3 · El checkout muestra el producto** — hecho
-  `ShopStep` pinta la foto del producto. Se creó `tubo_dia.jpeg` (78 KB) a
-  partir del PNG de 5,2 MB, inviable como miniatura en datos móviles. Las
-  fotos se sirven desde el propio frontend vía `PRODUCT_IMAGE_BASE_URL`: no
-  hace falta bucket aparte.
+  `ShopStep` pinta la foto del producto. Los dos tubos son PNG con fondo
+  transparente a 400 px (~250-290 KB); los originales pesaban ~5 MB cada uno,
+  inviables como miniatura en datos móviles. Las fotos se sirven desde el
+  propio frontend vía `PRODUCT_IMAGE_BASE_URL`: no hace falta bucket aparte.
 
 - [x] **Rótulos de demo** — hecho
   El checkout se anunciaba como «demo de checkout» y «Demo conectada a la API
