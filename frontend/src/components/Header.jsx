@@ -31,6 +31,17 @@ export default function Header({ isDay, onToggle }) {
             // El logo va sobre fondo transparente en los dos modos. Nada de
             // `borderRadius` ni `boxShadow`: sobre un PNG con alfa dibujarían
             // la caja rectangular de la imagen alrededor de una píldora.
+            //
+            // De noche su tipografía azul marino (#25213a) queda a 1,03:1
+            // contra el morado del fondo: prácticamente invisible. Se resuelve
+            // con `drop-shadow`, que a diferencia de `box-shadow` sigue el
+            // canal alfa: el halo abraza las letras mismas, no una caja, así
+            // que el fondo sigue siendo transparente. Dos capas: una ceñida
+            // que perfila el trazo y otra difusa que lo despega del fondo.
+            transition: 'filter .5s ease',
+            filter: isDay
+              ? 'none'
+              : 'drop-shadow(0 0 2px rgba(255,247,232,.95)) drop-shadow(0 0 7px rgba(255,236,205,.75))',
           }}
         />
       </div>
