@@ -9,6 +9,7 @@ import {
   setOnSessionExpired,
   storeSession,
 } from './api'
+import Logo from '../shared/Logo.jsx'
 import { recordarPedido } from '../shared/seguimiento.js'
 import StepIndicator from './components/StepIndicator'
 import AuthStep from './steps/AuthStep'
@@ -119,7 +120,7 @@ export default function CheckoutApp() {
     <div className="min-h-screen bg-gradient-to-br from-peach-50 via-[#FFE3BE] to-peach-400 font-sans">
       <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-black/5 bg-white/70 px-5 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
-          <span className="font-serif text-xl text-[#5A2E12]">PomAss</span>
+          <Logo alto={34} />
           <span className="rounded-full bg-peach-100 px-2.5 py-0.5 text-[11px] font-bold text-[#7A3A10]">
             demo de checkout
           </span>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api, storeSession } from '../checkout/api.js'
+import Logo from '../shared/Logo.jsx'
 import { Card, ErrorBanner, Field, Input, PrimaryButton } from '../shared/ui.jsx'
 
 /**
@@ -34,7 +35,8 @@ export default function LoginGate({ onSesionIniciada }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#FFF9F0] px-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-1 font-serif text-2xl text-[#3A2A1A]">Panel PomAss</h1>
+        <Logo alto={34} className="mb-4" />
+        <h1 className="mb-1 font-serif text-2xl text-[#3A2A1A]">Panel de administración</h1>
         <p className="mb-6 text-sm text-[#8A6A4A]">Ingresa con tu cuenta de administración.</p>
 
         <form onSubmit={enviar} className="space-y-4">

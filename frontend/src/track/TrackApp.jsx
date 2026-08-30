@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError } from '../checkout/api.js'
 import { formatCOP, formatFecha } from '../shared/format.js'
+import Logo from '../shared/Logo.jsx'
 import { Card, ErrorBanner, Field, Input, PrimaryButton, SecondaryButton } from '../shared/ui.jsx'
 import { leerPedidoRecordado, recordarPedido } from '../shared/seguimiento.js'
 import { esCancelado, esperaConfirmacion, pasosConEstado } from './trackModel.js'
@@ -149,9 +150,7 @@ export default function TrackApp() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-peach-50 via-[#FFE3BE] to-peach-400 font-sans">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-black/5 bg-white/70 px-5 py-3 backdrop-blur">
-        <a href="/" className="font-serif text-xl text-[#5A2E12]">
-          PomAss
-        </a>
+        <Logo alto={34} />
         <span className="rounded-full bg-peach-100 px-2.5 py-0.5 text-[11px] font-bold text-[#7A3A10]">
           seguimiento
         </span>

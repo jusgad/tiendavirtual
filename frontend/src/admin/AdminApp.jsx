@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { clearSession, getStoredUser, setOnSessionExpired } from '../checkout/api.js'
+import Logo from '../shared/Logo.jsx'
 import LoginGate from './LoginGate.jsx'
 import OrderDetailPage from './orders/OrderDetailPage.jsx'
 import OrdersPage from './orders/OrdersPage.jsx'
@@ -58,7 +59,7 @@ export default function AdminApp() {
   return (
     <div className="flex min-h-screen bg-[#FFF9F0] text-[#3A2A1A]">
       <aside className="hidden w-56 shrink-0 border-r border-[#E7D9C4] bg-white/70 p-4 sm:block">
-        <p className="mb-6 px-2 font-serif text-xl">PomAss</p>
+        <Logo alto={30} className="mb-6 px-2" />
         <nav className="space-y-1">
           {SECCIONES.map((s) => (
             <button
