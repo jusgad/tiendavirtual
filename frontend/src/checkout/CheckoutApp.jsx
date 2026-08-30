@@ -122,7 +122,7 @@ export default function CheckoutApp() {
         <div className="flex items-center gap-2">
           <Logo alto={34} />
           <span className="rounded-full bg-peach-100 px-2.5 py-0.5 text-[11px] font-bold text-[#7A3A10]">
-            demo de checkout
+            compra segura
           </span>
         </div>
         {user && (

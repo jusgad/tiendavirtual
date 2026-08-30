@@ -133,7 +133,7 @@ export default function AuthStep({ onAuthenticated, onSkip }) {
       </form>
 
       <p className="mt-4 text-center text-xs text-[#B5AFA0]">
-        Demo conectada a la API real del backend (JWT + Postgres).
+        Tus datos viajan cifrados. No guardamos datos de tu tarjeta.
       </p>
     </Card>
   )

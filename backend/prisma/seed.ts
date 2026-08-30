@@ -114,8 +114,11 @@ async function main() {
   // ----- Imágenes del producto -----
   // `position` es la clave estable para re-sembrar sin duplicar (ProductImage
   // no tiene restricción de unicidad propia).
+  // Se usan las versiones ligeras (720px, ~78 KB). El PNG original del tubo
+  // Día pesa 5,2 MB: como miniatura de catálogo son varios segundos de espera
+  // en datos móviles, que es como se compra esto.
   const images = [
-    { position: 0, url: `${IMAGE_BASE}/fondo-tubo-dia.png`, alt: 'Estuche PomAss · crema Día' },
+    { position: 0, url: `${IMAGE_BASE}/tubo_dia.jpeg`, alt: 'Estuche PomAss · crema Día' },
     { position: 1, url: `${IMAGE_BASE}/tubo_noche.jpeg`, alt: 'Estuche PomAss · crema Noche' },
   ]
   for (const img of images) {

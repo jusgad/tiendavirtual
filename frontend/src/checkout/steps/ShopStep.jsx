@@ -80,6 +80,14 @@ export default function ShopStep({ onContinue }) {
             const inCart = cart?.items.find((i) => i.productId === p.id)
             return (
               <Card key={p.id} className="p-4">
+                {p.images?.[0] && (
+                  <img
+                    src={p.images[0].url}
+                    alt={p.images[0].alt ?? p.name}
+                    loading="lazy"
+                    className="mb-3 h-44 w-full rounded-2xl bg-[#FFF3DE] object-contain"
+                  />
+                )}
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <h3 className="font-bold leading-tight text-[#3A2A1A]">{p.name}</h3>
                   <span className="whitespace-nowrap font-serif text-lg text-[#C24E0A]">
