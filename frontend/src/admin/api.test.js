@@ -80,3 +80,51 @@ describe('adminApi.updateOrderStatus', () => {
     expect(JSON.parse(globalThis.fetch.mock.calls[0][1].body)).toEqual({ status: 'PREPARING' })
   })
 })
+
+describe('adminApi · catálogo', () => {
+  it('pide los productos incluyendo los desactivados', async () => {
+    const { adminApi } = await loadAdminApi()
+    globalThis.fetch = vi.fn().mockResolvedValue(json(200, { items: [], total: 0 }))
+
+    await adminApi.listProducts({ page: 1, pageSize: 50 })
+
+    const url = globalThis.fetch.mock.calls[0][0]
+    expect(url).toContain('/products?')
+    expect(url).toContain('includeInactive=true')
+    expect(url).toContain('pageSize=50')
+  })
+
+  it('crea un producto con POST', async () => {
+    const { adminApi } = await loadAdminApi()
+    globalThis.fetch = vi.fn().mockResolvedValue(json(201, { product: {} }))
+
+    await adminApi.createProduct({ name: 'Nuevo' })
+
+    const [url, opciones] = globalThis.fetch.mock.calls[0]
+    expect(url).toContain('/products')
+    expect(opciones.method).toBe('POST')
+    expect(JSON.parse(opciones.body)).toEqual({ name: 'Nuevo' })
+  })
+
+  it('lista categorías y marcas incluyendo las inactivas', async () => {
+    const { adminApi } = await loadAdminApi()
+    globalThis.fetch = vi.fn().mockResolvedValue(json(200, { categories: [] }))
+    await adminApi.listCategories()
+    expect(globalThis.fetch.mock.calls[0][0]).toContain('/categories?includeInactive=true')
+
+    globalThis.fetch = vi.fn().mockResolvedValue(json(200, { brands: [] }))
+    await adminApi.listBrands()
+    expect(globalThis.fetch.mock.calls[0][0]).toContain('/brands?includeInactive=true')
+  })
+
+  it('borra con DELETE', async () => {
+    const { adminApi } = await loadAdminApi()
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 204, json: async () => ({}) })
+
+    await adminApi.deleteProduct('p1')
+
+    const [url, opciones] = globalThis.fetch.mock.calls[0]
+    expect(url).toContain('/products/p1')
+    expect(opciones.method).toBe('DELETE')
+  })
+})

@@ -19,4 +19,29 @@ export const adminApi = {
     if (trackingNumber) body.trackingNumber = trackingNumber
     return request(`/admin/orders/${id}/status`, { method: 'PATCH', body })
   },
+
+  // ---- Catálogo ----
+  // El panel siempre pide los inactivos: si no, un producto desactivado
+  // desaparecería de la lista y no habría forma de reactivarlo.
+  listProducts: ({ page = 1, pageSize = 50 } = {}) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+      includeInactive: 'true',
+    })
+    return request(`/products?${params}`)
+  },
+  createProduct: (datos) => request('/products', { method: 'POST', body: datos }),
+  updateProduct: (id, datos) => request(`/products/${id}`, { method: 'PATCH', body: datos }),
+  deleteProduct: (id) => request(`/products/${id}`, { method: 'DELETE' }),
+
+  listCategories: () => request('/categories?includeInactive=true'),
+  createCategory: (datos) => request('/categories', { method: 'POST', body: datos }),
+  updateCategory: (id, datos) => request(`/categories/${id}`, { method: 'PATCH', body: datos }),
+  deleteCategory: (id) => request(`/categories/${id}`, { method: 'DELETE' }),
+
+  listBrands: () => request('/brands?includeInactive=true'),
+  createBrand: (datos) => request('/brands', { method: 'POST', body: datos }),
+  updateBrand: (id, datos) => request(`/brands/${id}`, { method: 'PATCH', body: datos }),
+  deleteBrand: (id) => request(`/brands/${id}`, { method: 'DELETE' }),
 }
