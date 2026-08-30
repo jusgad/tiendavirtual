@@ -11,7 +11,12 @@ export const productListQuerySchema = z.object({
   skinType: z.string().trim().min(1).optional(),
   sort: z.enum(['price_asc', 'price_desc', 'newest']).optional(),
   // Solo lo honra el panel de administración; ver el controlador.
-  includeInactive: z.coerce.boolean().optional(),
+  // OJO: no usar z.coerce.boolean() aquí — Boolean('false') es `true` en JS,
+  // así que coerce.boolean() convertiría el string "false" en verdadero. Se
+  // compara explícitamente contra el string 'true'; si el parámetro no viene,
+  // el ZodOptional exterior corta antes de llamar al preprocess y el
+  // resultado sigue siendo `undefined` (no `false`).
+  includeInactive: z.preprocess((v) => v === 'true', z.boolean()).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 })
