@@ -28,18 +28,9 @@ export default function Header({ isDay, onToggle }) {
             height: '56px',
             width: 'auto',
             display: 'block',
-            // El logo es un PNG transparente: de día se asienta solo sobre el
-            // degradado claro. De noche, en cambio, su tipografía azul marino
-            // («Ass», «by Pao Díaz») se pierde contra el morado oscuro, así que
-            // se le pone una placa clara con la misma forma de píldora que el
-            // propio logo dibuja. Sin ella la marca queda a medio leer.
-            ...(isDay
-              ? {}
-              : {
-                  background: 'rgba(255,243,222,.94)',
-                  borderRadius: '999px',
-                  padding: '2px 10px',
-                }),
+            // El logo va sobre fondo transparente en los dos modos. Nada de
+            // `borderRadius` ni `boxShadow`: sobre un PNG con alfa dibujarían
+            // la caja rectangular de la imagen alrededor de una píldora.
           }}
         />
       </div>
