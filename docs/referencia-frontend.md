@@ -362,8 +362,14 @@ cancelación).
 ### Autenticación
 
 [`LoginGate.jsx`](../frontend/src/admin/LoginGate.jsx) valida credenciales
-contra `POST /auth/login`. No guarda sesión en `localStorage` (el token es
-de corta vida, 15 minutos); la renovación automática corre en `httpClient.js`.
+contra `POST /auth/login`. Al recibir la respuesta, llama a `storeSession(data)`
+que guarda en `localStorage` el usuario, el access token y el refresh token
+(este permite reutilizar la sesión al recargar la página). La renovación
+automática del access token vencido corre en
+[`httpClient.js`](../frontend/src/shared/httpClient.js): si un endpoint devuelve
+401, se renueva el token con `POST /auth/refresh` y se reintenta la petición.
+La renovación se deduplica para evitar consumir el refresh token dos veces si
+hay múltiples peticiones caducadas a la vez.
 
 ### Enrutador
 
@@ -395,9 +401,12 @@ El router también escucha cambios de hash y renderiza el componente correcto.
 
 ### Seguridad
 
-El campo de rol en el formulario de login es **solo por conveniencia**: el
-backend valida con `roleGuard('ADMIN')` en cada endpoint `/admin`. Cambiar
-el rol en el cliente no abre acceso.
+Tras el login exitoso, el panel comprueba que `data.user.role === 'ADMIN'`.
+Si no es ADMIN, se muestra «Esta cuenta no tiene permisos de administración.»
+y no se guarda la sesión. Este gate es **solo por conveniencia**: la
+autenticación real ocurre en el backend, que valida con `roleGuard('ADMIN')`
+en cada endpoint `/admin`. La sesión guardada es la del servidor (no se puede
+falsificar desde el navegador).
 
 ### Integración con código compartido
 
@@ -433,7 +442,7 @@ defecto. `content` incluye las tres páginas HTML y `src/**/*.{js,jsx}`.
 | `font-serif` | DM Serif Display |
 | `font-sans` | Nunito, `system-ui`, `sans-serif` |
 
-Se cargan desde Google Fonts con `<link>` en ambos HTML.
+Se cargan desde Google Fonts con `<link>` en los tres HTML.
 
 ### Paletas
 
@@ -514,7 +523,7 @@ npm run dev
 | Credenciales de Wompi | El widget está integrado, pero con la llave de ejemplo no cobra. Faltan las credenciales reales en `backend/.env` |
 | Vista de seguimiento pendiente | `api.trackOrder` ya existe y `PaymentStep` la usa para verificar, pero **no hay una pantalla `track.html`**. Hasta que exista, `WOMPI_REDIRECT_URL` apunta a una página inexistente: afecta a PSE y Bancolombia, que sacan al cliente del sitio |
 | Sin CI | Ningún workflow hace lint ni build de `frontend/**` |
-| Cobertura de tests parcial | `checkout/api.js` y `checkout/womji.js` están probados (22 tests). Los componentes no; el panel aún no tiene tests |
+| Cobertura de tests parcial | `checkout/api.js` y `checkout/wompi.js` están probados (22 tests). Los componentes no; el panel aún no tiene tests |
 | Sin recuperación de contraseña | La API la expone; la demo no la usa |
 | Sin direcciones guardadas | La demo siempre envía `shippingAddress`; nunca usa `addressId` ni `/api/addresses` |
 | Sin historial de pedidos | `GET /orders` no se consume; `api.getOrder` está definido pero no se llama |
