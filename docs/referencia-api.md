@@ -542,6 +542,8 @@ pedidos ajenos. El correo se compara sin distinguir mayúsculas contra el
     "total": 79900,
     "currency": "COP",
     "shipCity": "Medellín",
+    "carrier": "Servientrega",
+    "trackingNumber": "ABC123456789",
     "items": [
       { "productName": "Estuche PomAss Día + Noche", "quantity": 1, "lineTotal": 79900 }
     ],
@@ -551,7 +553,8 @@ pedidos ajenos. El correo se compara sin distinguir mayúsculas contra el
 ```
 
 Es un **subconjunto reducido a propósito**: sin dirección completa, sin
-teléfono, sin datos de pago y sin ids internos.
+teléfono, sin datos de pago y sin ids internos. Los campos `carrier` y
+`trackingNumber` son `null` hasta que el pedido se despache (`SHIPPED`).
 
 **Errores**: `404 NOT_FOUND` si no hay pedido con ese número **y** correo. Se
 responde 404 y no 403 incluso cuando el número existe pero el correo no
@@ -829,19 +832,58 @@ recientes primero. Cada elemento trae `orderNumber`, `status`, `total`,
 
 ```json
 {
-  "order": { "...": "detalle completo con items y totales" },
-  "allowedTransitions": ["PREPARING", "CANCELLED"]
+  "order": {
+    "id": "uuid",
+    "orderNumber": "PA-2026-A3F91C",
+    "status": "PREPARING",
+    "subtotal": 91800,
+    "discountTotal": 0,
+    "shippingTotal": 0,
+    "total": 91800,
+    "currency": "COP",
+    "discreetPackaging": true,
+    "contactEmail": "ana@correo.com",
+    "shipCity": "Medellín",
+    "shipFullName": "Ana Gómez",
+    "shipPhone": "3001234567",
+    "shipLine1": "Calle 10 # 20-30",
+    "shipLine2": "Apto 501",
+    "shipDepartment": "Antioquia",
+    "shipPostalCode": "050001",
+    "carrier": null,
+    "trackingNumber": null,
+    "items": [
+      { "productId": "uuid", "productName": "PomAss Día · Crema íntima", "quantity": 1, "lineTotal": 91800 }
+    ],
+    "createdAt": "2026-08-08T14:22:03.114Z"
+  },
+  "allowedTransitions": ["SHIPPED", "CANCELLED"]
 }
 ```
 
 `allowedTransitions` evita que el panel tenga que duplicar la regla de negocio
 para decidir qué botones pintar.
 
+**Campos de envío**: `shipFullName`, `shipPhone`, `shipLine1`, `shipLine2`,
+`shipDepartment`, `shipPostalCode` son la dirección completa de envío. Los
+campos `carrier` y `trackingNumber` son `null` hasta que se despache el
+pedido; luego los asigna `PATCH /admin/orders/:id/status`.
+
 ### `PATCH /admin/orders/:id/status`
 
 Mueve el pedido por su ciclo de vida operativo.
 
-**Body**: `{ "status": "PREPARING" | "SHIPPED" | "DELIVERED" | "CANCELLED" }`
+**Body**
+
+| Campo | Tipo | Obligatorio | Notas |
+|---|---|---|---|
+| `status` | enum | sí | `PREPARING` \| `SHIPPED` \| `DELIVERED` \| `CANCELLED` |
+| `carrier` | string | condicional | Obligatorio si `status` es `SHIPPED`. Ej: `"Servientrega"` |
+| `trackingNumber` | string | condicional | Obligatorio si `status` es `SHIPPED`. Ej: `"ABC123456789"` |
+
+Cuando `status` es `SHIPPED`, **ambos campos son obligatorios** y no pueden estar
+vacíos ni contener solo espacios. En cualquier otra transición, estos campos se
+rechazan con `400 BAD_REQUEST`.
 
 **Transiciones permitidas**
 
@@ -854,14 +896,16 @@ Mueve el pedido por su ciclo de vida operativo.
 | `DELIVERED` | — (estado final) |
 | `CANCELLED` | — (estado final) |
 
-Dos reglas que no se pueden saltar:
+Tres reglas que no se pueden saltar:
 
 - **`PAID` no se puede marcar a mano.** Solo lo produce el webhook de pago verificado. Permitirlo abriría la puerta a despachar sin haber cobrado.
 - **Un pedido ya enviado no se cancela.** Cancelar antes del despacho (`PENDING`, `PAID`, `PREPARING`) **devuelve el stock** al catálogo e invalida su caché.
+- **`SHIPPED` exige transportadora y guía.** Sin ambas, la petición falla con `400 BAD_REQUEST`.
 
-**`200 OK`**: misma forma que `GET /admin/orders/:id`, ya actualizada.
+**`200 OK`**: misma forma que `GET /admin/orders/:id`, ya actualizada. Los campos
+`carrier` y `trackingNumber` quedan guardados en la respuesta.
 
-**Errores**: `400 BAD_REQUEST` si ya está en ese estado o si se intenta marcar `PAID` · `409 CONFLICT` si la transición no cabe desde el estado actual (el mensaje dice cuáles sí) · `404 NOT_FOUND`.
+**Errores**: `400 BAD_REQUEST` si ya está en ese estado, si se intenta marcar `PAID`, si se va a `SHIPPED` sin transportadora o guía, o si en otra transición se envían esos campos · `409 CONFLICT` si la transición no cabe desde el estado actual (el mensaje dice cuáles sí) · `404 NOT_FOUND`.
 
 > Este endpoint es lo que hace visible la línea de tiempo del
 > [seguimiento público](#get-orderstrack) y lo que finalmente **habilita las

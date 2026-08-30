@@ -7,6 +7,7 @@ independientes** con propósitos distintos.
 |---|---|---|---|---|
 | **Landing** | `index.html` | `src/main.jsx` → `src/App.jsx` | Vende el combo Día + Noche por WhatsApp | **No** |
 | **Checkout demo** | `checkout.html` | `src/checkout-main.jsx` → `src/checkout/CheckoutApp.jsx` | Flujo de compra completo de 5 pasos | **Sí** |
+| **Panel admin** | `admin.html` | `src/admin-main.jsx` → `src/admin/AdminApp.jsx` | Gestión de pedidos (login, lista, detalle, transiciones, despacho) | **Sí** |
 
 Ambas están declaradas como entradas de build en
 [`vite.config.js`](../frontend/vite.config.js):
@@ -17,12 +18,13 @@ build: {
     input: {
       main: resolve(__dirname, 'index.html'),
       checkout: resolve(__dirname, 'checkout.html'),
+      admin: resolve(__dirname, 'admin.html'),
     },
   },
 }
 ```
 
-`npm run build` genera las dos. Si añades una tercera página, tienes que
+`npm run build` genera las tres. Si añades una cuarta página, tienes que
 registrarla aquí o no se compilará.
 
 **Stack**: React 18 · Vite 5 · Tailwind CSS 3 · sin router, sin gestor de estado,
@@ -348,10 +350,81 @@ invocación del widget. Aislado del componente para poder simularlo en tests.
 
 ---
 
+---
+
+## Panel admin (`admin.html`)
+
+Interfaz operativa para gestionar pedidos: login, listado con filtro y
+paginación, detalle con direcciones e historial, transiciones de estado
+(preparación, despacho con transportadora y guía obligatorios, entrega,
+cancelación).
+
+### Autenticación
+
+[`LoginGate.jsx`](../frontend/src/admin/LoginGate.jsx) valida credenciales
+contra `POST /auth/login`. No guarda sesión en `localStorage` (el token es
+de corta vida, 15 minutos); la renovación automática corre en `httpClient.js`.
+
+### Enrutador
+
+Hash router casero en [`router.js`](../frontend/src/admin/router.js) — sin
+dependencias. Rutas:
+
+| Ruta | Componente | Qué hace |
+|---|---|---|
+| `/` | `LoginGate` | Formulario de acceso (no muestra si hay sesión válida) |
+| `/pedidos` | `OrdersPage` | Listado de pedidos con filtro por estado y paginación |
+| `/pedidos/:id` | `OrderDetailPage` | Detalle de un pedido, acciones de transición |
+
+El router también escucha cambios de hash y renderiza el componente correcto.
+
+### Estructura de `src/admin/`
+
+| Archivo | Responsabilidad |
+|---|---|
+| `AdminApp.jsx` | Shell: sesión, sidebar, enrutador |
+| `LoginGate.jsx` | Formulario de login; valida contra la API |
+| `router.js` | Router por hash, sin dependencias externas |
+| `api.js` | Cliente de endpoints `/api/admin/*` |
+| `components/ui.jsx` | Primitivos: `Badge`, `Table`, `Modal`, `FilaMensaje` |
+| `orders/OrdersPage.jsx` | Listado de pedidos |
+| `orders/OrderDetailPage.jsx` | Detalle + panel de acciones |
+| `orders/ShipDialog.jsx` | Modal para registrar transportadora y guía |
+| `orders/CancelDialog.jsx` | Modal de confirmación de cancelación |
+| `orders/ordersModel.js` | Lógica pura: validación de guía, transiciones |
+
+### Seguridad
+
+El campo de rol en el formulario de login es **solo por conveniencia**: el
+backend valida con `roleGuard('ADMIN')` en cada endpoint `/admin`. Cambiar
+el rol en el cliente no abre acceso.
+
+### Integración con código compartido
+
+`src/admin/components/ui.jsx` y `src/admin/api.js` **reutilizan** código de
+`src/shared/` para evitar duplicación:
+
+- [`src/shared/httpClient.js`](../frontend/src/shared/httpClient.js) — Motor
+  HTTP con sesión, renovación automática de token y reintentos.
+- [`src/shared/format.js`](../frontend/src/shared/format.js) — `formatCOP`
+  y `formatFecha`.
+- [`src/shared/ui.jsx`](../frontend/src/shared/ui.jsx) — Componentes como
+  `Card`, `Field`, `Input`, etc., compartidos con checkout.
+
+El `checkout/api.js` ahora también reutiliza `httpClient`, así que los dos
+flujos (checkout y admin) comparten la misma lógica de sesión y renovación.
+
+### Secciones pendientes
+
+Los menús de catálogo, cupones y reportes en la barra lateral son placeholders
+que dirigen a páginas inexistentes. Forman parte del plan F4–F6.
+
+---
+
 ## Sistema de diseño
 
 [`tailwind.config.js`](../frontend/tailwind.config.js) extiende el tema por
-defecto. `content` incluye las dos páginas HTML y `src/**/*.{js,jsx}`.
+defecto. `content` incluye las tres páginas HTML y `src/**/*.{js,jsx}`.
 
 ### Tipografía
 
@@ -441,19 +514,19 @@ npm run dev
 | Credenciales de Wompi | El widget está integrado, pero con la llave de ejemplo no cobra. Faltan las credenciales reales en `backend/.env` |
 | Vista de seguimiento pendiente | `api.trackOrder` ya existe y `PaymentStep` la usa para verificar, pero **no hay una pantalla `track.html`**. Hasta que exista, `WOMPI_REDIRECT_URL` apunta a una página inexistente: afecta a PSE y Bancolombia, que sacan al cliente del sitio |
 | Sin CI | Ningún workflow hace lint ni build de `frontend/**` |
-| Cobertura de tests parcial | `checkout/api.js` y `checkout/wompi.js` están probados (22 tests). Los componentes no |
+| Cobertura de tests parcial | `checkout/api.js` y `checkout/womji.js` están probados (22 tests). Los componentes no; el panel aún no tiene tests |
 | Sin recuperación de contraseña | La API la expone; la demo no la usa |
 | Sin direcciones guardadas | La demo siempre envía `shippingAddress`; nunca usa `addressId` ni `/api/addresses` |
 | Sin historial de pedidos | `GET /orders` no se consume; `api.getOrder` está definido pero no se llama |
 | Sin reseñas | La API las expone; la demo no las muestra ni permite crearlas |
-| Sin panel de administración | Los endpoints `/admin` y `/coupons` no tienen interfaz |
+| Panel: secciones incompletas | El panel tiene login y gestión de pedidos ✅. Catálogo, cupones y reportes son placeholders (F4–F6) |
 | Landing desconectada del catálogo | Precio y contenido salen de `site.js`, no de `GET /products` |
 | CTA del hero aún a WhatsApp | `FloatingCta.jsx` sigue apuntando a `whatsappUrl()`; `OfferCard` y `StickyBar` ya van al checkout |
 | Enlaces de redes sin destino | `href="#"` en `OfferCard.jsx` |
 
-**Cerrado recientemente**: el cliente guardaba el `refreshToken` pero nunca lo
-usaba, así que la sesión moría a los 15 minutos. Ahora
-[renueva automáticamente](#renovación-automática-del-access-token).
+**Cerrado recientemente**:
+- El cliente guardaba el `refreshToken` pero nunca lo usaba, así que la sesión moría a los 15 minutos. Ahora [renueva automáticamente](#renovación-automática-del-access-token).
+- El panel de administración ahora tiene interfaz operativa para gestionar pedidos de punta a punta.
 
 ---
 

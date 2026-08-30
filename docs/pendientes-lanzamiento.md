@@ -11,13 +11,14 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 
 ---
 
-## 0. En curso
+## 0. Hecho
 
-- [ ] **P0 · Panel de administración (frontend)**
-  Los endpoints ya existen (`GET /admin/orders`, `GET /admin/orders/:id`,
-  `PATCH /admin/orders/:id/status`, `GET /admin/reports/*`), pero no hay
-  interfaz: hoy se opera con Swagger o curl. Sin esto nadie puede despachar
-  un pedido.
+- [x] **P0 · Panel de administración (frontend)**
+  Interfaz web operativa para gestionar pedidos. Incluye login, listado con
+  filtro por estado y paginación, detalle con la dirección completa del envío,
+  transiciones de estado, despacho con transportadora y número de guía
+  obligatorios, y cancelación. Verificado en navegador. Las secciones de
+  catálogo, cupones y reportes permanecen como placeholders (F4–F6).
 
 ---
 
@@ -65,11 +66,11 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
   - La recuperación de contraseña del admin **no funciona en producción**: el
     token se genera pero `devResetToken` solo se expone fuera de producción.
 
-- [ ] **O2 · Número de guía de la transportadora**
-  El modelo `Order` no tiene campo de tracking. El cliente ve «Enviado» pero
-  no puede rastrear el paquete.
-  → **Se cubre dentro de P0**: la pantalla que pide la guía es el detalle de
-  pedido del panel. Ver la [especificación](superpowers/specs/2026-08-29-panel-administracion-design.md).
+- [x] **O2 · Número de guía de la transportadora**
+  El modelo `Order` tiene campos `carrier` y `trackingNumber`. El panel de
+  administración pide ambos al despachar (`PATCH /admin/orders/:id/status`
+  con estado `SHIPPED` rechaza si falta alguno). El cliente ve el número en
+  el seguimiento público (`GET /orders/track`).
 
 - [ ] **O3 · Textos legales (Colombia)**
   Política de tratamiento de datos (Ley 1581), términos y condiciones,
@@ -97,10 +98,9 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 ## Orden sugerido
 
 ```
-Panel admin (P0)  →  B1 track.html  →  B3 imágenes  →  B2 landing
+Panel admin (P0) ✅  →  B1 track.html  →  B3 imágenes  →  B2 landing
       →  O1 emails  →  B4 infra  →  B5 llaves sandbox  →  B6 QA
-      →  O2 guía + P0 ampliado  →  O3 legales  →  llaves de producción
-      →  R1-R3 en paralelo
+      →  O3 legales  →  llaves de producción  →  R1-R3 en paralelo
 ```
 
 ## Relacionado
