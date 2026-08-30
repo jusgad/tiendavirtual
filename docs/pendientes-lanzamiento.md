@@ -24,11 +24,11 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 
 ## 1. Bloqueantes — sin esto no se puede vender
 
-- [ ] **B1 · `track.html` no existe**
-  `WOMPI_REDIRECT_URL` apunta ahí. PSE y Bancolombia sacan al cliente del
-  sitio y lo devuelven a un **404** después de pagar.
-  El endpoint (`GET /orders/track`) y `api.trackOrder` ya están listos; falta
-  solo la página y registrarla en `vite.config.js`.
+- [x] **B1 · `track.html`** — hecho
+  Cuarta entrada de Vite. Consulta por nº de pedido + correo, línea de tiempo
+  del avance, transportadora y guía cuando el pedido se despacha, y sondeo
+  mientras el pago no se confirma. El checkout recuerda el pedido para que al
+  volver de PSE la consulta salga sola. Verificado en navegador.
 
 - [ ] **B2 · La landing todavía vende por WhatsApp**
   `FloatingCta.jsx` apunta a `whatsappUrl()`. Además hay que decidir qué pasa
@@ -98,7 +98,7 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 ## Orden sugerido
 
 ```
-Panel admin (P0) ✅  →  B1 track.html  →  B3 imágenes  →  B2 landing
+Panel admin (P0) ✅  →  B1 track.html ✅  →  B3 imágenes  →  B2 landing
       →  O1 emails  →  B4 infra  →  B5 llaves sandbox  →  B6 QA
       →  O3 legales  →  llaves de producción  →  R1-R3 en paralelo
 ```
