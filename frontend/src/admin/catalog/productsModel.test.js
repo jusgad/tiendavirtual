@@ -61,6 +61,20 @@ describe('validarProducto', () => {
     const e = validarProducto({ ...base(), images: [{ url: '  ', alt: 'x' }] })
     expect(e.images).toBeTruthy()
   })
+
+  it('rechaza imágenes con URL inválida', () => {
+    expect(validarProducto({ ...base(), images: [{ url: 'foto.png', alt: '' }] }).images).toBeTruthy()
+    expect(validarProducto({ ...base(), images: [{ url: 'no-es-url', alt: '' }] }).images).toBeTruthy()
+    expect(validarProducto({ ...base(), images: [{ url: 'https://ejemplo.com/foto.jpg', alt: '' }] }).images).toBeUndefined()
+  })
+
+  it('acepta sizeMl vacío, pero rechaza valores inválidos', () => {
+    expect(validarProducto({ ...base(), sizeMl: '' }).sizeMl).toBeUndefined()
+    expect(validarProducto({ ...base(), sizeMl: '0' }).sizeMl).toBeTruthy()
+    expect(validarProducto({ ...base(), sizeMl: '-5' }).sizeMl).toBeTruthy()
+    expect(validarProducto({ ...base(), sizeMl: '1.5' }).sizeMl).toBeTruthy()
+    expect(validarProducto({ ...base(), sizeMl: '500' }).sizeMl).toBeUndefined()
+  })
 })
 
 describe('productoAFormulario', () => {

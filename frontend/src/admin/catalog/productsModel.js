@@ -69,8 +69,26 @@ export function validarProducto(f) {
     errores.stock = 'El stock debe ser un entero de cero en adelante'
   }
 
-  if ((f.images ?? []).some((i) => !i.url?.trim())) {
-    errores.images = 'Hay una imagen sin dirección; complétala o quítala'
+  // sizeMl es opcional, pero si viene, debe ser un entero positivo.
+  if (f.sizeMl?.trim()) {
+    const sizeMl = Number(f.sizeMl)
+    if (!Number.isInteger(sizeMl) || sizeMl <= 0) {
+      errores.sizeMl = 'El volumen debe ser un número entero mayor que cero'
+    }
+  }
+
+  // Valida que cada imagen tenga una URL válida (no solo texto no vacío).
+  if ((f.images ?? []).some((i) => {
+    const url = i.url?.trim()
+    if (!url) return true
+    try {
+      new URL(url)
+      return false
+    } catch {
+      return true
+    }
+  })) {
+    errores.images = 'Hay una imagen con una dirección inválida; debe ser una URL como https://ejemplo.com/foto.jpg'
   }
 
   return errores

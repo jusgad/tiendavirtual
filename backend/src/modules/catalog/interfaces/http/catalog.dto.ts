@@ -26,7 +26,7 @@ export const idParamSchema = z.object({ id: z.string().uuid('id inválido') })
 
 const imageSchema = z.object({
   url: z.string().url(),
-  alt: z.string().optional(),
+  alt: z.string().nullable().optional(),
   position: z.number().int().nonnegative().optional(),
 })
 
@@ -37,12 +37,12 @@ export const createProductSchema = z.object({
   brandId: z.string().uuid(),
   categoryId: z.string().uuid(),
   price: z.number().positive('El precio debe ser mayor a 0'),
-  presentation: z.string().optional(),
-  sizeMl: z.number().int().positive().optional(),
-  usageType: z.string().optional(),
-  skinType: z.string().optional(),
-  ingredients: z.string().optional(),
-  warnings: z.string().optional(),
+  presentation: z.string().nullable().optional(),
+  sizeMl: z.number().int().positive().nullable().optional(),
+  usageType: z.string().nullable().optional(),
+  skinType: z.string().nullable().optional(),
+  ingredients: z.string().nullable().optional(),
+  warnings: z.string().nullable().optional(),
   stock: z.number().int().nonnegative().default(0),
   images: z.array(imageSchema).optional(),
 })
