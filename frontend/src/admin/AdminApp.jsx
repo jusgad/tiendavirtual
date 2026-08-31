@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { clearSession, getStoredUser, setOnSessionExpired } from '../checkout/api.js'
 import Logo from '../shared/Logo.jsx'
+import ProductForm from './catalog/ProductForm.jsx'
 import ProductsPage from './catalog/ProductsPage.jsx'
 import LoginGate from './LoginGate.jsx'
 import OrderDetailPage from './orders/OrderDetailPage.jsx'
@@ -30,6 +31,7 @@ export default function AdminApp() {
   const [aviso, setAviso] = useState('')
   // `null` = ninguno; un objeto = editando ese producto; `'nuevo'` = alta.
   const [productoEnEdicion, setProductoEnEdicion] = useState(null)
+  const [recargaProductos, setRecargaProductos] = useState(0)
   const route = useRoute()
 
   useEffect(() => {
@@ -93,7 +95,23 @@ export default function AdminApp() {
           {route.name === 'pedidos' && <OrdersPage />}
           {route.name === 'pedido' && <OrderDetailPage id={route.params.id} />}
           {route.name === 'productos' && (
-            <ProductsPage onEditar={(p) => setProductoEnEdicion(p ?? 'nuevo')} />
+            <>
+              <ProductsPage
+                key={recargaProductos}
+                onEditar={(p) => setProductoEnEdicion(p ?? 'nuevo')}
+              />
+              {productoEnEdicion && (
+                <ProductForm
+                  producto={productoEnEdicion}
+                  onCerrar={() => setProductoEnEdicion(null)}
+                  onGuardado={() => {
+                    setProductoEnEdicion(null)
+                    // Cambiar la `key` remonta la lista y la obliga a recargar.
+                    setRecargaProductos((n) => n + 1)
+                  }}
+                />
+              )}
+            </>
           )}
           {route.name === 'taxonomia' && <EnConstruccion titulo="Categorías y marcas" />}
           {route.name === 'cupones' && <EnConstruccion titulo="Cupones" />}
