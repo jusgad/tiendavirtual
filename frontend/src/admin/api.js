@@ -2,6 +2,7 @@
 // es el mismo que usa el checkout.
 
 import { request } from '../shared/httpClient.js'
+import { limitesConsulta } from './reports/reportsModel.js'
 
 export const adminApi = {
   listOrders: ({ status, page = 1, pageSize = 20 } = {}) => {
@@ -49,4 +50,15 @@ export const adminApi = {
   listCoupons: () => request('/coupons?includeInactive=true'),
   createCoupon: (datos) => request('/coupons', { method: 'POST', body: datos }),
   updateCoupon: (id, datos) => request(`/coupons/${id}`, { method: 'PATCH', body: datos }),
+
+  // ---- Reportes ----
+  // Las fechas del formulario van como instantes de Colombia (ver
+  // `limitesConsulta`): así el último día entra completo. La fecha que la
+  // dueña deje en blanco no se manda y el backend aplica su propio rango.
+  salesReport: ({ from, to, groupBy = 'day' } = {}) => {
+    const params = new URLSearchParams({ groupBy, ...limitesConsulta({ from, to }) })
+    return request(`/admin/reports/sales?${params}`)
+  },
+  topProducts: (limit = 5) => request(`/admin/reports/top-products?limit=${limit}`),
+  ordersByStatus: () => request('/admin/reports/orders-by-status'),
 }
