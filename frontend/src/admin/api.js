@@ -44,4 +44,9 @@ export const adminApi = {
   createBrand: (datos) => request('/brands', { method: 'POST', body: datos }),
   updateBrand: (id, datos) => request(`/brands/${id}`, { method: 'PATCH', body: datos }),
   deleteBrand: (id) => request(`/brands/${id}`, { method: 'DELETE' }),
+
+  // ---- Cupones ----
+  listCoupons: () => request('/coupons?includeInactive=true'),
+  createCoupon: (datos) => request('/coupons', { method: 'POST', body: datos }),
+  updateCoupon: (id, datos) => request(`/coupons/${id}`, { method: 'PATCH', body: datos }),
 }
