@@ -54,3 +54,45 @@ export function FilaMensaje({ columnas, children }) {
     </tr>
   )
 }
+
+/** Diálogo de confirmación para acciones que no se pueden deshacer. */
+export function Confirmacion({
+  titulo,
+  mensaje,
+  textoConfirmar = 'Confirmar',
+  onConfirmar,
+  onCerrar,
+  enviando,
+  error,
+}) {
+  return (
+    <Modal titulo={titulo} onCerrar={onCerrar}>
+      <div className="space-y-4">
+        <p className="text-sm text-[#6A5A4A]">{mensaje}</p>
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            ⚠️ {error}
+          </div>
+        )}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCerrar}
+            disabled={enviando}
+            className="rounded-full border border-[#E7D9C4] px-5 py-2.5 text-sm font-bold text-[#6A3A1C] disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirmar}
+            disabled={enviando}
+            className="rounded-full border border-red-200 px-5 py-2.5 text-sm font-extrabold text-red-700 hover:bg-red-50 disabled:opacity-50"
+          >
+            {enviando ? 'Un momento…' : textoConfirmar}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { clearSession, getStoredUser, setOnSessionExpired } from '../checkout/api.js'
 import Logo from '../shared/Logo.jsx'
+import ProductsPage from './catalog/ProductsPage.jsx'
 import LoginGate from './LoginGate.jsx'
 import OrderDetailPage from './orders/OrderDetailPage.jsx'
 import OrdersPage from './orders/OrdersPage.jsx'
@@ -27,6 +28,8 @@ function EnConstruccion({ titulo }) {
 export default function AdminApp() {
   const [user, setUser] = useState(() => getStoredUser())
   const [aviso, setAviso] = useState('')
+  // `null` = ninguno; un objeto = editando ese producto; `'nuevo'` = alta.
+  const [productoEnEdicion, setProductoEnEdicion] = useState(null)
   const route = useRoute()
 
   useEffect(() => {
@@ -89,7 +92,9 @@ export default function AdminApp() {
         <main className="min-w-0 flex-1 p-4 sm:p-6">
           {route.name === 'pedidos' && <OrdersPage />}
           {route.name === 'pedido' && <OrderDetailPage id={route.params.id} />}
-          {route.name === 'productos' && <EnConstruccion titulo="Productos" />}
+          {route.name === 'productos' && (
+            <ProductsPage onEditar={(p) => setProductoEnEdicion(p ?? 'nuevo')} />
+          )}
           {route.name === 'taxonomia' && <EnConstruccion titulo="Categorías y marcas" />}
           {route.name === 'cupones' && <EnConstruccion titulo="Cupones" />}
           {route.name === 'reportes' && <EnConstruccion titulo="Reportes" />}
