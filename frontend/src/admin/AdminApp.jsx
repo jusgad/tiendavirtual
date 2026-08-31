@@ -4,6 +4,7 @@ import Logo from '../shared/Logo.jsx'
 import ProductForm from './catalog/ProductForm.jsx'
 import ProductsPage from './catalog/ProductsPage.jsx'
 import TaxonomyPage from './catalog/TaxonomyPage.jsx'
+import CouponsPage from './coupons/CouponsPage.jsx'
 import LoginGate from './LoginGate.jsx'
 import OrderDetailPage from './orders/OrderDetailPage.jsx'
 import OrdersPage from './orders/OrdersPage.jsx'
@@ -115,7 +116,7 @@ export default function AdminApp() {
             </>
           )}
           {route.name === 'taxonomia' && <TaxonomyPage />}
-          {route.name === 'cupones' && <EnConstruccion titulo="Cupones" />}
+          {route.name === 'cupones' && <CouponsPage />}
           {route.name === 'reportes' && <EnConstruccion titulo="Reportes" />}
         </main>
       </div>
