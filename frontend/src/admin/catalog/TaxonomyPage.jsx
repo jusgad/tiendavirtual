@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { adminApi } from '../api.js'
 import { ErrorBanner, Input, PrimaryButton } from '../../shared/ui.jsx'
 import { Badge, Confirmacion, FilaMensaje, Table } from '../components/ui.jsx'
@@ -16,12 +16,25 @@ function Seccion({ titulo, singular, acciones }) {
   const [ocupado, setOcupado] = useState(null)
   const [aBorrar, setABorrar] = useState(null)
   const [errorBorrado, setErrorBorrado] = useState('')
+  // Cada mutación (crear/alternar/borrar) dispara su propia recarga, así que
+  // puede haber varias peticiones de `cargar()` en vuelo a la vez —el
+  // `ocupado` por fila solo bloquea esa fila, no las demás acciones de la
+  // sección. Este contador identifica la más reciente: si una respuesta
+  // vieja llega después que una más nueva, se descarta en vez de pisar el
+  // estado con datos desactualizados. Vive dentro del componente porque
+  // Categorías y Marcas son dos instancias separadas de `Seccion`, cada una
+  // con su propio conteo.
+  const cargaId = useRef(0)
 
   const cargar = useCallback(async () => {
+    const id = ++cargaId.current
     setError('')
     try {
-      setItems(await acciones.listar())
+      const datos = await acciones.listar()
+      if (id !== cargaId.current) return
+      setItems(datos)
     } catch (err) {
+      if (id !== cargaId.current) return
       setError(err.message)
       setItems([])
     }
