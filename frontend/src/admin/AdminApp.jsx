@@ -3,6 +3,7 @@ import { clearSession, getStoredUser, setOnSessionExpired } from '../checkout/ap
 import Logo from '../shared/Logo.jsx'
 import ProductForm from './catalog/ProductForm.jsx'
 import ProductsPage from './catalog/ProductsPage.jsx'
+import TaxonomyPage from './catalog/TaxonomyPage.jsx'
 import LoginGate from './LoginGate.jsx'
 import OrderDetailPage from './orders/OrderDetailPage.jsx'
 import OrdersPage from './orders/OrdersPage.jsx'
@@ -113,7 +114,7 @@ export default function AdminApp() {
               )}
             </>
           )}
-          {route.name === 'taxonomia' && <EnConstruccion titulo="Categorías y marcas" />}
+          {route.name === 'taxonomia' && <TaxonomyPage />}
           {route.name === 'cupones' && <EnConstruccion titulo="Cupones" />}
           {route.name === 'reportes' && <EnConstruccion titulo="Reportes" />}
         </main>
