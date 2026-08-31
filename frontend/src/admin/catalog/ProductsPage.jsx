@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { adminApi } from '../api.js'
 import { formatCOP } from '../../shared/format.js'
 import { ErrorBanner } from '../../shared/ui.jsx'
@@ -12,13 +12,21 @@ export default function ProductsPage({ onEditar }) {
   const [ocupado, setOcupado] = useState(null)
   const [aBorrar, setABorrar] = useState(null)
   const [errorBorrado, setErrorBorrado] = useState('')
+  // Cada mutación dispara su propia recarga, así que puede haber varias
+  // peticiones de `cargar()` en vuelo a la vez. Este contador identifica la
+  // más reciente: si una respuesta vieja llega después que una más nueva, se
+  // descarta en vez de pisar el estado con datos desactualizados.
+  const cargaId = useRef(0)
 
   const cargar = useCallback(async () => {
+    const id = ++cargaId.current
     setError('')
     try {
       const { items } = await adminApi.listProducts({ pageSize: 100 })
+      if (id !== cargaId.current) return
       setProductos(items)
     } catch (err) {
+      if (id !== cargaId.current) return
       setError(err.message)
       setProductos([])
     }
@@ -75,7 +83,7 @@ export default function ProductsPage({ onEditar }) {
 
       <Table columnas={COLUMNAS}>
         {productos === null && <FilaMensaje columnas={COLUMNAS.length}>Cargando productos…</FilaMensaje>}
-        {productos?.length === 0 && (
+        {productos?.length === 0 && !error && (
           <FilaMensaje columnas={COLUMNAS.length}>Todavía no hay productos.</FilaMensaje>
         )}
         {productos?.map((p) => (
@@ -120,7 +128,8 @@ export default function ProductsPage({ onEditar }) {
                     setABorrar(p)
                     setErrorBorrado('')
                   }}
-                  className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
+                  disabled={ocupado === p.id}
+                  className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-40"
                 >
                   Borrar
                 </button>
