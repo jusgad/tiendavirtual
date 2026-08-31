@@ -118,6 +118,9 @@ export class PrismaProductRepository implements ProductRepository {
         ingredients: data.ingredients ?? null,
         warnings: data.warnings ?? null,
         stock: data.stock,
+        // Si no viene, se omite la clave y la columna toma su valor por
+        // defecto en base de datos (`true`) — no se fuerza aquí.
+        ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
         images: data.images?.length
           ? { create: data.images.map((i, idx) => ({ url: i.url, alt: i.alt ?? null, position: i.position ?? idx })) }
           : undefined,

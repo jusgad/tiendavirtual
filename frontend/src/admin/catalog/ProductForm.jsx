@@ -126,7 +126,7 @@ export default function ProductForm({ producto, onCerrar, onGuardado }) {
           <Field label="Presentación">
             <Input value={form.presentation} onChange={(e) => campo('presentation')(e.target.value)} />
           </Field>
-          <Field label="Tamaño (ml)">
+          <Field label="Tamaño (ml)" error={errores.sizeMl}>
             <Input inputMode="numeric" value={form.sizeMl} onChange={(e) => campo('sizeMl')(e.target.value)} />
           </Field>
           <Field label="Tipo de uso">

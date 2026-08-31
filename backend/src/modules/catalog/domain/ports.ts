@@ -83,6 +83,8 @@ export interface CreateProductData {
   ingredients?: string | null
   warnings?: string | null
   stock: number
+  /** Opcional: si no llega, la columna conserva su valor por defecto en base de datos (`true`). */
+  isActive?: boolean
   images?: { url: string; alt?: string | null; position?: number }[]
 }
 

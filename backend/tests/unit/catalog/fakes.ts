@@ -54,7 +54,8 @@ export class InMemoryProductRepository implements ProductRepository {
       ingredients: data.ingredients ?? null,
       warnings: data.warnings ?? null,
       stock: data.stock,
-      isActive: true,
+      // Igual que el repositorio Prisma real: si no viene, nace activo.
+      isActive: data.isActive ?? true,
     }
     this.products.push(product)
     return product

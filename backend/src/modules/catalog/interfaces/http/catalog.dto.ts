@@ -44,6 +44,10 @@ export const createProductSchema = z.object({
   ingredients: z.string().nullable().optional(),
   warnings: z.string().nullable().optional(),
   stock: z.number().int().nonnegative().default(0),
+  // Opcional: permite dar de alta un producto ya desactivado (ficha en
+  // preparación que todavía no debe verse en la tienda). Si no viene, la
+  // columna toma su valor por defecto en base de datos (`true`).
+  isActive: z.boolean().optional(),
   images: z.array(imageSchema).optional(),
 })
 

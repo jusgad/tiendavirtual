@@ -56,6 +56,23 @@ describe('CreateProductUseCase', () => {
       useCase.execute({ ...baseData, brandId: brand.id, categoryId: 'inexistente' }),
     ).rejects.toMatchObject({ statusCode: 400 })
   })
+
+  it('crea un producto desactivado si isActive llega en false', async () => {
+    const { useCase, brand, category } = makeEnv()
+    const product = await useCase.execute({
+      ...baseData,
+      brandId: brand.id,
+      categoryId: category.id,
+      isActive: false,
+    })
+    expect(product.isActive).toBe(false)
+  })
+
+  it('crea un producto activo cuando isActive no llega', async () => {
+    const { useCase, brand, category } = makeEnv()
+    const product = await useCase.execute({ ...baseData, brandId: brand.id, categoryId: category.id })
+    expect(product.isActive).toBe(true)
+  })
 })
 
 // Este archivo no crea productos vía `repo.create()` para las pruebas de
