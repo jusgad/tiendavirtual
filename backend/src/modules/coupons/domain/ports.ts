@@ -26,6 +26,7 @@ export interface CreateCouponData {
   perUserLimit?: number | null
   startsAt?: Date | null
   endsAt?: Date | null
+  isActive?: boolean
 }
 
 export type UpdateCouponData = Partial<Omit<CreateCouponData, 'code'>> & {

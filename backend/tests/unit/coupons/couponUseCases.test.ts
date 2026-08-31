@@ -28,6 +28,20 @@ describe('CreateCouponUseCase', () => {
       useCase.execute({ code: 'verano20', type: CouponType.FIXED, value: 5000 }),
     ).rejects.toMatchObject({ statusCode: 409 })
   })
+
+  it('permite crear un cupón ya desactivado (ficha en preparación)', async () => {
+    const coupons = new InMemoryCouponRepository()
+    const useCase = new CreateCouponUseCase(coupons)
+
+    const coupon = await useCase.execute({
+      code: 'preparacion10',
+      type: CouponType.PERCENTAGE,
+      value: 10,
+      isActive: false,
+    })
+
+    expect(coupon.isActive).toBe(false)
+  })
 })
 
 describe('UpdateCouponUseCase', () => {

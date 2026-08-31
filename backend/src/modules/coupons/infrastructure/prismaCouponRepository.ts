@@ -51,6 +51,9 @@ export class PrismaCouponRepository implements CouponRepository {
         perUserLimit: data.perUserLimit ?? null,
         startsAt: data.startsAt ?? null,
         endsAt: data.endsAt ?? null,
+        // Si no viene, se omite la clave y la columna toma su valor por
+        // defecto en base de datos (`true`) — no se fuerza aquí.
+        ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
       },
     })
     return toCoupon(c)

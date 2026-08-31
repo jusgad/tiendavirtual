@@ -31,7 +31,8 @@ export class InMemoryCouponRepository implements CouponRepository {
       perUserLimit: data.perUserLimit ?? null,
       startsAt: data.startsAt ?? null,
       endsAt: data.endsAt ?? null,
-      isActive: true,
+      // Igual que el repositorio Prisma real: si no viene, nace activo.
+      isActive: data.isActive ?? true,
       createdAt: new Date(),
     }
     this.coupons.push(coupon)

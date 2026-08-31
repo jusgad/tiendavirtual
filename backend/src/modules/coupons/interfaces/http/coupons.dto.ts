@@ -19,6 +19,10 @@ export const createCouponSchema = z
     perUserLimit: z.number().int().positive().optional(),
     startsAt: z.coerce.date().optional(),
     endsAt: z.coerce.date().optional(),
+    // Opcional: permite dar de alta un cupón ya desactivado (por ejemplo,
+    // uno que se está preparando y todavía no debe poder canjearse). Si no
+    // viene, la columna toma su valor por defecto en base de datos (`true`).
+    isActive: z.boolean().optional(),
   })
   .refine(dateRangeRefinement, { message: 'startsAt debe ser anterior a endsAt', path: ['endsAt'] })
   .refine((d) => d.type !== 'PERCENTAGE' || d.value <= 100, {

@@ -37,6 +37,8 @@ export function validarCupon(f) {
 
   if (!f.code?.trim() || f.code.trim().length < 3) {
     errores.code = 'El código debe tener al menos 3 caracteres'
+  } else if (f.code.trim().length > 40) {
+    errores.code = 'El código no puede tener más de 40 caracteres'
   }
 
   const valor = Number(f.value)
@@ -44,6 +46,29 @@ export function validarCupon(f) {
     errores.value = 'El valor debe ser mayor que cero'
   } else if (f.type === 'PERCENTAGE' && valor > 100) {
     errores.value = 'Un descuento porcentual no puede pasar de 100'
+  }
+
+  // minPurchase, maxUses y perUserLimit son opcionales: en blanco es válido.
+  // Si vienen, deben cumplir lo mismo que exige el servidor.
+  if (f.minPurchase?.trim()) {
+    const min = Number(f.minPurchase)
+    if (!Number.isFinite(min) || min < 0) {
+      errores.minPurchase = 'El monto mínimo de compra no puede ser negativo'
+    }
+  }
+
+  if (f.maxUses?.trim()) {
+    const max = Number(f.maxUses)
+    if (!Number.isInteger(max) || max <= 0) {
+      errores.maxUses = 'El número máximo de usos debe ser un entero mayor que cero'
+    }
+  }
+
+  if (f.perUserLimit?.trim()) {
+    const porUsuario = Number(f.perUserLimit)
+    if (!Number.isInteger(porUsuario) || porUsuario <= 0) {
+      errores.perUserLimit = 'El límite de usos por cliente debe ser un entero mayor que cero'
+    }
   }
 
   if (f.startsAt && f.endsAt && f.startsAt >= f.endsAt) {
@@ -58,7 +83,19 @@ export function validarCupon(f) {
  * porque un cupón ya repartido no se puede renombrar sin romper a quien lo tenga.
  */
 export function formularioAPayloadCupon(f, { esNuevo }) {
-  const numero = (v) => (v?.trim() ? Number(v) : undefined)
+  // Al crear, un opcional en blanco simplemente se omite: el esquema de
+  // creación no acepta `null`. Al editar, en cambio, mandar `null` es la
+  // única forma de borrar un valor que ya existía — si se omitiera la
+  // clave, el PATCH la dejaría intacta en la base de datos.
+  const numero = (v) => {
+    if (v?.trim()) return Number(v)
+    return esNuevo ? undefined : null
+  }
+  const fecha = (v) => {
+    if (v) return v
+    return esNuevo ? undefined : null
+  }
+
   const payload = {
     type: f.type,
     value: Number(f.value),
@@ -73,8 +110,10 @@ export function formularioAPayloadCupon(f, { esNuevo }) {
   if (max !== undefined) payload.maxUses = max
   const porUsuario = numero(f.perUserLimit)
   if (porUsuario !== undefined) payload.perUserLimit = porUsuario
-  if (f.startsAt) payload.startsAt = f.startsAt
-  if (f.endsAt) payload.endsAt = f.endsAt
+  const inicio = fecha(f.startsAt)
+  if (inicio !== undefined) payload.startsAt = inicio
+  const fin = fecha(f.endsAt)
+  if (fin !== undefined) payload.endsAt = fin
 
   return payload
 }
