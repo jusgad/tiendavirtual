@@ -8,6 +8,7 @@ import CouponsPage from './coupons/CouponsPage.jsx'
 import LoginGate from './LoginGate.jsx'
 import OrderDetailPage from './orders/OrderDetailPage.jsx'
 import OrdersPage from './orders/OrdersPage.jsx'
+import ReportsPage from './reports/ReportsPage.jsx'
 import { navigate, useRoute } from './router.js'
 
 const SECCIONES = [
@@ -17,16 +18,6 @@ const SECCIONES = [
   { ruta: 'cupones', etiqueta: 'Cupones', rutasActivas: ['cupones'] },
   { ruta: 'reportes', etiqueta: 'Reportes', rutasActivas: ['reportes'] },
 ]
-
-/** Marcador de las secciones que llegan en el siguiente plan (F4–F6). */
-function EnConstruccion({ titulo }) {
-  return (
-    <div className="rounded-2xl border border-[#E7D9C4] bg-white p-8 text-center text-sm text-[#8A6A4A]">
-      <p className="font-bold text-[#3A2A1A]">{titulo}</p>
-      <p className="mt-1">Esta sección aún no está construida.</p>
-    </div>
-  )
-}
 
 export default function AdminApp() {
   const [user, setUser] = useState(() => getStoredUser())
@@ -117,7 +108,7 @@ export default function AdminApp() {
           )}
           {route.name === 'taxonomia' && <TaxonomyPage />}
           {route.name === 'cupones' && <CouponsPage />}
-          {route.name === 'reportes' && <EnConstruccion titulo="Reportes" />}
+          {route.name === 'reportes' && <ReportsPage />}
         </main>
       </div>
     </div>

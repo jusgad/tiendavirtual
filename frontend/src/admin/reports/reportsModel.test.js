@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { aBarras, etiquetaPeriodo, limitesConsulta, rangoPorDefecto } from './reportsModel.js'
+import {
+  aBarras,
+  etiquetaPeriodo,
+  limitesConsulta,
+  rangoPorDefecto,
+  validarRango,
+} from './reportsModel.js'
 
 describe('rangoPorDefecto', () => {
   it('cubre los últimos 30 días, incluido hoy', () => {
@@ -61,6 +67,40 @@ describe('etiquetaPeriodo', () => {
   it('respeta el día que dice el periodo, sin correrlo por el huso horario', () => {
     expect(etiquetaPeriodo('2026-08-30')).toContain('30')
     expect(etiquetaPeriodo('2026-01-01')).toContain('1')
+  })
+})
+
+describe('validarRango', () => {
+  it('acepta un rango en orden', () => {
+    expect(validarRango({ from: '2026-08-01', to: '2026-08-30' })).toBe('')
+  })
+
+  it('avisa en español cuando "desde" queda después de "hasta"', () => {
+    const mensaje = validarRango({ from: '2026-08-30', to: '2026-08-01' })
+    expect(mensaje).not.toBe('')
+    expect(mensaje).toContain('desde')
+    // Nada de nombres de campo en inglés: el aviso es para la dueña.
+    expect(mensaje).not.toContain('from')
+  })
+
+  it('acepta pedir un solo día', () => {
+    expect(validarRango({ from: '2026-08-30', to: '2026-08-30' })).toBe('')
+  })
+
+  it('acepta los extremos en blanco, que el backend completa', () => {
+    expect(validarRango({ from: '', to: '2026-08-01' })).toBe('')
+    expect(validarRango({ from: '2026-08-30', to: '' })).toBe('')
+    expect(validarRango({ from: '', to: '' })).toBe('')
+    expect(validarRango({})).toBe('')
+    expect(validarRango()).toBe('')
+  })
+
+  it('compara por fecha y no por número de día', () => {
+    // Un 9 de agosto es anterior a un 10 de agosto aunque "9" > "10" si se
+    // leyeran como números sueltos.
+    expect(validarRango({ from: '2026-08-09', to: '2026-08-10' })).toBe('')
+    // Y el año manda sobre el mes.
+    expect(validarRango({ from: '2026-01-05', to: '2025-12-31' })).not.toBe('')
   })
 })
 

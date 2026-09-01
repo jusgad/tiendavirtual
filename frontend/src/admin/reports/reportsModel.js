@@ -48,6 +48,26 @@ export function limitesConsulta({ from, to } = {}) {
 }
 
 /**
+ * Mensaje en español si el rango no tiene sentido; cadena vacía si está bien.
+ *
+ * Existe para no llegar a preguntar: con "desde" después de "hasta" el backend
+ * responde `"from" debe ser anterior a "to"`, que no le dice nada a la dueña.
+ *
+ * Un extremo en blanco es válido: el backend completa el que falte (sin
+ * "hasta" llega hasta hoy, sin "desde" arranca 30 días antes). Y pedir un solo
+ * día —desde igual a hasta— también vale: `limitesConsulta` lo abre de la
+ * medianoche al cierre.
+ *
+ * Las fechas vienen como 'YYYY-MM-DD', así que compararlas como texto ordena
+ * igual que compararlas como fechas y no hace falta construir ningún `Date`.
+ */
+export function validarRango({ from, to } = {}) {
+  if (!from || !to) return ''
+  if (from > to) return 'La fecha "desde" no puede ser posterior a la de "hasta".'
+  return ''
+}
+
+/**
  * Convierte una lista en barras, con el porcentaje relativo al mayor valor.
  * Escalar contra el máximo —y no contra el total— es lo que hace comparables
  * dos barras de un vistazo.
