@@ -21,6 +21,7 @@ import {
 } from './application/passwordReset.usecase'
 
 import { AuthController } from './interfaces/http/auth.controller'
+import { buildEmailNotifier } from '../../shared/email/buildEmailNotifier'
 import {
   loginSchema,
   refreshSchema,
@@ -51,7 +52,13 @@ export function buildAuthModule(prisma: PrismaClient): Router {
     new LoginUserUseCase(users, hasher, tokens, refreshTokens),
     new RefreshTokensUseCase(users, tokens, refreshTokens),
     new LogoutUseCase(tokens, refreshTokens),
-    new RequestPasswordResetUseCase(users, tokens, passwordResets, env.PASSWORD_RESET_TTL_MIN),
+    new RequestPasswordResetUseCase(
+      users,
+      tokens,
+      passwordResets,
+      env.PASSWORD_RESET_TTL_MIN,
+      buildEmailNotifier(),
+    ),
     new ResetPasswordUseCase(users, hasher, tokens, passwordResets, refreshTokens),
   )
 

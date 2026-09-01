@@ -1,3 +1,4 @@
+import { SpyNotifier } from '../shared/notifierFakes'
 import { RegisterUserUseCase } from '../../../src/modules/auth/application/registerUser.usecase'
 import {
   RequestPasswordResetUseCase,
@@ -19,10 +20,11 @@ function makeEnv() {
   const hasher = new FakePasswordHasher()
   const tokens = new FakeTokenService()
   const register = new RegisterUserUseCase(users, hasher, tokens, refresh)
-  const requestReset = new RequestPasswordResetUseCase(users, tokens, resets, 30)
+  const notifier = new SpyNotifier()
+  const requestReset = new RequestPasswordResetUseCase(users, tokens, resets, 30, notifier)
   const resetPassword = new ResetPasswordUseCase(users, hasher, tokens, resets, refresh)
   const login = new LoginUserUseCase(users, hasher, tokens, refresh)
-  return { users, refresh, resets, register, requestReset, resetPassword, login }
+  return { users, refresh, resets, register, requestReset, resetPassword, login, notifier }
 }
 
 const creds = {
@@ -77,5 +79,32 @@ describe('Password reset', () => {
     await expect(resetPassword.execute(req!.rawToken, 'OtraPass1')).rejects.toMatchObject({
       statusCode: 400,
     })
+  })
+})
+
+describe('RequestPasswordResetUseCase · entrega del enlace', () => {
+  it('manda el token al correo del usuario, con su vigencia', async () => {
+    const { register, requestReset, notifier } = makeEnv()
+    await register.execute(creds)
+
+    const res = await requestReset.execute(creds.email)
+
+    expect(notifier.de('passwordReset')).toEqual([
+      { to: creds.email, rawToken: res!.rawToken, minutosDeVigencia: 30 },
+    ])
+  })
+
+  /**
+   * Si el correo no existe no se manda nada y no se distingue por fuera: el
+   * controlador responde lo mismo en los dos casos, que es lo que impide usar
+   * este endpoint para averiguar qué cuentas existen.
+   */
+  it('no manda nada si el correo no corresponde a ninguna cuenta', async () => {
+    const { requestReset, notifier } = makeEnv()
+
+    const res = await requestReset.execute('nadie@ejemplo.co')
+
+    expect(res).toBeNull()
+    expect(notifier.enviados).toHaveLength(0)
   })
 })

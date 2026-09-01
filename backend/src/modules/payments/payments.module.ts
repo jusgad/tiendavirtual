@@ -16,6 +16,7 @@ import {
 } from './application/paymentUseCases'
 import { PaymentsController } from './interfaces/http/payments.controller'
 import { paymentIdParamSchema, startPaymentSchema } from './interfaces/http/payments.dto'
+import { buildEmailNotifier } from '../../shared/email/buildEmailNotifier'
 
 export function buildPaymentsModule(prisma: PrismaClient): Router {
   const gateway = new WompiGateway({
@@ -30,7 +31,7 @@ export function buildPaymentsModule(prisma: PrismaClient): Router {
 
   const controller = new PaymentsController(
     new StartPaymentUseCase(orders, payments, gateway),
-    new HandleWebhookUseCase(payments, orders, gateway),
+    new HandleWebhookUseCase(payments, orders, gateway, buildEmailNotifier()),
     new GetPaymentUseCase(payments),
   )
 

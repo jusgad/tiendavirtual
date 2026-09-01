@@ -5,6 +5,7 @@ import {
   AdminOrderSummary,
   CatalogCacheInvalidator,
   Paginated,
+  ShipmentNotifier,
 } from '../domain/ports'
 import { OrderStatus } from '../domain/orderStatus'
 import {
@@ -41,6 +42,7 @@ export class UpdateOrderStatusUseCase {
   constructor(
     private readonly orders: AdminOrderRepository,
     private readonly catalogCache: CatalogCacheInvalidator,
+    private readonly notifier: ShipmentNotifier,
   ) {}
 
   async execute(id: string, to: OrderStatus, shipment?: ShipmentData): Promise<AdminOrderDetail> {
@@ -59,6 +61,24 @@ export class UpdateOrderStatusUseCase {
     // Solo si volvieron unidades al inventario cambia lo que el catálogo
     // muestra; invalidar siempre sería tirar el caché sin motivo.
     if (restoreStock) await this.catalogCache.invalidate()
+
+    // El único cambio de estado que le interesa a la clienta por correo es el
+    // despacho: ahí tiene guía que rastrear. Los demás los ve en seguimiento.
+    if (to === OrderStatus.SHIPPED && updated.contactEmail && updated.carrier && updated.trackingNumber) {
+      // Igual que en el checkout: el despacho ya quedó registrado. Un error de
+      // correo aquí haría creer a quien opera que el despacho no se guardó, y
+      // lo repetiría.
+      try {
+        await this.notifier.orderShipped({
+          to: updated.contactEmail,
+          orderNumber: updated.orderNumber,
+          carrier: updated.carrier,
+          trackingNumber: updated.trackingNumber,
+        })
+      } catch {
+        // Ignorado a propósito: el adaptador ya deja el fallo en el log.
+      }
+    }
 
     return updated
   }

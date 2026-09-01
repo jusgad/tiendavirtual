@@ -145,6 +145,17 @@ export class PrismaOrderRepository implements OrderRepository {
     return toOrderView(order)
   }
 
+  async contactEmail(orderId: string): Promise<string | null> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { guestEmail: true, user: { select: { email: true } } },
+    })
+    if (!order) return null
+    // Un pedido tiene dueño o correo de invitado, nunca los dos; el `??`
+    // cubre igual el caso raro de que llegaran ambos.
+    return order.user?.email ?? order.guestEmail
+  }
+
   async listByUser(userId: string, page: number, pageSize: number): Promise<Paginated<OrderSummary>> {
     const skip = (page - 1) * pageSize
     const [rows, total] = await Promise.all([

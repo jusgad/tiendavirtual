@@ -57,6 +57,21 @@ const envSchema = z
 
     ADMIN_EMAIL: z.string().email().default('admin@pomass.co'),
     ADMIN_PASSWORD: z.string().min(8).default(INSECURE_ADMIN_PASSWORD),
+
+    // ---- Correo transaccional ----
+    // Sin llave no se envía nada: los correos quedan en el log. Es lo cómodo
+    // en desarrollo, y `main.ts` avisa al arrancar si pasa en producción.
+    RESEND_API_KEY: z.string().min(1).optional(),
+    // Remitente. El dominio tiene que estar verificado en Resend o el envío
+    // se rechaza. Formato "Nombre <correo@dominio>" o solo el correo.
+    EMAIL_FROM: z.string().min(3).default('PomAss <onboarding@resend.dev>'),
+    // Base pública del frontend: de aquí salen los enlaces de los correos
+    // (seguimiento del pedido, restablecer contraseña). Sin barra final.
+    FRONTEND_URL: z
+      .string()
+      .url()
+      .default('http://localhost:5173')
+      .transform((v) => v.replace(/\/+$/, '')),
   })
   // Endurecimiento en PRODUCCIÓN: prohíbe secretos por defecto y CORS abierto.
   .superRefine((cfg, ctx) => {
@@ -103,6 +118,17 @@ const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ['CORS_ORIGIN'],
         message: 'En producción especifica los orígenes permitidos; "*" no está permitido',
+      })
+    }
+    // Los correos llevan enlaces al seguimiento del pedido y al cambio de
+    // contraseña. Con el valor de desarrollo apuntarían a `localhost`, que en
+    // el correo de una clienta no abre nada.
+    if (cfg.FRONTEND_URL.includes('localhost')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['FRONTEND_URL'],
+        message:
+          'Define FRONTEND_URL con la dirección pública de la tienda: los enlaces de los correos salen de ahí y con localhost no abren nada.',
       })
     }
   })

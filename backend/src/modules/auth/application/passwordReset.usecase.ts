@@ -1,6 +1,7 @@
 import { BadRequestError } from '../../../shared/errors/AppError'
 import {
   PasswordHasher,
+  PasswordResetNotifier,
   PasswordResetRepository,
   RefreshTokenRepository,
   TokenService,
@@ -9,8 +10,12 @@ import {
 
 /**
  * Solicita recuperación de contraseña. Por seguridad NO revela si el correo
- * existe: devuelve el token solo si el usuario existe (el controlador decide
- * cómo entregarlo — email en producción; en dev se puede exponer para pruebas).
+ * existe: el controlador responde siempre lo mismo, exista o no.
+ *
+ * El envío ocurre aquí dentro, no en el controlador. Antes el token se
+ * devolvía y el controlador solo lo exponía fuera de producción, así que en la
+ * tienda real la recuperación simplemente no funcionaba: se generaba un token
+ * que nadie recibía nunca.
  */
 export class RequestPasswordResetUseCase {
   constructor(
@@ -18,6 +23,7 @@ export class RequestPasswordResetUseCase {
     private readonly tokens: TokenService,
     private readonly resets: PasswordResetRepository,
     private readonly ttlMinutes: number,
+    private readonly notifier: PasswordResetNotifier,
   ) {}
 
   async execute(email: string): Promise<{ rawToken: string; userId: string } | null> {
@@ -28,6 +34,13 @@ export class RequestPasswordResetUseCase {
     const tokenHash = this.tokens.hashToken(raw)
     const expiresAt = new Date(Date.now() + this.ttlMinutes * 60_000)
     await this.resets.save({ userId: user.id, tokenHash, expiresAt })
+
+    await this.notifier.passwordReset({
+      to: user.email,
+      rawToken: raw,
+      minutosDeVigencia: this.ttlMinutes,
+    })
+
     return { rawToken: raw, userId: user.id }
   }
 }

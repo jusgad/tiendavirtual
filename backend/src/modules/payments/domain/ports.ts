@@ -89,9 +89,34 @@ export interface OrderForPayment {
   status: string
 }
 
+/** Lo que hace falta para avisarle a la clienta de que su pago entró. */
+export interface PaidOrderContact {
+  orderNumber: string
+  total: number
+  /** Correo del usuario dueño o del invitado; `null` si el pedido no tiene. */
+  contactEmail: string | null
+}
+
 export interface OrderPaymentGateway {
   /** userId null = invitado: solo puede pagar pedidos que también sean de invitado (sin dueño). */
   getForPayment(orderId: string, userId: string | null): Promise<OrderForPayment | null>
-  /** Transición PENDING -> PAID (con guarda). Devuelve true si aplicó. */
-  markPaid(orderId: string): Promise<boolean>
+  /**
+   * Transición PENDING -> PAID (con guarda).
+   *
+   * Devuelve los datos de contacto **solo si la transición se aplicó**, y
+   * `null` si el pedido ya no estaba PENDING. Así el aviso de pago sale una
+   * sola vez aunque Wompi reenvíe el mismo evento: la idempotencia del correo
+   * la da la misma guarda que la del estado, sin un segundo mecanismo que
+   * mantener en sincronía.
+   */
+  markPaid(orderId: string): Promise<PaidOrderContact | null>
+}
+
+/**
+ * Aviso de pago confirmado. No lanza, por el mismo motivo que en el checkout:
+ * el pago ya está cobrado y registrado cuando esto se invoca, y un webhook que
+ * responde error hace que Wompi reintente el evento en bucle.
+ */
+export interface PaymentNotifier {
+  orderPaid(data: { to: string; orderNumber: string; total: number }): Promise<void>
 }

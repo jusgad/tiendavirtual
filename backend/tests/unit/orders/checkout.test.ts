@@ -1,3 +1,4 @@
+import { SpyNotifier } from '../shared/notifierFakes'
 import { CheckoutUseCase } from '../../../src/modules/orders/application/checkout.usecase'
 import {
   AddressRepository,
@@ -78,6 +79,11 @@ class FakeAddresses implements AddressRepository {
 }
 class CapturingOrders implements OrderRepository {
   captured?: PlaceOrderData
+  /** Correo que devuelve `contactEmail`; `null` simula un pedido sin correo. */
+  correo: string | null = 'clienta@ejemplo.co'
+  async contactEmail() {
+    return this.correo
+  }
   async place(data: PlaceOrderData) {
     this.captured = data
     return {
@@ -132,6 +138,7 @@ function makeUseCase(opts: {
   const orders = new CapturingOrders()
   const cart = new FakeCart(opts.cart)
   const catalogCache = new FakeCatalogCache()
+  const notifier = new SpyNotifier()
   const useCase = new CheckoutUseCase(
     cart,
     new FakeProducts(opts.products),
@@ -140,8 +147,9 @@ function makeUseCase(opts: {
     orders,
     config,
     catalogCache,
+    notifier,
   )
-  return { useCase, orders, cart, catalogCache }
+  return { useCase, orders, cart, catalogCache, notifier }
 }
 
 describe('CheckoutUseCase', () => {
@@ -321,5 +329,56 @@ describe('CheckoutUseCase', () => {
       expect(orders.captured!.discountTotal).toBe(10000)
       expect(order.discountTotal).toBe(10000)
     })
+  })
+})
+
+describe('CheckoutUseCase · aviso por correo', () => {
+  it('avisa a la clienta con el número de pedido y los artículos', async () => {
+    const { useCase, notifier } = makeUseCase({
+      cart: [{ productId: 'p1', quantity: 2 }],
+      products: [{ id: 'p1', name: 'Crema', price: 50000, stock: 10, isActive: true }],
+    })
+
+    const pedido = await useCase.execute(asUser('user-1'), { shippingAddress: address })
+
+    const [aviso] = notifier.de('orderPlaced')
+    expect(aviso).toMatchObject({
+      to: 'clienta@ejemplo.co',
+      orderNumber: pedido.orderNumber,
+      total: pedido.total,
+    })
+    expect(aviso.items).toEqual([
+      expect.objectContaining({ productName: 'Crema', quantity: 2 }),
+    ])
+  })
+
+  it('no avisa si el pedido no tiene correo de contacto', async () => {
+    const { useCase, orders, notifier } = makeUseCase({
+      cart: [{ productId: 'p1', quantity: 1 }],
+      products: [{ id: 'p1', name: 'Crema', price: 50000, stock: 10, isActive: true }],
+    })
+    orders.correo = null
+
+    await useCase.execute(asUser('user-1'), { shippingAddress: address })
+
+    expect(notifier.de('orderPlaced')).toHaveLength(0)
+  })
+
+  /**
+   * La propiedad importante: a estas alturas el pedido YA existe y el stock YA
+   * se descontó. Si el correo hiciera fallar el checkout, la clienta vería un
+   * error por una compra que sí ocurrió y compraría otra vez.
+   */
+  it('completa la compra aunque el correo falle', async () => {
+    const { useCase, orders, notifier } = makeUseCase({
+      cart: [{ productId: 'p1', quantity: 1 }],
+      products: [{ id: 'p1', name: 'Crema', price: 50000, stock: 10, isActive: true }],
+    })
+    notifier.falla = true
+
+    const pedido = await useCase.execute(asUser('user-1'), { shippingAddress: address })
+
+    expect(pedido.orderNumber).toBeTruthy()
+    expect(orders.captured).toBeDefined()
   })
 })

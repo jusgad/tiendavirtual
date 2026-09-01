@@ -45,6 +45,7 @@ import {
   updateAddressSchema,
 } from './interfaces/http/orders.dto'
 import { trackingRateLimiter } from '../../shared/middlewares/rateLimit'
+import { buildEmailNotifier } from '../../shared/email/buildEmailNotifier'
 
 export function buildOrdersModule(prisma: PrismaClient, redis: Redis): Router {
   const cart = new HybridCartGateway(prisma, redis)
@@ -53,6 +54,7 @@ export function buildOrdersModule(prisma: PrismaClient, redis: Redis): Router {
   const addresses = new PrismaAddressRepository(prisma)
   const orders = new PrismaOrderRepository(prisma)
   const catalogCache = new RedisCatalogCache(redis)
+  const notifier = buildEmailNotifier()
 
   const ordersController = new OrdersController(
     new CheckoutUseCase(
@@ -63,6 +65,7 @@ export function buildOrdersModule(prisma: PrismaClient, redis: Redis): Router {
       orders,
       { flatRate: env.SHIPPING_FLAT_RATE, freeThreshold: env.FREE_SHIPPING_THRESHOLD },
       catalogCache,
+      notifier,
     ),
     new ListMyOrdersUseCase(orders),
     new GetMyOrderUseCase(orders),

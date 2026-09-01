@@ -137,6 +137,12 @@ export interface OrderRepository {
   /** Transacción atómica: descuenta stock (con guarda), crea el pedido + ítems,
    *  registra el canje del cupón y vacía el carrito del usuario. */
   place(data: PlaceOrderData): Promise<OrderView>
+  /**
+   * Correo al que escribirle por este pedido: el del usuario dueño, o el que
+   * dejó el invitado. Se consulta y no se arrastra en `OrderView` para no
+   * meter el correo en respuestas HTTP que hoy no lo llevan.
+   */
+  contactEmail(orderId: string): Promise<string | null>
   listByUser(userId: string, page: number, pageSize: number): Promise<Paginated<OrderSummary>>
   findByIdForUser(id: string, userId: string): Promise<OrderView | null>
   /** Transacción: restaura stock y marca CANCELLED (solo si el estado lo permite). */
@@ -158,4 +164,23 @@ export interface OrderRepository {
  */
 export interface CatalogCacheInvalidator {
   invalidate(): Promise<void>
+}
+
+/**
+ * Aviso a la clienta de que su pedido entró.
+ *
+ * Es el correo que evita que quien cierre la pantalla de confirmación pierda
+ * la referencia de su compra para siempre.
+ *
+ * El contrato incluye que **no lanza**: se invoca con el pedido ya creado y el
+ * inventario ya descontado, así que un fallo de correo no puede convertirse en
+ * un error de checkout. El adaptador se encarga de tragárselo y registrarlo.
+ */
+export interface OrderNotifier {
+  orderPlaced(data: {
+    to: string
+    orderNumber: string
+    total: number
+    items: { productName: string; quantity: number; lineTotal: number }[]
+  }): Promise<void>
 }

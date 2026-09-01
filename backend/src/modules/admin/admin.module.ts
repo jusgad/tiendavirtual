@@ -18,6 +18,7 @@ import {
   UpdateOrderStatusUseCase,
 } from './application/orderAdminUseCases'
 import { AdminOrdersController, AdminReportsController } from './interfaces/http/admin.controller'
+import { buildEmailNotifier } from '../../shared/email/buildEmailNotifier'
 import {
   listOrdersQuerySchema,
   orderIdParamSchema,
@@ -44,7 +45,7 @@ export function buildAdminModule(prisma: PrismaClient, redis: Redis): Router {
   const ordersController = new AdminOrdersController(
     new ListOrdersUseCase(orders),
     new GetOrderUseCase(orders),
-    new UpdateOrderStatusUseCase(orders, catalogCache),
+    new UpdateOrderStatusUseCase(orders, catalogCache, buildEmailNotifier()),
   )
 
   const router = Router()

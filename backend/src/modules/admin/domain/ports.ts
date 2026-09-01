@@ -93,6 +93,22 @@ export interface Paginated<T> {
   pageSize: number
 }
 
+/**
+ * Aviso de "tu pedido va en camino", con transportadora y guía.
+ *
+ * No lanza: el pedido ya quedó despachado en la base de datos cuando esto se
+ * invoca. Si el correo falla, quien opera no debe ver un error que le haga
+ * pensar que el despacho no se registró y repetirlo.
+ */
+export interface ShipmentNotifier {
+  orderShipped(data: {
+    to: string
+    orderNumber: string
+    carrier: string
+    trackingNumber: string
+  }): Promise<void>
+}
+
 // -------- Puertos --------
 
 export interface AdminReportsRepository {

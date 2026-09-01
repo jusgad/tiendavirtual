@@ -12,6 +12,35 @@ export default function LoginGate({ onSesionIniciada }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
+  const [enviandoEnlace, setEnviandoEnlace] = useState(false)
+  const [avisoEnlace, setAvisoEnlace] = useState('')
+
+  /**
+   * Pide el correo de recuperación.
+   *
+   * El aviso que se muestra es el mismo exista o no la cuenta, igual que la
+   * respuesta del servidor: si dijera "ese correo no existe" convertiría esta
+   * pantalla en una forma de averiguar qué cuentas hay.
+   */
+  const pedirEnlace = async () => {
+    if (!email.trim()) {
+      setError('Escribe tu correo arriba y vuelve a pulsar el enlace.')
+      return
+    }
+    setError('')
+    setEnviandoEnlace(true)
+    try {
+      await api.forgotPassword(email.trim())
+    } catch {
+      // Se ignora a propósito: un error aquí también delataría, por diferencia
+      // de comportamiento, si la cuenta existe.
+    } finally {
+      setEnviandoEnlace(false)
+      setAvisoEnlace(
+        'Si ese correo tiene una cuenta, le acabamos de enviar un enlace para cambiar la contraseña. Revisa también la carpeta de spam.',
+      )
+    }
+  }
 
   const enviar = async (e) => {
     e.preventDefault()
@@ -56,6 +85,21 @@ export default function LoginGate({ onSesionIniciada }) {
             {cargando ? 'Entrando…' : 'Entrar'}
           </PrimaryButton>
         </form>
+
+        {avisoEnlace ? (
+          <p className="mt-4 rounded-xl bg-[#FFF3DE] px-3 py-2.5 text-sm text-[#6A3A1C]">
+            {avisoEnlace}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={pedirEnlace}
+            disabled={enviandoEnlace}
+            className="mt-4 text-sm font-bold text-[#6A3A1C] hover:underline disabled:opacity-50"
+          >
+            {enviandoEnlace ? 'Enviando…' : 'Olvidé mi contraseña'}
+          </button>
+        )}
       </Card>
     </div>
   )

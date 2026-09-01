@@ -57,8 +57,12 @@ function Fila({ label, valor, fuerte }) {
 
 export default function TrackApp() {
   const recordado = leerPedidoRecordado()
+  // Los correos que enviamos traen el número de pedido en el enlace. No traen
+  // el correo a propósito: un enlace acaba en historiales y capturas, y así por
+  // sí solo no deja ver el pedido de nadie. Solo ahorra teclear el número.
+  const pedidoDelEnlace = new URLSearchParams(window.location.search).get('pedido')
 
-  const [orderNumber, setOrderNumber] = useState(recordado?.orderNumber ?? '')
+  const [orderNumber, setOrderNumber] = useState(pedidoDelEnlace ?? recordado?.orderNumber ?? '')
   const [email, setEmail] = useState(recordado?.email ?? '')
   const [order, setOrder] = useState(null)
   const [cargando, setCargando] = useState(false)

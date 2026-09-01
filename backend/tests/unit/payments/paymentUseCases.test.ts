@@ -1,3 +1,4 @@
+import { SpyNotifier } from '../shared/notifierFakes'
 import {
   GetPaymentUseCase,
   HandleWebhookUseCase,
@@ -22,9 +23,12 @@ class FakeOrders implements OrderPaymentGateway {
   async getForPayment() {
     return this.order
   }
+  /** Si es false, `markPaid` devuelve null: simula un pedido que ya no está PENDING. */
+  aplicaTransicion = true
   async markPaid(orderId: string) {
     this.paidCalls.push(orderId)
-    return true
+    if (!this.aplicaTransicion) return null
+    return { orderNumber: 'PA-2026-ABC123', total: 79900, contactEmail: 'clienta@ejemplo.co' }
   }
 }
 
@@ -159,14 +163,14 @@ describe('HandleWebhookUseCase', () => {
   }
 
   it('rechaza (401) si el checksum no es válido', async () => {
-    const useCase = new HandleWebhookUseCase(new FakePayments(), new FakeOrders(order), new FakeGateway(null))
+    const useCase = new HandleWebhookUseCase(new FakePayments(), new FakeOrders(order), new FakeGateway(null), new SpyNotifier())
     await expect(useCase.execute({})).rejects.toMatchObject({ statusCode: 401 })
   })
 
   it('aprueba el pago, guarda el id de transacción y marca el pedido como PAID', async () => {
     const payments = await conPagoPendiente()
     const orders = new FakeOrders(order)
-    const useCase = new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado))
+    const useCase = new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado), new SpyNotifier())
 
     const res = await useCase.execute({})
 
@@ -182,6 +186,7 @@ describe('HandleWebhookUseCase', () => {
       payments,
       orders,
       new FakeGateway({ ...aprobado, status: PaymentStatus.DECLINED }),
+      new SpyNotifier(),
     )
 
     const res = await useCase.execute({})
@@ -193,7 +198,7 @@ describe('HandleWebhookUseCase', () => {
   it('es idempotente ante la reentrega del mismo evento', async () => {
     const payments = await conPagoPendiente()
     const orders = new FakeOrders(order)
-    const useCase = new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado))
+    const useCase = new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado), new SpyNotifier())
 
     await useCase.execute({})
     const segunda = await useCase.execute({})
@@ -206,12 +211,13 @@ describe('HandleWebhookUseCase', () => {
     const payments = await conPagoPendiente()
     const orders = new FakeOrders(order)
     // Primero se aprueba...
-    await new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado)).execute({})
+    await new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado), new SpyNotifier()).execute({})
     // ...y después llega un evento de rechazo con otra transacción.
     const res = await new HandleWebhookUseCase(
       payments,
       orders,
       new FakeGateway({ reference: 'PA-2026-ABC', transactionId: 'txn-002', status: PaymentStatus.DECLINED }),
+      new SpyNotifier(),
     ).execute({})
 
     expect(res.status).toBe(PaymentStatus.APPROVED)
@@ -227,12 +233,14 @@ describe('HandleWebhookUseCase', () => {
       payments,
       orders,
       new FakeGateway({ reference: 'PA-2026-ABC', transactionId: 'txn-001', status: PaymentStatus.DECLINED }),
+      new SpyNotifier(),
     ).execute({})
 
     const res = await new HandleWebhookUseCase(
       payments,
       orders,
       new FakeGateway({ reference: 'PA-2026-ABC', transactionId: 'txn-002', status: PaymentStatus.APPROVED }),
+      new SpyNotifier(),
     ).execute({})
 
     expect(res.status).toBe(PaymentStatus.APPROVED)
@@ -245,6 +253,7 @@ describe('HandleWebhookUseCase', () => {
       new FakePayments(),
       new FakeOrders(order),
       new FakeGateway(aprobado),
+      new SpyNotifier(),
     )
     await expect(useCase.execute({})).rejects.toMatchObject({ statusCode: 404 })
   })
@@ -255,5 +264,87 @@ describe('GetPaymentUseCase', () => {
     await expect(new GetPaymentUseCase(new FakePayments()).execute('user-1', 'pay-1')).rejects.toMatchObject({
       statusCode: 404,
     })
+  })
+})
+
+describe('HandleWebhookUseCase · aviso de pago', () => {
+  async function conPagoPendiente() {
+    const payments = new FakePayments()
+    await payments.create({
+      orderId: 'order-1',
+      method: PaymentMethod.WOMPI,
+      amount: 79900,
+      currency: 'COP',
+      externalReference: 'PA-2026-ABC',
+    })
+    return payments
+  }
+  const aprobado: PaymentEventResult = {
+    reference: 'PA-2026-ABC',
+    transactionId: 'txn-001',
+    status: PaymentStatus.APPROVED,
+  }
+
+  it('avisa cuando el pago queda aprobado', async () => {
+    const notifier = new SpyNotifier()
+    const useCase = new HandleWebhookUseCase(
+      await conPagoPendiente(),
+      new FakeOrders(order),
+      new FakeGateway(aprobado),
+      notifier,
+    )
+
+    await useCase.execute({})
+
+    expect(notifier.de('orderPaid')).toEqual([
+      { to: 'clienta@ejemplo.co', orderNumber: 'PA-2026-ABC123', total: 79900 },
+    ])
+  })
+
+  it('no avisa si el pago fue rechazado', async () => {
+    const notifier = new SpyNotifier()
+    await new HandleWebhookUseCase(
+      await conPagoPendiente(),
+      new FakeOrders(order),
+      new FakeGateway({ ...aprobado, status: PaymentStatus.DECLINED }),
+      notifier,
+    ).execute({})
+
+    expect(notifier.de('orderPaid')).toHaveLength(0)
+  })
+
+  /**
+   * Wompi reintenta el evento si no recibe 200 a tiempo. La guarda
+   * PENDING -> PAID de `markPaid` es la que impide el segundo correo: no hay
+   * un mecanismo aparte que pueda quedar desincronizado.
+   */
+  it('no manda dos avisos si el pedido ya no estaba PENDING', async () => {
+    const notifier = new SpyNotifier()
+    const orders = new FakeOrders(order)
+    orders.aplicaTransicion = false
+
+    await new HandleWebhookUseCase(
+      await conPagoPendiente(),
+      orders,
+      new FakeGateway(aprobado),
+      notifier,
+    ).execute({})
+
+    expect(orders.paidCalls).toEqual(['order-1'])
+    expect(notifier.de('orderPaid')).toHaveLength(0)
+  })
+
+  it('responde 200 al webhook aunque el correo falle', async () => {
+    const notifier = new SpyNotifier()
+    notifier.falla = true
+
+    const res = await new HandleWebhookUseCase(
+      await conPagoPendiente(),
+      new FakeOrders(order),
+      new FakeGateway(aprobado),
+      notifier,
+    ).execute({})
+
+    expect(res.status).toBe(PaymentStatus.APPROVED)
   })
 })

@@ -3,6 +3,7 @@ import {
   CheckoutConfig,
   OrderPaymentGateway,
   PaymentGateway,
+  PaymentNotifier,
   PaymentRecord,
   PaymentRepository,
 } from '../domain/ports'
@@ -70,6 +71,7 @@ export class HandleWebhookUseCase {
     private readonly payments: PaymentRepository,
     private readonly orders: OrderPaymentGateway,
     private readonly gateway: PaymentGateway,
+    private readonly notifier: PaymentNotifier,
   ) {}
 
   async execute(payload: unknown): Promise<WebhookOutcome> {
@@ -92,7 +94,23 @@ export class HandleWebhookUseCase {
     await this.payments.markStatus(payment.id, result.status, payload, result.transactionId)
 
     if (result.status === PaymentStatus.APPROVED) {
-      await this.orders.markPaid(payment.orderId)
+      // Devuelve datos solo si la guarda PENDING -> PAID dejó pasar, así que
+      // el correo sale una vez aunque Wompi reenvíe el evento.
+      const pedido = await this.orders.markPaid(payment.orderId)
+      if (pedido?.contactEmail) {
+        // El puerto promete no lanzar, pero aquí se refuerza: si una excepción
+        // subiera, el webhook respondería error y Wompi reintentaría el evento
+        // en bucle por un pago que ya quedó bien registrado.
+        try {
+          await this.notifier.orderPaid({
+            to: pedido.contactEmail,
+            orderNumber: pedido.orderNumber,
+            total: pedido.total,
+          })
+        } catch {
+          // Ignorado a propósito: el adaptador ya deja el fallo en el log.
+        }
+      }
     }
 
     return { status: result.status }

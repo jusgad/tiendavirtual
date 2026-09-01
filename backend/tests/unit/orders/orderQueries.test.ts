@@ -28,6 +28,9 @@ class FakeCatalogCache implements CatalogCacheInvalidator {
 }
 
 class FakeOrders implements OrderRepository {
+  async contactEmail() {
+    return 'clienta@ejemplo.co'
+  }
   cancelled: string[] = []
   constructor(private order: OrderView | null) {}
 
@@ -51,6 +54,9 @@ class FakeOrders implements OrderRepository {
 
 /** Repositorio que solo responde a la búsqueda de seguimiento. */
 class FakeTrackingRepo implements OrderRepository {
+  async contactEmail() {
+    return 'clienta@ejemplo.co'
+  }
   consultas: { orderNumber: string; email: string }[] = []
   constructor(private readonly resultado: OrderTrackingView | null) {}
 

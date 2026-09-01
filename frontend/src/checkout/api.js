@@ -23,6 +23,13 @@ export const api = {
   register: (payload) => request('/auth/register', { method: 'POST', body: payload, auth: false }),
   login: (payload) => request('/auth/login', { method: 'POST', body: payload, auth: false }),
   me: () => request('/auth/me'),
+  // Recuperación de contraseña. La respuesta de `forgotPassword` es siempre la
+  // misma exista o no el correo: es lo que impide usarla para averiguar qué
+  // cuentas existen, así que la pantalla no debe interpretarla.
+  forgotPassword: (email) =>
+    request('/auth/forgot-password', { method: 'POST', body: { email }, auth: false }),
+  resetPassword: (token, password) =>
+    request('/auth/reset-password', { method: 'POST', body: { token, password }, auth: false }),
 
   listProducts: (params = {}) => {
     const qs = new URLSearchParams(params).toString()

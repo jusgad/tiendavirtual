@@ -12,6 +12,8 @@ const RUTAS = [
   { name: 'taxonomia', segmentos: ['taxonomia'] },
   { name: 'cupones', segmentos: ['cupones'] },
   { name: 'reportes', segmentos: ['reportes'] },
+  // Llega desde el enlace del correo y es la única ruta que se abre SIN sesión.
+  { name: 'nueva-contrasena', segmentos: ['nueva-contrasena', ':token'] },
 ]
 
 const POR_DEFECTO = { name: 'pedidos', params: {} }

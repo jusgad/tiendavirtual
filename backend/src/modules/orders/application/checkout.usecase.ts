@@ -10,6 +10,7 @@ import {
   CatalogCacheInvalidator,
   CouponGateway,
   OrderItemSnapshot,
+  OrderNotifier,
   OrderProductGateway,
   OrderRepository,
   OrderView,
@@ -43,6 +44,7 @@ export class CheckoutUseCase {
     private readonly orders: OrderRepository,
     private readonly config: ShippingConfig,
     private readonly catalogCache: CatalogCacheInvalidator,
+    private readonly notifier: OrderNotifier,
   ) {}
 
   async execute(owner: CartOwner, input: CheckoutInput): Promise<OrderView> {
@@ -151,6 +153,30 @@ export class CheckoutUseCase {
     // queda desactualizado. Se invalida tras confirmar el pedido (nunca antes,
     // para no invalidar si el checkout terminó fallando).
     await this.catalogCache.invalidate()
+
+    // Aviso de "recibimos tu pedido". Va al final y por el mismo motivo que el
+    // carrito de invitado: el pedido ya existe y el stock ya se descontó, así
+    // que nada de aquí puede tumbar la respuesta. El puerto no lanza.
+    // El `try` cubre también la consulta del correo: el notificador promete no
+    // lanzar, pero `contactEmail` va a la base de datos y sí podría.
+    try {
+      const destino = await this.orders.contactEmail(placed.id)
+      if (destino) {
+        await this.notifier.orderPlaced({
+          to: destino,
+          orderNumber: placed.orderNumber,
+          total: placed.total,
+          items: placed.items.map((i) => ({
+            productName: i.productName,
+            quantity: i.quantity,
+            lineTotal: i.lineTotal,
+          })),
+        })
+      }
+    } catch {
+      // Se ignora a propósito: el adaptador ya deja el fallo en el log y el
+      // pedido está cerrado. Ver el comentario del carrito de invitado.
+    }
 
     return placed
   }

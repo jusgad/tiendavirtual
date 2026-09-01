@@ -8,6 +8,7 @@ import CouponsPage from './coupons/CouponsPage.jsx'
 import LoginGate from './LoginGate.jsx'
 import OrderDetailPage from './orders/OrderDetailPage.jsx'
 import OrdersPage from './orders/OrdersPage.jsx'
+import ResetPasswordPage from './auth/ResetPasswordPage.jsx'
 import ReportsPage from './reports/ReportsPage.jsx'
 import { navigate, useRoute } from './router.js'
 
@@ -39,6 +40,12 @@ export default function AdminApp() {
     clearSession()
     setUser(null)
     setAviso('')
+  }
+
+  // Va ANTES del gate de acceso: a esta pantalla se llega desde el correo,
+  // justamente porque no se puede entrar. Exigir sesión la haría inalcanzable.
+  if (route.name === 'nueva-contrasena') {
+    return <ResetPasswordPage token={route.params.token} />
   }
 
   if (!user || user.role !== 'ADMIN') {
