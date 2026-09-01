@@ -7,7 +7,7 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 |---|---|
 | **Creada** | 2026-08-29 |
 | **Rama** | `feat/panel-admin-catalogo` |
-| **Estado** | 182 tests backend · 104 frontend · typecheck ✅ · lint ✅ · 4 páginas compilando |
+| **Estado** | 212 tests backend · 114 frontend · typecheck ✅ · lint ✅ · 5 páginas compilando |
 
 ---
 
@@ -77,13 +77,28 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 
 ## 2. Necesario para operar la tienda
 
-- [ ] **O1 · Emails transaccionales**
-  No existe **nada**: ni nodemailer, ni Resend, ni SMTP. Consecuencias:
-  - Si el cliente cierra la pantalla de confirmación, pierde el acceso a su
-    pedido para siempre.
-  - No hay aviso de «pedido enviado».
-  - La recuperación de contraseña del admin **no funciona en producción**: el
-    token se genera pero `devResetToken` solo se expone fuera de producción.
+- [x] **O1 · Emails transaccionales** — hecho
+  Cuatro correos, por la API HTTP de Resend (sin dependencias nuevas):
+  «recibimos tu pedido» al cerrar el checkout, «pago confirmado» desde el
+  webhook, «tu pedido va en camino» con transportadora y guía al despachar, y
+  el enlace de recuperación de contraseña.
+
+  Tres decisiones que importan:
+  - **Un fallo de correo nunca tumba una operación de negocio.** Los avisos
+    salen después de que el pedido existe y el stock ya se descontó; si el
+    proveedor está caído, se registra en el log y la compra sigue.
+  - **El aviso de pago no se duplica**: `markPaid` devuelve los datos de
+    contacto solo si la guarda `PENDING → PAID` dejó pasar, así que un
+    reintento de Wompi no manda un segundo correo.
+  - **La recuperación de contraseña ya funciona de verdad.** Antes el token se
+    generaba y solo se exponía fuera de producción: en la tienda real nadie lo
+    recibía. Ahora llega por correo, hay pantalla para usarlo
+    (`admin.html#/nueva-contrasena/<token>`) y un enlace «Olvidé mi contraseña»
+    en el acceso.
+
+  ⚠️ **Falta configurarlo**: `RESEND_API_KEY`, `EMAIL_FROM` y `FRONTEND_URL`
+  en `.env`. Sin la llave los correos quedan en el log en vez de enviarse; la
+  tienda arranca igual y avisa a gritos en el log de producción.
 
 - [x] **O2 · Número de guía de la transportadora**
   El modelo `Order` tiene campos `carrier` y `trackingNumber`. El panel de
@@ -91,10 +106,20 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
   con estado `SHIPPED` rechaza si falta alguno). El cliente ve el número en
   el seguimiento público (`GET /orders/track`).
 
-- [ ] **O3 · Textos legales (Colombia)**
-  Política de tratamiento de datos (Ley 1581), términos y condiciones,
-  política de devoluciones con el retracto de 5 días hábiles (Estatuto del
-  Consumidor) y datos del comerciante.
+- [x] **O3 · Textos legales (Colombia)** — redactados, faltan tus datos
+  Quinta entrada de Vite, `legal.html`, con cuatro apartados enlazables:
+  quién te vende, tratamiento de datos (Ley 1581 de 2012 y Decreto 1377 de
+  2013), términos y condiciones, y devoluciones con el retracto de cinco días
+  hábiles, la garantía legal y la reversión del pago (Ley 1480 de 2011,
+  artículos 47, 50 y 51). Hay pie con los enlaces en la landing, el checkout y
+  el seguimiento, porque el artículo 50 pide que se vean antes de contratar.
+
+  ⚠️ **Falta completar `COMERCIANTE` en `frontend/src/site.js`**: razón social,
+  NIT, dirección y correo de contacto. Mientras tanto la página publica
+  literalmente «POR DEFINIR», a propósito, para que no se pase por alto.
+
+  Son un punto de partida serio, no un concepto jurídico: conviene que los
+  revise un abogado antes de publicar, sobre todo por el producto.
 
 ---
 
@@ -120,14 +145,40 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 
 ## Orden sugerido
 
-Todo lo que era código puro ya está cerrado. Lo que queda depende de cuentas
-externas o de contenido tuyo, salvo O1 y R2.
+**Ya no queda código por escribir.** Todo lo que falta son cuentas externas,
+credenciales y datos tuyos.
 
 ```
-O1 emails  →  B4 infra (Supabase + Redis + despliegue)  →  B5 llaves sandbox
-      →  B6 QA de punta a punta  →  O3 legales  →  llaves de producción
-      →  R2-R3 cuando haya tráfico
+1. Completa COMERCIANTE en site.js  (5 minutos)
+2. B4 — Supabase + Redis + desplegar backend y frontend
+3. B5 — llaves de sandbox de Wompi + registrar la URL de Eventos
+4. Resend — crear cuenta, verificar el dominio, poner RESEND_API_KEY
+5. B6 — comprar de mentira de punta a punta
+6. Llaves de producción de Wompi
+7. R2-R3 cuando haya tráfico
 ```
+
+### Lo que hay que poner en `.env` al desplegar
+
+| Variable | De dónde sale |
+|---|---|
+| `DATABASE_URL` y `DIRECT_URL` | Supabase → Connection string. **Las dos por el pooler**: la conexión directa es IPv6 y no resuelve desde aquí. |
+| `REDIS_URL` | Railway → añadir Redis al proyecto. |
+| `FRONTEND_URL` | La dirección pública de la tienda. En producción no puede quedar en `localhost`: el arranque falla si se intenta. |
+| `CORS_ORIGIN` | La misma dirección. En producción `*` está prohibido. |
+| `RESEND_API_KEY` | resend.com → API Keys. |
+| `EMAIL_FROM` | Un remitente de un dominio verificado en Resend. |
+| `WOMPI_*` | Las cuatro de sandbox primero; las de producción al final. |
+| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ADMIN_PASSWORD` | Valores propios. El arranque falla si quedan los de ejemplo. |
+
+### La URL de Eventos de Wompi
+
+En el panel de Wompi, campo «URL de Eventos»:
+`https://TU-BACKEND/api/payments/webhook`
+
+**Hoy está vacía. Mientras siga así, ningún pago se confirma**: el cliente
+paga y el pedido se queda en PENDING para siempre. Es lo primero que hay que
+hacer apenas el backend tenga dirección pública.
 
 ## Relacionado
 

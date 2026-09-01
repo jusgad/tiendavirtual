@@ -8,6 +8,7 @@ independientes** con propósitos distintos.
 | **Landing** | `index.html` | `src/main.jsx` → `src/App.jsx` | Vende el combo Día + Noche por WhatsApp | **No** |
 | **Checkout demo** | `checkout.html` | `src/checkout-main.jsx` → `src/checkout/CheckoutApp.jsx` | Flujo de compra completo de 5 pasos | **Sí** |
 | **Panel admin** | `admin.html` | `src/admin-main.jsx` → `src/admin/AdminApp.jsx` | Gestión completa de la tienda: pedidos, catálogo, cupones y reportes | **Sí** |
+| **Legal** | `legal.html` | `src/legal-main.jsx` → `src/legal/LegalApp.jsx` | Datos del comerciante, tratamiento de datos, términos, devoluciones | **No** |
 
 Ambas están declaradas como entradas de build en
 [`vite.config.js`](../frontend/vite.config.js):
@@ -401,6 +402,7 @@ dependencias. Rutas:
 | `/taxonomia` | `TaxonomyPage` | Categorías y marcas |
 | `/cupones` | `CouponsPage` | Cupones: lista, alta y edición |
 | `/reportes` | `ReportsPage` | Ventas, top de productos y pedidos por estado |
+| `/nueva-contrasena/:token` | `ResetPasswordPage` | Llega desde el correo. **Única ruta que se atiende sin sesión** |
 
 El router también escucha cambios de hash y renderiza el componente correcto.
 
@@ -427,6 +429,8 @@ El router también escucha cambios de hash y renderiza el componente correcto.
 | `reports/ReportsPage.jsx` | Las tres vistas de reporte |
 | `reports/Bars.jsx` | Barras horizontales con divs; sin librería de gráficas |
 | `reports/reportsModel.js` | Lógica pura: rango, límites en hora de Colombia, escalado |
+| `auth/ResetPasswordPage.jsx` | Contraseña nueva desde el enlace del correo |
+| `auth/passwordModel.js` | Lógica pura: reglas de contraseña y forma del token |
 
 Patrón repetido en las cuatro pantallas nuevas: **la lógica testeable vive en
 un `*Model.js` puro** y el componente solo pinta. Vitest corre en entorno node
