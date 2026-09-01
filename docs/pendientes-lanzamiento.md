@@ -56,11 +56,17 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
   real». Ya no.
 
 - [ ] **B4 · Infraestructura viva** — a medias
-  Proyecto de Supabase creado (`us-east-1`). Falta: pegar las dos cadenas de
-  conexión en `.env` y aplicar migraciones; Redis (lo da Railway); desplegar
-  backend en Railway y frontend en Vercel. Las configuraciones ya están.
-  Verificado: la conexión directa de Supabase es IPv6 y no resuelve desde
-  esta máquina — hay que usar el pooler para ambas cadenas.
+  Proyecto de Supabase creado (`us-east-1`). **La puesta en marcha de la base
+  ya está automatizada**: pega las dos cadenas del pooler en `backend/.env` y
+  corre `npm run supabase:setup` — valida las cadenas antes de conectarse,
+  migra, siembra y verifica. Guía paso a paso en
+  [howto-supabase.md](howto-supabase.md), incluido cómo **desactivar la Data
+  API**, que no es opcional.
+
+  Falta: Redis (lo da Railway), desplegar backend en Railway y frontend en
+  Vercel. Verificado: la conexión directa de Supabase es IPv6 y no resuelve
+  desde esta máquina — las dos cadenas van por el pooler, y el script lo
+  impone.
 
 - [ ] **B5 · Credenciales de Wompi** — a medias
   Las cuatro llaves de **producción** ya están en `.env`. Falta: cambiar a las
@@ -150,7 +156,7 @@ credenciales y datos tuyos.
 
 ```
 1. Completa COMERCIANTE en site.js  (5 minutos)
-2. B4 — Supabase + Redis + desplegar backend y frontend
+2. B4 — Supabase (`npm run supabase:setup`) + Redis + desplegar
 3. B5 — llaves de sandbox de Wompi + registrar la URL de Eventos
 4. Resend — crear cuenta, verificar el dominio, poner RESEND_API_KEY
 5. B6 — comprar de mentira de punta a punta
@@ -162,7 +168,7 @@ credenciales y datos tuyos.
 
 | Variable | De dónde sale |
 |---|---|
-| `DATABASE_URL` y `DIRECT_URL` | Supabase → Connection string. **Las dos por el pooler**: la conexión directa es IPv6 y no resuelve desde aquí. |
+| `DATABASE_URL` y `DIRECT_URL` | Supabase → Connect. **Las dos por el pooler**: transacción (6543, con `?pgbouncer=true`) y sesión (5432). Ver [howto-supabase.md](howto-supabase.md). |
 | `REDIS_URL` | Railway → añadir Redis al proyecto. |
 | `FRONTEND_URL` | La dirección pública de la tienda. En producción no puede quedar en `localhost`: el arranque falla si se intenta. |
 | `CORS_ORIGIN` | La misma dirección. En producción `*` está prohibido. |
@@ -183,4 +189,5 @@ hacer apenas el backend tenga dirección pública.
 ## Relacionado
 
 - [Análisis de brechas](analisis-brechas-blueprint.md) — el detalle técnico de cada hueco
+- [Montar la base en Supabase](howto-supabase.md)
 - [Cómo desplegar](howto-desplegar.md)
