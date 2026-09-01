@@ -17,6 +17,7 @@ import ShopStep from './steps/ShopStep'
 import CheckoutFormStep from './steps/CheckoutFormStep'
 import PaymentStep from './steps/PaymentStep'
 import ConfirmationStep from './steps/ConfirmationStep'
+import PieLegal from '../shared/PieLegal.jsx'
 
 const STEPS = ['Cuenta', 'Tienda', 'Envío', 'Pago', 'Confirmación']
 
@@ -173,6 +174,7 @@ export default function CheckoutApp() {
           )}
         </div>
       </main>
+      <PieLegal />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import Hero from './components/Hero'
 import OfferCard from './components/OfferCard'
 import StickyBar from './components/StickyBar'
 import Toast from './components/Toast'
+import PieLegal from './shared/PieLegal.jsx'
 
 export default function App() {
   const [mode, setMode] = useState('day') // 'day' | 'night'
@@ -72,6 +73,7 @@ export default function App() {
       <Header isDay={isDay} onToggle={toggle} />
       <Hero isDay={isDay} products={products} onBuy={buy} />
       <OfferCard isDay={isDay} onBuy={buy} />
+      <PieLegal sobreOscuro={!isDay} dejarSitioAbajo />
       <StickyBar isDay={isDay} onBuy={buy} />
       <Toast show={toast} />
     </div>

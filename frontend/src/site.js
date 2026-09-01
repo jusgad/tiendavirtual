@@ -6,6 +6,26 @@ export const CURRENCY = 'COP'
 export const WHATSAPP_PHONE = '573105676187'
 
 /**
+ * Datos del comerciante.
+ *
+ * ⚠️ HAY QUE COMPLETARLOS ANTES DE PUBLICAR. El artículo 50 de la Ley 1480 de
+ * 2011 (Estatuto del Consumidor) obliga a que una tienda en línea muestre de
+ * forma clara quién vende: identificación, dirección y datos de contacto. Los
+ * textos legales de `legal.html` leen de aquí, así que se edita una sola vez.
+ *
+ * Mientras digan «POR DEFINIR» se ven así en la página publicada: es a
+ * propósito, para que no se olvide.
+ */
+export const COMERCIANTE = {
+  razonSocial: 'POR DEFINIR — nombre o razón social registrada',
+  nit: 'POR DEFINIR — NIT o cédula',
+  direccion: 'POR DEFINIR — dirección física',
+  ciudad: 'Medellín, Colombia',
+  correo: 'POR DEFINIR — correo de contacto',
+  telefono: '+57 310 567 6187',
+}
+
+/**
  * Enlace de WhatsApp. Es el canal de **soporte**, no de venta: la compra se
  * cierra en el checkout, donde queda registrada, descuenta inventario y
  * aparece en el panel. Un pedido cerrado a mano por chat no hace nada de eso.

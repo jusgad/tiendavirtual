@@ -5,6 +5,7 @@ import Logo from '../shared/Logo.jsx'
 import { Card, ErrorBanner, Field, Input, PrimaryButton, SecondaryButton } from '../shared/ui.jsx'
 import { leerPedidoRecordado, recordarPedido } from '../shared/seguimiento.js'
 import { esCancelado, esperaConfirmacion, pasosConEstado } from './trackModel.js'
+import PieLegal from '../shared/PieLegal.jsx'
 
 // Espera de la confirmación del webhook al volver de pagar: hasta ~1 minuto.
 // El widget informa el pago, pero la verdad la escribe el webhook de Wompi, y
@@ -256,6 +257,7 @@ export default function TrackApp() {
           </Card>
         )}
       </main>
+      <PieLegal />
     </div>
   )
 }
