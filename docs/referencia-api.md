@@ -200,8 +200,14 @@ Devuelve lo que viene firmado en el access token (id y rol), no una lectura de b
 
 ### `GET /products`
 
-Listado público con búsqueda, filtros, orden y paginación. **Solo devuelve
-productos activos.** El resultado se cachea 120 s en Redis.
+Listado público con búsqueda, filtros, orden y paginación. **Por defecto solo
+devuelve productos activos.** El resultado se cachea 120 s en Redis.
+
+Acepta también `includeInactive=true`, pero **se honra únicamente si quien
+pregunta es ADMIN** (la ruta lleva `optionalAuth`: sin sesión, o con una que no
+sea de administración, el parámetro se ignora y siguen saliendo solo los
+activos). Lo usa el panel: sin él, desactivar un producto lo haría desaparecer
+de la lista y no habría forma de reactivarlo.
 
 **Query**
 
@@ -217,6 +223,7 @@ productos activos.** El resultado se cachea 120 s en Redis.
 | `sort` | enum | — | `price_asc` \| `price_desc` \| `newest` |
 | `page` | int | `1` | ≥ 1 |
 | `pageSize` | int | `20` | 1–100 |
+| `includeInactive` | boolean | `false` | Solo se honra para ADMIN |
 
 **`200 OK`**
 
@@ -295,6 +302,13 @@ añade un sufijo. Marca y categoría deben existir.
 Todos los campos de `POST /products` son opcionales, más `isActive` (boolean).
 Los campos opcionales aceptan `null` para borrarlos. **El slug no cambia** aunque
 cambie el nombre — así no se rompen enlaces existentes.
+
+Acepta además `images`: un array de `{ url, alt? }` en el orden deseado. **No es
+un añadido, es un reemplazo en bloque**: se borran las imágenes actuales y se
+crean las del array, con `position` según su índice. Enviar `[]` deja el
+producto sin imágenes; omitir el campo las deja intactas. El borrado y la
+creación van en la misma transacción, así que un fallo a mitad no deja el
+producto sin fotos.
 
 **`200 OK`**: `{ "product": {...} }`
 

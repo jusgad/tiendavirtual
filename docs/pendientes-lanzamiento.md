@@ -6,19 +6,29 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 | | |
 |---|---|
 | **Creada** | 2026-08-29 |
-| **Rama** | `feat/wompi-seguimiento-pedido` |
-| **Estado** | 151 tests backend · 51 frontend · typecheck ✅ · lint ✅ · 4 páginas compilando |
+| **Rama** | `feat/panel-admin-catalogo` |
+| **Estado** | 163 tests backend · 104 frontend · typecheck ✅ · lint ✅ · 4 páginas compilando |
 
 ---
 
 ## 0. Hecho
 
-- [x] **P0 · Panel de administración (frontend)**
-  Interfaz web operativa para gestionar pedidos. Incluye login, listado con
-  filtro por estado y paginación, detalle con la dirección completa del envío,
-  transiciones de estado, despacho con transportadora y número de guía
-  obligatorios, y cancelación. Verificado en navegador. Las secciones de
-  catálogo, cupones y reportes permanecen como placeholders (F4–F6).
+- [x] **P0 · Panel de administración (frontend)** — completo
+  Interfaz web operativa para llevar la tienda. Las cinco secciones están
+  construidas y verificadas en navegador:
+  - **Pedidos** — login, listado con filtro y paginación, detalle con la
+    dirección completa, transiciones de estado, despacho con transportadora y
+    guía obligatorios, cancelación.
+  - **Productos** — alta, edición, activar/desactivar y borrado, con editor de
+    imágenes por dirección web y orden editable. `GET /products` acepta
+    `includeInactive`, honrado solo para ADMIN, para que un producto
+    desactivado no desaparezca de la lista.
+  - **Categorías y marcas** — alta en línea, activación y borrado.
+  - **Cupones** — alta y edición. El código queda bloqueado al editar y el
+    estado (Vigente, Programado, Expirado, Agotado, Desactivado) se calcula
+    en el cliente.
+  - **Reportes** — ventas por día o por mes en el rango elegido, productos más
+    vendidos y conteo de pedidos por estado.
 
 ---
 
@@ -98,7 +108,10 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 
 - [ ] **R2 · `perUserLimit` de cupones no es exigible sin cuentas**
   Solo funciona el tope global `maxUses`. Un cupón «uno por cliente» hoy es
-  ilimitado para los pedidos de invitado.
+  ilimitado para los pedidos de invitado. Mitigado a medias: el formulario de
+  cupones del panel avisa de esto junto al campo y remite al máximo de usos,
+  así que ya no se promete un límite que no se cumple. La restricción de fondo
+  sigue ahí.
 
 - [ ] **R3 · Sin observabilidad**
   No hay Sentry, ni alertas, ni backups verificados de la base de datos.

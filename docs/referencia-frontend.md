@@ -7,7 +7,7 @@ independientes** con propósitos distintos.
 |---|---|---|---|---|
 | **Landing** | `index.html` | `src/main.jsx` → `src/App.jsx` | Vende el combo Día + Noche por WhatsApp | **No** |
 | **Checkout demo** | `checkout.html` | `src/checkout-main.jsx` → `src/checkout/CheckoutApp.jsx` | Flujo de compra completo de 5 pasos | **Sí** |
-| **Panel admin** | `admin.html` | `src/admin-main.jsx` → `src/admin/AdminApp.jsx` | Gestión de pedidos (login, lista, detalle, transiciones, despacho) | **Sí** |
+| **Panel admin** | `admin.html` | `src/admin-main.jsx` → `src/admin/AdminApp.jsx` | Gestión completa de la tienda: pedidos, catálogo, cupones y reportes | **Sí** |
 
 Ambas están declaradas como entradas de build en
 [`vite.config.js`](../frontend/vite.config.js):
@@ -358,10 +358,22 @@ invocación del widget. Aislado del componente para poder simularlo en tests.
 
 ## Panel admin (`admin.html`)
 
-Interfaz operativa para gestionar pedidos: login, listado con filtro y
-paginación, detalle con direcciones e historial, transiciones de estado
-(preparación, despacho con transportadora y guía obligatorios, entrega,
-cancelación).
+Interfaz operativa para llevar la tienda. Cinco secciones, todas construidas:
+
+- **Pedidos** — listado con filtro y paginación, detalle con direcciones e
+  historial, transiciones de estado (preparación, despacho con transportadora
+  y guía obligatorios, entrega, cancelación).
+- **Productos** — alta, edición, activación y borrado. La lista pide siempre
+  `includeInactive=true`: si no, un producto desactivado desaparecería y no
+  habría forma de reactivarlo. Las imágenes se administran por dirección web,
+  con orden editable.
+- **Categorías y marcas** — dos listas de la misma forma (nombre, estado),
+  con alta en línea, activación y borrado.
+- **Cupones** — alta y edición. El código no se puede cambiar al editar
+  (quien ya lo tenga dejaría de poder usarlo) y el estado —Vigente,
+  Programado, Expirado, Agotado, Desactivado— se calcula en el cliente.
+- **Reportes** — ventas por día o por mes en el rango elegido, productos más
+  vendidos y conteo de pedidos por estado.
 
 ### Autenticación
 
@@ -385,6 +397,10 @@ dependencias. Rutas:
 | `/` | `LoginGate` | Formulario de acceso (no muestra si hay sesión válida) |
 | `/pedidos` | `OrdersPage` | Listado de pedidos con filtro por estado y paginación |
 | `/pedidos/:id` | `OrderDetailPage` | Detalle de un pedido, acciones de transición |
+| `/productos` | `ProductsPage` + `ProductForm` | Catálogo: lista, alta y edición |
+| `/taxonomia` | `TaxonomyPage` | Categorías y marcas |
+| `/cupones` | `CouponsPage` | Cupones: lista, alta y edición |
+| `/reportes` | `ReportsPage` | Ventas, top de productos y pedidos por estado |
 
 El router también escucha cambios de hash y renderiza el componente correcto.
 
@@ -396,12 +412,31 @@ El router también escucha cambios de hash y renderiza el componente correcto.
 | `LoginGate.jsx` | Formulario de login; valida contra la API |
 | `router.js` | Router por hash, sin dependencias externas |
 | `api.js` | Cliente de endpoints `/api/admin/*` |
-| `components/ui.jsx` | Primitivos: `Badge`, `Table`, `Modal`, `FilaMensaje` |
+| `components/ui.jsx` | Primitivos: `Badge`, `Table`, `Modal`, `FilaMensaje`, `Confirmacion` |
 | `orders/OrdersPage.jsx` | Listado de pedidos |
 | `orders/OrderDetailPage.jsx` | Detalle + panel de acciones |
 | `orders/ShipDialog.jsx` | Modal para registrar transportadora y guía |
 | `orders/CancelDialog.jsx` | Modal de confirmación de cancelación |
 | `orders/ordersModel.js` | Lógica pura: validación de guía, transiciones |
+| `catalog/ProductsPage.jsx` | Lista de productos, activar/desactivar, borrar |
+| `catalog/ProductForm.jsx` | Alta y edición, con editor de imágenes por URL |
+| `catalog/TaxonomyPage.jsx` | Categorías y marcas (dos instancias de `Seccion`) |
+| `catalog/productsModel.js` | Lógica pura: validación, payload, orden de imágenes |
+| `coupons/CouponsPage.jsx` | Lista, alta y edición de cupones |
+| `coupons/couponsModel.js` | Lógica pura: validación, estado, descripción del descuento |
+| `reports/ReportsPage.jsx` | Las tres vistas de reporte |
+| `reports/Bars.jsx` | Barras horizontales con divs; sin librería de gráficas |
+| `reports/reportsModel.js` | Lógica pura: rango, límites en hora de Colombia, escalado |
+
+Patrón repetido en las cuatro pantallas nuevas: **la lógica testeable vive en
+un `*Model.js` puro** y el componente solo pinta. Vitest corre en entorno node
+sin DOM, así que los componentes no llevan test; su render se verifica en
+navegador.
+
+Las pantallas que recargan tras una mutación llevan una guarda `cargaId` con
+`useRef`: el identificador se toma antes del `await` y se compara en la rama
+de éxito y en la de error, para que una respuesta vieja que llega tarde no
+pise a la más reciente.
 
 ### Seguridad
 
@@ -426,11 +461,6 @@ falsificar desde el navegador).
 
 El `checkout/api.js` ahora también reutiliza `httpClient`, así que los dos
 flujos (checkout y admin) comparten la misma lógica de sesión y renovación.
-
-### Secciones pendientes
-
-Los menús de catálogo, cupones y reportes en la barra lateral son placeholders
-que dirigen a páginas inexistentes. Forman parte del plan F4–F6.
 
 ---
 
@@ -532,14 +562,14 @@ npm run dev
 | Sin direcciones guardadas | La demo siempre envía `shippingAddress`; nunca usa `addressId` ni `/api/addresses` |
 | Sin historial de pedidos | `GET /orders` no se consume; `api.getOrder` está definido pero no se llama |
 | Sin reseñas | La API las expone; la demo no las muestra ni permite crearlas |
-| Panel: secciones incompletas | El panel tiene login y gestión de pedidos ✅. Catálogo, cupones y reportes son placeholders (F4–F6) |
+| Panel: secciones incompletas | Cerrado: las cinco secciones están construidas y verificadas en navegador |
 | Landing desconectada del catálogo | Precio y contenido salen de `site.js`, no de `GET /products` |
 | CTA del hero aún a WhatsApp | `FloatingCta.jsx` sigue apuntando a `whatsappUrl()`; `OfferCard` y `StickyBar` ya van al checkout |
 | Enlaces de redes sin destino | `href="#"` en `OfferCard.jsx` |
 
 **Cerrado recientemente**:
 - El cliente guardaba el `refreshToken` pero nunca lo usaba, así que la sesión moría a los 15 minutos. Ahora [renueva automáticamente](#renovación-automática-del-access-token).
-- El panel de administración ahora tiene interfaz operativa para gestionar pedidos de punta a punta.
+- El panel de administración cubre las cinco secciones: pedidos, productos, categorías y marcas, cupones y reportes.
 
 ---
 
