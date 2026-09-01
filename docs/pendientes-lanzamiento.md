@@ -7,7 +7,7 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
 |---|---|
 | **Creada** | 2026-08-29 |
 | **Rama** | `feat/panel-admin-catalogo` |
-| **Estado** | 163 tests backend · 104 frontend · typecheck ✅ · lint ✅ · 4 páginas compilando |
+| **Estado** | 182 tests backend · 104 frontend · typecheck ✅ · lint ✅ · 4 páginas compilando |
 
 ---
 
