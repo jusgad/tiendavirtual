@@ -11,6 +11,7 @@ export default {
     extend: {
       fontFamily: {
         serif: ['"DM Serif Display"', 'serif'],
+        display: ['Fraunces', 'Georgia', 'serif'],
         sans: ['Nunito', 'system-ui', 'sans-serif'],
       },
       colors: {
@@ -31,6 +32,19 @@ export default {
           600: '#4A2C90',
           violet: '#7C5CE0',
           lilac: '#B98CFF',
+        },
+        // Manual de marca PomAss. Las variantes `-deep` existen porque el
+        // coral y el naranja de Día no llegan a 4,5:1 como texto sobre crema.
+        brand: {
+          coral: '#F47A4D',
+          'coral-deep': '#A8401D',
+          crema: '#FFF7EF',
+          dia: '#F56A00',
+          'dia-deep': '#B94E00',
+          noche: '#A70B94',
+          'noche-deep': '#8A0879',
+          tinta: '#343553',
+          hoja: '#679B3C',
         },
       },
       keyframes: {

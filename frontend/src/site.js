@@ -38,15 +38,41 @@ export function whatsappUrl(
 }
 
 export const DAY_BENEFITS = [
-  { icon: '👃', text: 'Neutraliza olores indeseados' },
-  { icon: '🏋️', text: 'Ideal para usar en el gimnasio' },
-  { icon: '❤️', text: 'Mayor confianza en momentos íntimos' },
-  { icon: '🍃', text: 'Ideal para tu rutina diaria' },
+  { icon: 'leaf', text: 'Neutraliza olores indeseados' },
+  { icon: 'sun', text: 'Ideal para usar en el gimnasio' },
+  { icon: 'heart', text: 'Mayor confianza en momentos íntimos' },
+  { icon: 'check', text: 'Ideal para tu rutina diaria' },
 ]
 
 export const NIGHT_BENEFITS = [
-  { icon: '💧', text: 'Crema íntima blanqueadora' },
-  { icon: '✨', text: 'Ayuda a blanquear la zona anal' },
-  { icon: '🌙', text: 'Uso nocturno para mejores resultados' },
-  { icon: '🛡️', text: 'Fórmula suave y segura para ti' },
+  { icon: 'droplet', text: 'Crema íntima blanqueadora' },
+  { icon: 'sparkle', text: 'Ayuda a blanquear la zona anal' },
+  { icon: 'moon', text: 'Uso nocturno para mejores resultados' },
+  { icon: 'shield', text: 'Fórmula suave y segura para ti' },
 ]
+
+/**
+ * Las dos cremas, como las define el manual de marca: cada una tiene UN
+ * beneficio principal, que es el que se destaca; el resto acompaña. Los
+ * íconos son nombres de `landing/icons.jsx`, no emojis.
+ */
+export const PRODUCTOS = {
+  dia: {
+    id: 'dia',
+    nombre: 'Día',
+    tipo: 'Crema íntima',
+    beneficio: 'Neutraliza olores indeseados.',
+    enCombo: 'Crema íntima · 50 ml',
+    imagen: '/images/tubo_dia.png',
+    beneficios: DAY_BENEFITS.slice(1),
+  },
+  noche: {
+    id: 'noche',
+    nombre: 'Noche',
+    tipo: 'Crema íntima',
+    beneficio: 'Crema íntima blanqueadora.',
+    enCombo: 'Crema íntima blanqueadora · 50 ml',
+    imagen: '/images/tubo_noche.png',
+    beneficios: NIGHT_BENEFITS.slice(1),
+  },
+}

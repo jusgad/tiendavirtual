@@ -1,0 +1,544 @@
+/*
+ * Estilos propios de la landing. Todo cuelga de `.lp` o lleva el prefijo
+ * `lp-`, así que no afecta al checkout, al seguimiento ni al panel, que
+ * comparten `index.css`.
+ *
+ * Tailwind pone el layout; aquí va lo que Tailwind no expresa bien:
+ * degradados de marca, animaciones y el escenario 3D de los tubos.
+ *
+ * Contraste medido contra WCAG sobre crema #FFF7EF:
+ *   tinta #343553 → 11,1:1      coral #F47A4D → 2,6:1 (no sirve para texto)
+ *   noche #A70B94 → 6,4:1       naranja Día #F56A00 → 2,9:1 (no sirve para texto)
+ * Por eso el texto de acento usa las variantes profundas (#A8401D, #B94E00) y
+ * el botón de compra lleva letra blanca sobre un degradado de tonos profundos.
+ */
+
+.lp {
+  /* `clip` y no `hidden`: `hidden` convierte al contenedor en caja de scroll
+     y rompe la cabecera fija (`position: sticky`). */
+  overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.lp) {
+    scroll-behavior: smooth;
+  }
+}
+
+.lp a:hover {
+  /* `index.css` baja la opacidad de todo enlace al pasar el ratón; en los
+     botones de la landing eso se leería como deshabilitado. */
+  opacity: 1;
+}
+
+.lp :focus-visible {
+  outline: 3px solid #a70b94;
+  outline-offset: 3px;
+}
+.lp-panel-noche :focus-visible,
+.lp-cierre :focus-visible {
+  outline-color: #fff7ef;
+}
+
+.lp-skip {
+  position: absolute;
+  left: 12px;
+  top: -120px;
+  z-index: 60;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #343553;
+  color: #fff7ef;
+  font-weight: 800;
+}
+.lp-skip:focus {
+  top: 12px;
+}
+
+/* ---- Degradado de marca: naranja → coral → magenta ---- */
+
+.lp-grad-text {
+  /* Tonos profundos: con el naranja y el coral puros un titular no llega ni
+     al 3:1 que exige el texto grande. */
+  background-image: linear-gradient(95deg, #b94e00 0%, #c2502a 40%, #a70b94 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.lp-subrayado {
+  background-image: linear-gradient(90deg, #f56a00, #f47a4d, #a70b94);
+  background-repeat: no-repeat;
+  background-size: 100% 0.12em;
+  background-position: 0 94%;
+  padding-bottom: 0.08em;
+}
+
+/* ---- Botones ---- */
+
+.lp-btn {
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.25s ease,
+    background-color 0.25s ease,
+    background-position 0.5s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
+}
+.lp-btn:hover {
+  transform: translateY(-2px);
+}
+.lp-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+.lp-flecha {
+  transition: transform 0.25s ease;
+}
+.lp-btn:hover .lp-flecha {
+  transform: translateX(3px);
+}
+
+.lp-grad-cta {
+  /* Blanco sobre cualquier punto de este degradado queda entre 5:1 y 6,7:1. */
+  background-image: linear-gradient(100deg, #b94e00 0%, #a8401d 45%, #a70b94 100%);
+  background-size: 170% 100%;
+  background-position: 0% 50%;
+}
+.lp-grad-cta:hover {
+  background-position: 100% 50%;
+  box-shadow: 0 18px 36px -14px rgba(167, 11, 148, 0.6);
+}
+
+.lp-navlink {
+  transition: background-color 0.2s ease;
+}
+.lp-navlink:hover {
+  background-color: rgba(52, 53, 83, 0.06);
+}
+
+/* ---- Hero ---- */
+
+.lp-hero-fondo {
+  /* Lo que se ve si WebGL no está disponible, y lo que hay debajo mientras
+     carga el ambiente 3D. */
+  background:
+    radial-gradient(60% 55% at 88% 18%, rgba(167, 11, 148, 0.1), transparent 70%),
+    radial-gradient(55% 60% at 8% 82%, rgba(245, 106, 0, 0.13), transparent 70%),
+    linear-gradient(180deg, #fff7ef 0%, #fff0e2 100%);
+}
+
+.lp-escenario {
+  perspective: 1100px;
+  --rx: 0deg;
+  --ry: 0deg;
+}
+
+.lp-tubos {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.lp-halo {
+  position: absolute;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(46px);
+}
+.lp-halo-dia {
+  left: 4%;
+  top: 22%;
+  opacity: 0.5;
+  background: radial-gradient(circle, #f56a00 0%, rgba(245, 106, 0, 0) 70%);
+}
+.lp-halo-noche {
+  right: 4%;
+  top: 8%;
+  opacity: 0.4;
+  background: radial-gradient(circle, #a70b94 0%, rgba(167, 11, 148, 0) 70%);
+}
+
+.lp-tubo {
+  position: absolute;
+  bottom: 13%;
+  width: 39%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 26px 28px rgba(52, 53, 83, 0.24));
+  transition:
+    transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1),
+    filter 0.3s ease;
+}
+.lp-tubo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  animation: lp-flotar 6.5s ease-in-out infinite;
+}
+.lp-tubo-dia {
+  left: 14%;
+  z-index: 2;
+  transform: translateZ(30px) rotate(-7deg);
+}
+.lp-tubo-noche {
+  right: 14%;
+  z-index: 1;
+  transform: translateZ(0) translateY(-7%) rotate(8deg);
+}
+.lp-tubo-noche img {
+  animation-delay: -3.2s;
+}
+.lp-tubo-dia:hover,
+.lp-tubo-dia:focus-visible {
+  transform: translateZ(70px) rotate(-4deg) scale(1.05);
+}
+.lp-tubo-noche:hover,
+.lp-tubo-noche:focus-visible {
+  z-index: 3;
+  transform: translateZ(70px) translateY(-7%) rotate(5deg) scale(1.05);
+}
+
+.lp-tubo-etiqueta {
+  position: absolute;
+  left: 50%;
+  bottom: -5%;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: #fff;
+  color: #343553;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px -10px rgba(52, 53, 83, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.lp-tubo:hover .lp-tubo-etiqueta,
+.lp-tubo:focus-visible .lp-tubo-etiqueta {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+@media (hover: none) {
+  /* En pantallas táctiles no hay "pasar el ratón": la etiqueta se ve siempre
+     para que se entienda que el tubo se puede tocar. */
+  .lp-tubo-etiqueta {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.lp-sombra {
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  bottom: 8%;
+  height: 9%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(52, 53, 83, 0.22), rgba(52, 53, 83, 0) 70%);
+}
+
+@keyframes lp-flotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ---- Cinta ---- */
+
+.lp-marquesina {
+  overflow: hidden;
+}
+.lp-marquesina-pista {
+  display: flex;
+  width: max-content;
+  animation: lp-desfilar 46s linear infinite;
+}
+.lp-marquesina:hover .lp-marquesina-pista {
+  animation-play-state: paused;
+}
+.lp-marquesina-tira {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  margin: 0;
+  padding: 0 1.75rem 0 0;
+  list-style: none;
+}
+@keyframes lp-desfilar {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---- Selector Día / Noche ---- */
+
+.lp-selector-indicador {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc(50% - 6px);
+  border-radius: 9999px;
+  background: #b94e00;
+  box-shadow: 0 10px 22px -12px rgba(185, 78, 0, 0.7);
+  transition:
+    transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1),
+    background-color 0.45s ease,
+    box-shadow 0.45s ease;
+}
+.lp-selector[data-modo='noche'] .lp-selector-indicador {
+  transform: translateX(100%);
+  background: #a70b94;
+  box-shadow: 0 10px 22px -12px rgba(167, 11, 148, 0.75);
+}
+
+.lp-panel {
+  /* Deja el scroll vertical al navegador y el gesto horizontal a la página,
+     que lo usa para cambiar de crema. */
+  touch-action: pan-y;
+  transition:
+    background-color 0.6s ease,
+    color 0.6s ease;
+}
+.lp-panel-dia {
+  background-color: #fde7d5;
+  color: #343553;
+}
+.lp-panel-noche {
+  background-color: #a70b94;
+  color: #fff7ef;
+}
+
+.lp-panel-halo {
+  position: absolute;
+  width: 72%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(44px);
+  transition: background 0.6s ease;
+}
+.lp-panel-dia .lp-panel-halo {
+  background: radial-gradient(circle, rgba(245, 106, 0, 0.42), transparent 68%);
+}
+.lp-panel-noche .lp-panel-halo {
+  background: radial-gradient(circle, rgba(244, 122, 77, 0.55), transparent 68%);
+}
+
+.lp-panel-tubo {
+  position: absolute;
+  height: 78%;
+  width: auto;
+  max-width: none;
+  filter: drop-shadow(0 30px 30px rgba(52, 53, 83, 0.3));
+  opacity: 0;
+  transform: translateY(26px) scale(0.9) rotate(-5deg);
+  transition:
+    opacity 0.45s ease,
+    transform 0.65s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.lp-panel-tubo.is-activo {
+  opacity: 1;
+  transform: none;
+}
+
+.lp-panel-dia .lp-panel-chip {
+  background: rgba(255, 255, 255, 0.78);
+  color: #b94e00;
+}
+.lp-panel-noche .lp-panel-chip {
+  background: rgba(255, 247, 239, 0.16);
+  color: #fff7ef;
+}
+.lp-panel-dia .lp-panel-icono {
+  background: #fff;
+  color: #b94e00;
+  box-shadow: 0 8px 18px -10px rgba(185, 78, 0, 0.55);
+}
+.lp-panel-noche .lp-panel-icono {
+  background: rgba(255, 247, 239, 0.14);
+  color: #fff7ef;
+  box-shadow: inset 0 0 0 1px rgba(255, 247, 239, 0.3);
+}
+.lp-panel-dia .lp-panel-cta {
+  background: #343553;
+  color: #fff7ef;
+}
+.lp-panel-noche .lp-panel-cta {
+  background: #fff7ef;
+  color: #8a0879;
+}
+
+.lp-aparecer {
+  animation: lp-aparecer 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes lp-aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Combo ---- */
+
+.lp-combo-disco {
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  background: conic-gradient(from 200deg, #f56a00, #f47a4d, #a70b94, #f56a00);
+  animation: lp-girar 26s linear infinite;
+}
+.lp-combo-disco::after {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: #fff7ef;
+}
+.lp-combo-tubo {
+  position: absolute;
+  bottom: 15%;
+  height: 64%;
+  width: auto;
+  max-width: none;
+  filter: drop-shadow(0 24px 24px rgba(52, 53, 83, 0.26));
+  transition: transform 0.55s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.lp-combo-tubo-dia {
+  left: 24%;
+  z-index: 2;
+  transform: rotate(-9deg);
+}
+.lp-combo-tubo-noche {
+  right: 24%;
+  transform: rotate(9deg);
+}
+.lp-combo-visual:hover .lp-combo-tubo-dia {
+  transform: translateX(-9%) rotate(-15deg);
+}
+.lp-combo-visual:hover .lp-combo-tubo-noche {
+  transform: translateX(9%) rotate(15deg);
+}
+@keyframes lp-girar {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* ---- Preguntas ---- */
+
+.lp-faq-respuesta {
+  /* Animar `grid-template-rows` de 0fr a 1fr abre el panel a su altura real
+     sin medirla con JavaScript. */
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-faq-respuesta.is-abierto {
+  grid-template-rows: 1fr;
+}
+.lp-faq-mas {
+  background: rgba(52, 53, 83, 0.06);
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+.lp-faq-mas.is-abierto {
+  transform: rotate(45deg);
+  background: #a70b94;
+  color: #fff;
+}
+
+/* ---- Cierre ---- */
+
+.lp-cierre-luz {
+  position: absolute;
+  z-index: -1;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(72px);
+  opacity: 0.5;
+  animation: lp-orbitar 14s ease-in-out infinite alternate;
+}
+.lp-cierre-luz-1 {
+  left: -12%;
+  top: -34%;
+  background: #f56a00;
+}
+.lp-cierre-luz-2 {
+  right: -12%;
+  bottom: -38%;
+  background: #a70b94;
+  animation-delay: -7s;
+}
+@keyframes lp-orbitar {
+  to {
+    transform: translate(8%, 10%) scale(1.12);
+  }
+}
+
+/* ---- Barra de compra ---- */
+
+.lp-barra {
+  transform: translateY(110%);
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-barra.is-visible {
+  transform: none;
+}
+
+/* ---- Aparición al hacer scroll ---- */
+
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--lp-delay, 0ms);
+}
+.lp-reveal[data-visible='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Menos movimiento ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .lp *,
+  .lp *::before,
+  .lp *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .lp-reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .lp-marquesina-pista {
+    animation: none !important;
+  }
+}
