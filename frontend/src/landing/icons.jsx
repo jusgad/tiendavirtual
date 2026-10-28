@@ -33,6 +33,12 @@ export const IconArrowRight = (p) => (
   </Svg>
 )
 
+export const IconArrowDown = (p) => (
+  <Svg {...p}>
+    <path d="M12 5v14M6 13l6 6 6-6" />
+  </Svg>
+)
+
 export const IconSun = (p) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="4" />

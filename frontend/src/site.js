@@ -1,6 +1,6 @@
 // Central place for business content so copy / price / contact are edited once.
 
-export const PRICE = '$79.900'
+export const PRICE = '$89.900'
 export const CURRENCY = 'COP'
 
 export const WHATSAPP_PHONE = '573105676187'
@@ -62,8 +62,12 @@ export const PRODUCTOS = {
     nombre: 'Día',
     tipo: 'Crema íntima',
     beneficio: 'Neutraliza olores indeseados.',
+    cuando: 'En la mañana, antes del gimnasio o de un día largo fuera de casa.',
     enCombo: 'Crema íntima · 50 ml',
     imagen: '/images/tubo_dia.png',
+    // El primer beneficio de la lista es el titular de la banda, así que la
+    // lista arranca en el segundo: repetirlo sería decir lo mismo dos veces
+    // en la misma pantalla.
     beneficios: DAY_BENEFITS.slice(1),
   },
   noche: {
@@ -71,6 +75,7 @@ export const PRODUCTOS = {
     nombre: 'Noche',
     tipo: 'Crema íntima',
     beneficio: 'Crema íntima blanqueadora.',
+    cuando: 'Antes de dormir, cuando la piel descansa y tiene tiempo de absorber.',
     enCombo: 'Crema íntima blanqueadora · 50 ml',
     imagen: '/images/tubo_noche.png',
     beneficios: NIGHT_BENEFITS.slice(1),

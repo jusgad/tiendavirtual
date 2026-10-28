@@ -9,12 +9,14 @@ import { antetitulo } from './ui.js'
 // pide evitar lenguaje médico no sustentado.
 const PREGUNTAS = [
   {
-    pregunta: '¿Cuándo uso cada crema?',
+    // Antes esta pregunta era «¿Cuándo uso cada crema?» y repetía los dos
+    // beneficios enteros. Ahora cada banda dice el suyo y cuándo se usa, así
+    // que aquí solo cabe lo que ninguna de las dos cuenta.
+    pregunta: '¿Cómo se usan?',
     respuesta: (
       <>
-        La crema <strong>Día</strong> es para tu rutina diaria y neutraliza olores indeseados. La crema{' '}
-        <strong>Noche</strong> es la crema íntima blanqueadora y se usa en la noche. Antes de usarlas, lee las
-        indicaciones y advertencias del empaque.
+        Son cosméticos de uso externo. Las indicaciones de cada crema vienen en su empaque: léelas antes de
+        empezar. No las apliques sobre piel lastimada y suspende el uso si notas irritación.
       </>
     ),
   },

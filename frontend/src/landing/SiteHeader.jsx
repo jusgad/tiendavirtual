@@ -4,8 +4,10 @@ import { useDesplazado } from './hooks.js'
 import { IconClose, IconMenu } from './icons.jsx'
 import { btnPrimario } from './ui.js'
 
+// Cada destino es una banda que existe. Al separar Día y Noche en dos bandas
+// propias desapareció `#dia-noche`, que era a donde apuntaba el menú antes.
 const ENLACES = [
-  { href: '#dia-noche', texto: 'Día y Noche' },
+  { href: '#rutina', texto: 'La rutina' },
   { href: '#comprar', texto: 'El combo' },
   { href: '#preguntas', texto: 'Preguntas' },
   { href: '/track.html', texto: 'Seguir mi pedido' },

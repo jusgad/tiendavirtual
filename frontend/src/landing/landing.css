@@ -36,7 +36,7 @@
   outline-offset: 3px;
 }
 .lp-panel-noche :focus-visible,
-.lp-cierre :focus-visible {
+.lp-transicion :focus-visible {
   outline-color: #fff7ef;
 }
 
@@ -65,14 +65,6 @@
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-}
-
-.lp-subrayado {
-  background-image: linear-gradient(90deg, #f56a00, #f47a4d, #a70b94);
-  background-repeat: no-repeat;
-  background-size: 100% 0.12em;
-  background-position: 0 94%;
-  padding-bottom: 0.08em;
 }
 
 /* ---- Botones ---- */
@@ -128,195 +120,34 @@
     linear-gradient(180deg, #fff7ef 0%, #fff0e2 100%);
 }
 
+.lp-bajar-circulo {
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    background-color 0.3s ease;
+  animation: lp-rebotar 2.4s ease-in-out infinite;
+}
+.lp-bajar:hover .lp-bajar-circulo {
+  transform: translateY(3px);
+  background: #fff;
+}
+@keyframes lp-rebotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+/* ---- Bandas de crema: Día y Noche ---- */
+
 .lp-escenario {
   perspective: 1100px;
   --rx: 0deg;
   --ry: 0deg;
 }
 
-.lp-tubos {
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-  transform: rotateX(var(--rx)) rotateY(var(--ry));
-  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-.lp-halo {
-  position: absolute;
-  width: 58%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  filter: blur(46px);
-}
-.lp-halo-dia {
-  left: 4%;
-  top: 22%;
-  opacity: 0.5;
-  background: radial-gradient(circle, #f56a00 0%, rgba(245, 106, 0, 0) 70%);
-}
-.lp-halo-noche {
-  right: 4%;
-  top: 8%;
-  opacity: 0.4;
-  background: radial-gradient(circle, #a70b94 0%, rgba(167, 11, 148, 0) 70%);
-}
-
-.lp-tubo {
-  position: absolute;
-  bottom: 13%;
-  width: 39%;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  transform-style: preserve-3d;
-  filter: drop-shadow(0 26px 28px rgba(52, 53, 83, 0.24));
-  transition:
-    transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1),
-    filter 0.3s ease;
-}
-.lp-tubo img {
-  display: block;
-  width: 100%;
-  height: auto;
-  user-select: none;
-  -webkit-user-drag: none;
-  animation: lp-flotar 6.5s ease-in-out infinite;
-}
-.lp-tubo-dia {
-  left: 14%;
-  z-index: 2;
-  transform: translateZ(30px) rotate(-7deg);
-}
-.lp-tubo-noche {
-  right: 14%;
-  z-index: 1;
-  transform: translateZ(0) translateY(-7%) rotate(8deg);
-}
-.lp-tubo-noche img {
-  animation-delay: -3.2s;
-}
-.lp-tubo-dia:hover,
-.lp-tubo-dia:focus-visible {
-  transform: translateZ(70px) rotate(-4deg) scale(1.05);
-}
-.lp-tubo-noche:hover,
-.lp-tubo-noche:focus-visible {
-  z-index: 3;
-  transform: translateZ(70px) translateY(-7%) rotate(5deg) scale(1.05);
-}
-
-.lp-tubo-etiqueta {
-  position: absolute;
-  left: 50%;
-  bottom: -5%;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  background: #fff;
-  color: #343553;
-  font-size: 14px;
-  font-weight: 800;
-  white-space: nowrap;
-  box-shadow: 0 8px 20px -10px rgba(52, 53, 83, 0.45);
-  pointer-events: none;
-  opacity: 0;
-  transform: translate(-50%, 8px);
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-.lp-tubo:hover .lp-tubo-etiqueta,
-.lp-tubo:focus-visible .lp-tubo-etiqueta {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-@media (hover: none) {
-  /* En pantallas táctiles no hay "pasar el ratón": la etiqueta se ve siempre
-     para que se entienda que el tubo se puede tocar. */
-  .lp-tubo-etiqueta {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-.lp-sombra {
-  position: absolute;
-  left: 16%;
-  right: 16%;
-  bottom: 8%;
-  height: 9%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(52, 53, 83, 0.22), rgba(52, 53, 83, 0) 70%);
-}
-
-@keyframes lp-flotar {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-/* ---- Cinta ---- */
-
-.lp-marquesina {
-  overflow: hidden;
-}
-.lp-marquesina-pista {
-  display: flex;
-  width: max-content;
-  animation: lp-desfilar 46s linear infinite;
-}
-.lp-marquesina:hover .lp-marquesina-pista {
-  animation-play-state: paused;
-}
-.lp-marquesina-tira {
-  display: flex;
-  align-items: center;
-  gap: 1.75rem;
-  margin: 0;
-  padding: 0 1.75rem 0 0;
-  list-style: none;
-}
-@keyframes lp-desfilar {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-/* ---- Selector Día / Noche ---- */
-
-.lp-selector-indicador {
-  position: absolute;
-  top: 6px;
-  bottom: 6px;
-  left: 6px;
-  width: calc(50% - 6px);
-  border-radius: 9999px;
-  background: #b94e00;
-  box-shadow: 0 10px 22px -12px rgba(185, 78, 0, 0.7);
-  transition:
-    transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1),
-    background-color 0.45s ease,
-    box-shadow 0.45s ease;
-}
-.lp-selector[data-modo='noche'] .lp-selector-indicador {
-  transform: translateX(100%);
-  background: #a70b94;
-  box-shadow: 0 10px 22px -12px rgba(167, 11, 148, 0.75);
-}
-
-.lp-panel {
-  /* Deja el scroll vertical al navegador y el gesto horizontal a la página,
-     que lo usa para cambiar de crema. */
-  touch-action: pan-y;
-  transition:
-    background-color 0.6s ease,
-    color 0.6s ease;
-}
 .lp-panel-dia {
   background-color: #fde7d5;
   color: #343553;
@@ -332,7 +163,10 @@
   aspect-ratio: 1;
   border-radius: 50%;
   filter: blur(44px);
-  transition: background 0.6s ease;
+}
+.lp-crema-halo {
+  left: 14%;
+  top: 14%;
 }
 .lp-panel-dia .lp-panel-halo {
   background: radial-gradient(circle, rgba(245, 106, 0, 0.42), transparent 68%);
@@ -341,21 +175,25 @@
   background: radial-gradient(circle, rgba(244, 122, 77, 0.55), transparent 68%);
 }
 
-.lp-panel-tubo {
+.lp-crema-tubo-caja {
   position: absolute;
-  height: 78%;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-crema-tubo {
+  height: 88%;
   width: auto;
   max-width: none;
   filter: drop-shadow(0 30px 30px rgba(52, 53, 83, 0.3));
-  opacity: 0;
-  transform: translateY(26px) scale(0.9) rotate(-5deg);
-  transition:
-    opacity 0.45s ease,
-    transform 0.65s cubic-bezier(0.34, 1.3, 0.64, 1);
+  animation: lp-flotar 6.5s ease-in-out infinite;
 }
-.lp-panel-tubo.is-activo {
-  opacity: 1;
-  transform: none;
+.lp-panel-noche .lp-crema-tubo {
+  animation-delay: -3.2s;
 }
 
 .lp-panel-dia .lp-panel-chip {
@@ -376,27 +214,83 @@
   color: #fff7ef;
   box-shadow: inset 0 0 0 1px rgba(255, 247, 239, 0.3);
 }
-.lp-panel-dia .lp-panel-cta {
-  background: #343553;
-  color: #fff7ef;
-}
-.lp-panel-noche .lp-panel-cta {
-  background: #fff7ef;
-  color: #8a0879;
+
+@keyframes lp-flotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-.lp-aparecer {
-  animation: lp-aparecer 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+/* ---- Transición: la bisagra entre Día y Noche ---- */
+
+.lp-transicion {
+  /* El degradado del manual, en sus tonos profundos. Los puros no aguantan
+     texto encima: blanco sobre el naranja #F56A00 da 3,0:1 y el mínimo para
+     texto normal es 4,5:1. Sobre estos, el blanco queda entre 5,1:1 y 6,7:1,
+     y además el tono apagado es el que corresponde a un atardecer. */
+  background-image: linear-gradient(105deg, #b94e00 0%, #a8401d 45%, #a70b94 100%);
 }
-@keyframes lp-aparecer {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+
+.lp-arco {
+  --x: 0%;
+  --alto: 0%;
+}
+.lp-arco-linea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 247, 239, 0.5) 0 6px,
+    transparent 6px 14px
+  );
+}
+.lp-arco-extremo {
+  position: absolute;
+  bottom: -14px;
+  display: inline-flex;
+  height: 28px;
+  width: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 247, 239, 0.18);
+  color: rgba(255, 247, 239, 0.75);
+}
+.lp-arco-sol {
+  left: -14px;
+}
+.lp-arco-luna {
+  right: -14px;
+}
+
+.lp-arco-astro {
+  position: absolute;
+  bottom: 0;
+  left: var(--x);
+  display: inline-flex;
+  height: 46px;
+  width: 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff7ef;
+  color: #a8401d;
+  box-shadow: 0 0 34px rgba(255, 247, 239, 0.55);
+  /* `bottom` ya lo sube el arco; el translate centra el astro sobre la línea
+     y lo eleva según el avance. */
+  transform: translate(-50%, calc(50% - var(--alto) * 0.75));
+}
+.lp-arco-astro-sol,
+.lp-arco-astro-luna {
+  position: absolute;
+  display: inline-flex;
 }
 
 /* ---- Combo ---- */
@@ -470,35 +364,6 @@
   color: #fff;
 }
 
-/* ---- Cierre ---- */
-
-.lp-cierre-luz {
-  position: absolute;
-  z-index: -1;
-  width: 46%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  filter: blur(72px);
-  opacity: 0.5;
-  animation: lp-orbitar 14s ease-in-out infinite alternate;
-}
-.lp-cierre-luz-1 {
-  left: -12%;
-  top: -34%;
-  background: #f56a00;
-}
-.lp-cierre-luz-2 {
-  right: -12%;
-  bottom: -38%;
-  background: #a70b94;
-  animation-delay: -7s;
-}
-@keyframes lp-orbitar {
-  to {
-    transform: translate(8%, 10%) scale(1.12);
-  }
-}
-
 /* ---- Barra de compra ---- */
 
 .lp-barra {
@@ -537,8 +402,5 @@
   .lp-reveal {
     opacity: 1;
     transform: none;
-  }
-  .lp-marquesina-pista {
-    animation: none !important;
   }
 }

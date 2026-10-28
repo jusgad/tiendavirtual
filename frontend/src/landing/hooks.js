@@ -55,6 +55,55 @@ export function useEnPantalla({ margen = '0px 0px -10% 0px', umbral = 0.12 } = {
   return [ref, visible]
 }
 
+/**
+ * Cuánto ha recorrido un elemento la pantalla, de 0 a 1.
+ *
+ * 0 cuando su borde superior entra por abajo; 1 cuando su borde inferior sale
+ * por arriba. Lo usa la banda de transición para mover el sol hacia la luna al
+ * ritmo del scroll: el degradado deja de ser decorado y pasa a contar el paso
+ * del día.
+ *
+ * Con «reducir movimiento» se queda quieto a media tarde (0,5): la escena se
+ * entiende igual sin que nada se mueva.
+ */
+export function useProgresoEnPantalla() {
+  const ref = useRef(null)
+  const [progreso, setProgreso] = useState(0)
+  const reducido = usePrefiereMenosMovimiento()
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    if (reducido) {
+      setProgreso(0.5)
+      return undefined
+    }
+
+    const medir = () => {
+      const r = el.getBoundingClientRect()
+      // El recorrido total es la altura del elemento más la de la ventana:
+      // es lo que tarda en cruzarla de abajo arriba.
+      const total = r.height + window.innerHeight
+      const avance = (window.innerHeight - r.top) / total
+      // Se redondea a dos decimales para que el scroll no provoque un render
+      // por píxel: con cien pasos el arco ya se mueve de forma continua, y
+      // `setProgreso` no hace nada cuando el valor no cambia.
+      const paso = Math.round(Math.min(Math.max(avance, 0), 1) * 100) / 100
+      setProgreso(paso)
+    }
+
+    medir()
+    window.addEventListener('scroll', medir, { passive: true })
+    window.addEventListener('resize', medir)
+    return () => {
+      window.removeEventListener('scroll', medir)
+      window.removeEventListener('resize', medir)
+    }
+  }, [reducido])
+
+  return [ref, progreso]
+}
+
 /** ¿Ya se bajó más de `umbral` píxeles? Sirve para condensar la cabecera. */
 export function useDesplazado(umbral = 12) {
   const [desplazado, setDesplazado] = useState(false)
