@@ -5,12 +5,37 @@
     <link rel="icon" type="image/png" href="/images/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#FFF7EF" />
-    <link rel="preload" as="image" href="/images/tubo_dia.png" fetchpriority="high" />
-    <title>PomAss by Pao Díaz · Crema íntima Día &amp; Noche</title>
+
+    <!-- Nada de `preload` de imagen: la apertura ya no muestra ningún tubo
+         (el primer tubo vive en la banda de Día, bastante más abajo y con
+         `loading="lazy"`). Precargarlo competía por el ancho de banda de la
+         primera pantalla a cambio de nada. -->
+
+    <title>Crema íntima Día y Noche · PomAss by Pao Díaz · Colombia</title>
     <meta
       name="description"
-      content="Combo Día + Noche de PomAss: Día neutraliza olores indeseados y Noche es la crema íntima blanqueadora. Confianza en todo momento. Hecho en Colombia."
+      content="Combo de dos cremas íntimas: Día neutraliza olores indeseados y Noche aclara la zona íntima. Envío a todo el país con empaque discreto. Hecho en Colombia."
     />
+    <!-- ⚠️ PENDIENTE: `pomass.co` es un marcador, no el dominio real, que
+         todavía no está definido. Un canonical apuntando a un dominio que no
+         es el tuyo le dice a Google que la página buena es otra, así que hay
+         que corregir esta línea y las dos `og:url`/`og:image` de abajo antes
+         de publicar. -->
+    <link rel="canonical" href="https://pomass.co/" />
+
+    <!-- Cómo se ve al compartir el enlace por WhatsApp, que es por donde
+         llega la mayor parte del tráfico de esta tienda. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_CO" />
+    <meta property="og:site_name" content="PomAss by Pao Díaz" />
+    <meta property="og:title" content="Crema íntima Día y Noche · PomAss" />
+    <meta
+      property="og:description"
+      content="Dos cremas íntimas para tu rutina. Confianza en todo momento. Envío a todo el país con empaque discreto."
+    />
+    <meta property="og:url" content="https://pomass.co/" />
+    <meta property="og:image" content="https://pomass.co/images/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -109,6 +109,34 @@
   background-color: rgba(52, 53, 83, 0.06);
 }
 
+/* ---- Entrada de la apertura ---- */
+
+/*
+ * El titular entra por líneas, escalonado. Es la técnica que repiten las
+ * galerías de heros y aquí tiene sentido porque el titular es corto: cuatro
+ * palabras. No se parte en caracteres a propósito —un elemento por letra
+ * infla el DOM y estorba a los lectores de pantalla—, y solo se animan
+ * `opacity` y `transform`, que no desplazan nada al reproducirse.
+ *
+ * El retraso de cada pieza va en `--d`, puesto desde el componente.
+ */
+.lp-entrada {
+  opacity: 0;
+  animation: lp-entrar 0.62s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes lp-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---- Hero ---- */
 
 .lp-hero-fondo {
@@ -399,8 +427,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .lp-reveal {
+  .lp-reveal,
+  .lp-entrada {
     opacity: 1;
     transform: none;
+    animation: none !important;
   }
 }
