@@ -143,6 +143,23 @@ npm run preview    # sirve el build de producción
 Detalle completo de componentes, cliente de API y sistema de diseño en
 **[docs/referencia-frontend.md](docs/referencia-frontend.md)**.
 
+## Probarlo entero en local
+
+```bash
+docker compose up --build
+```
+
+Levanta base, caché, API, frontend y una **pasarela de pago simulada**, y deja
+la tienda en <http://localhost:5173> lista para recorrer una compra de
+principio a fin: al pagar aterrizas en una pasarela de mentira donde eliges si
+el pago se aprueba o se rechaza, y el aviso que manda va firmado igual que lo
+haría Mercado Pago. Detalle en
+[cómo probar el flujo de pagos](docs/howto-probar-pagos.md).
+
+Es un entorno de **pruebas**: los secretos están a la vista en
+`docker-compose.yml` y no se cobra nada. Para desplegar de verdad, ver
+[cómo desplegar](docs/howto-desplegar.md).
+
 ## Frontend — demo de checkout
 
 `checkout.html` es una segunda página, independiente de la landing, que **sí

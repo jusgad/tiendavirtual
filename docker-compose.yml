@@ -1,0 +1,148 @@
+# Entorno de PRUEBAS completo: base, caché, API, frontend y una pasarela de
+# pago simulada. Levanta la tienda entera en local para poder recorrer una
+# compra de principio a fin.
+#
+#     docker compose up --build
+#
+# Luego: http://localhost:5173  (landing)
+#        http://localhost:5173/checkout.html
+#        http://localhost:3000/api/docs
+#
+# ⚠️ ESTO NO SIRVE PARA PRODUCCIÓN, y no por descuido:
+#    - los secretos están aquí escritos, a la vista;
+#    - la pasarela de pago es un doble que no cobra nada;
+#    - el frontend corre en modo desarrollo, sin compilar;
+#    - `CORS_ORIGIN` es `*`.
+#    El backend se niega a arrancar con esta configuración si se le pone
+#    NODE_ENV=production (ver `shared/config/env.ts`), que es justo la red
+#    de seguridad que evita desplegar esto por error.
+#
+# Para desplegar de verdad hay otro punto de partida: `backend/docker-compose.yml`
+# levanta solo la API contra Postgres y Redis, leyendo las credenciales
+# reales de `backend/.env`.
+
+name: pomass-pruebas
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pomass
+      POSTGRES_PASSWORD: pomass_pass
+      POSTGRES_DB: pomass
+    ports:
+      # 55432 y no 5432: en esta máquina hay un Postgres nativo ocupando el
+      # puerto estándar, y las conexiones desde fuera acababan en él en vez de
+      # aquí, fallando con un error de credenciales que no decía nada de eso.
+      # La API no usa este puerto: dentro de compose habla con `db:5432`.
+      # Para psql, Prisma Studio o los tests de integración: localhost:55432.
+      - "55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pomass -d pomass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Desarrollo a propósito: con `production` el backend rechazaría medio
+      # archivo de estos (secretos de ejemplo, CORS abierto, token de prueba).
+      NODE_ENV: development
+      PORT: 3000
+      API_PREFIX: /api
+
+      # Dentro de la red de compose los hosts son los nombres de servicio.
+      DATABASE_URL: postgresql://pomass:pomass_pass@db:5432/pomass?schema=public
+      # Sin pooler en local: la conexión directa es la misma. Prisma la exige
+      # porque el schema declara `directUrl` (ver schema.prisma).
+      DIRECT_URL: postgresql://pomass:pomass_pass@db:5432/pomass?schema=public
+      REDIS_URL: redis://redis:6379
+
+      JWT_ACCESS_SECRET: secreto_de_pruebas_no_usar_en_produccion
+      CORS_ORIGIN: "*"
+
+      # URL del frontend tal y como la ve el NAVEGADOR, no la red de compose:
+      # de aquí salen los enlaces de los correos y la vuelta tras pagar.
+      FRONTEND_URL: http://localhost:5173
+
+      # --- Pasarela simulada ---
+      # El token no puede ser el de ejemplo: con ese, el backend ni llama a la
+      # API y devuelve el checkout como «sin configurar».
+      MERCADO_PAGO_ACCESS_TOKEN: TEST-pruebas-locales
+      MERCADO_PAGO_PUBLIC_KEY: TEST-llave-publica-de-pruebas
+      MERCADO_PAGO_WEBHOOK_SECRET: dev_mercadopago_webhook_change_me
+      # A dónde llama el doble para avisar. Es un host de la red de compose
+      # porque quien lo llama es el contenedor, no el navegador.
+      MERCADO_PAGO_NOTIFICATION_URL: http://api:3000/api/payments/webhook/mercadopago
+      # Y esta es la API falsa. En producción el backend se niega a arrancar
+      # si esta variable apunta a algo que no sea la API real de Mercado Pago.
+      MERCADO_PAGO_API_URL: http://mercadopago:4100
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Migra, siembra el catálogo y arranca.
+    command: sh -c "npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main.js"
+
+  mercadopago:
+    # Un script suelto sobre la imagen de Node: no merece Dockerfile propio.
+    image: node:20-alpine
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "4100:4100"
+    volumes:
+      - ./backend/scripts:/app/scripts:ro
+    environment:
+      PUERTO: 4100
+      # Cómo lo ve el navegador cuando el checkout lo manda a pagar.
+      URL_PUBLICA: http://localhost:4100
+      # Cómo ve él al backend para mandarle el aviso firmado.
+      BACKEND_URL: http://api:3000
+      MERCADO_PAGO_WEBHOOK_SECRET: dev_mercadopago_webhook_change_me
+    command: node scripts/mercadopago-falso.mjs
+
+  frontend:
+    image: node:20-alpine
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Volumen propio para `node_modules`: las dependencias nativas que se
+      # instalan en Linux no son las mismas que las del Windows de fuera, y
+      # sin esto el montaje de `./frontend` las pisaría.
+      - frontend_node_modules:/app/node_modules
+    environment:
+      # La ve el navegador, así que es localhost y no el nombre del servicio.
+      VITE_API_URL: http://localhost:3000/api
+      # Dentro de un contenedor no hay navegador que abrir.
+      VITE_NO_OPEN: "true"
+    # `--no-save`: al instalar en Linux, npm añade al lockfile los binarios
+    # nativos de esta plataforma. Sin esto, levantar el stack dejaba
+    # `package-lock.json` modificado en el repo, que no es asunto suyo.
+    command: sh -c "npm install --no-save && npm run dev -- --host 0.0.0.0"
+
+volumes:
+  pgdata:
+  frontend_node_modules:

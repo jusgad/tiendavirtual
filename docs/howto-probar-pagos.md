@@ -6,7 +6,60 @@ Mercado Pago que tú mismo firmaste — igual que lo haría la pasarela real.
 Sirve para dos cosas: probar el flujo sin depender del sandbox ni de internet,
 y entender qué verifica el backend antes de dar un pedido por pagado.
 
-## Requisitos previos
+## La vía rápida: `docker compose`
+
+Levanta la tienda entera —base, caché, API, frontend y una pasarela de pago
+simulada— y recorre una compra de verdad con el navegador:
+
+```bash
+docker compose up --build
+```
+
+Cuando el log diga que la API escucha, abre <http://localhost:5173/checkout.html>
+y compra como invitada. Al darle a **Pagar** aterrizas en una pasarela simulada
+con tres botones: *Aprobar*, *Rechazar* y *Dejarlo pendiente*. El que elijas se
+convierte en un aviso **firmado igual que lo haría Mercado Pago**, que llega al
+webhook del backend; después vuelves al seguimiento del pedido, ya relleno.
+
+| Dónde | Qué |
+|---|---|
+| <http://localhost:5173> | La landing |
+| <http://localhost:5173/checkout.html> | El checkout |
+| <http://localhost:5173/track.html> | Seguimiento del pedido |
+| <http://localhost:3000/api/docs> | Swagger |
+| <http://localhost:4100> | La pasarela simulada |
+
+Para ver qué pasa por dentro mientras compras:
+
+```bash
+docker compose logs -f api mercadopago
+```
+
+Verás, en orden: la preferencia creándose, el aviso firmado saliendo hacia el
+webhook, el backend yendo a consultar el pago (`GET /v1/payments/…`) y, solo
+entonces, el pedido pasando a `PAID`.
+
+Y para empezar de cero, base incluida:
+
+```bash
+docker compose down -v
+```
+
+> **Esto no sirve para producción, y no por descuido.** Los secretos están
+> escritos en `docker-compose.yml`, la pasarela no cobra nada y el frontend
+> corre sin compilar. El backend se niega a arrancar con esta configuración si
+> se le pone `NODE_ENV=production`, que es justo la red que evita desplegarlo
+> por error.
+
+El resto de este documento es la vía manual, con `curl`: sirve para ver el
+mecanismo pieza a pieza, y para cuando quieras probar un caso concreto sin
+pasar por el navegador.
+
+---
+
+## La vía manual, con curl
+
+### Requisitos previos
 
 - Backend corriendo en `http://localhost:3000` con Postgres y Redis vivos ([cómo montarlo](howto-entorno-local.md)).
 - Base migrada y sembrada (`npm run prisma:seed`).

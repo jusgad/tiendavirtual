@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    open: true,
+    // Dentro de un contenedor no hay navegador que abrir, y el intento
+    // ensucia el log con un error que no significa nada.
+    open: process.env.VITE_NO_OPEN !== 'true',
   },
   build: {
     rollupOptions: {

@@ -1,0 +1,8 @@
+# Lo que no tiene por qué entrar en ningún contexto de build.
+**/node_modules
+**/dist
+**/.git
+**/.env
+**/*.log
+graphify-out
+.superpowers

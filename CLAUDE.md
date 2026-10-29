@@ -40,7 +40,11 @@ npx jest -t "aplica cupón porcentual"
 
 **Frontend:** `npm run dev` (:5173), `npm run build`, `npm run preview`. No tests.
 
-**Full environment (Postgres + Redis + API):** from `backend/`, `docker compose up --build` (migrates + seeds + starts). Note: on this Windows machine Docker Desktop currently can't start because WSL2 has no Linux distro installed — unit tests, typecheck, lint, and both frontend/backend builds all run without Docker; only integration tests and a live backend need it.
+**Full test stack (db + redis + API + frontend + a fake Mercado Pago):** from the repo root, `docker compose up --build`, then http://localhost:5173. It brings up the whole store so a purchase can be walked end to end: the checkout redirects to `scripts/mercadopago-falso.mjs`, which signs the webhook exactly as Mercado Pago would. Test-only — the root compose carries throwaway secrets and `NODE_ENV=development` on purpose, and `env.ts` refuses that combination under `NODE_ENV=production`.
+
+**Backend only (Postgres + Redis + API):** from `backend/`, `docker compose up --build` (migrates + seeds + starts), reading real credentials from `backend/.env`.
+
+Docker Desktop on this Windows machine lives at `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`, not under `Program Files`; WSL2 has Ubuntu installed and the engine works once the app is launched. Unit tests, typecheck, lint, and both builds still run without Docker; only integration tests and a live backend need it.
 
 ## Backend architecture (the important part)
 

@@ -17,6 +17,20 @@ const user = {
 
 let token = ''
 
+/**
+ * Cierre ÚNICO del fichero, fuera de los describes.
+ *
+ * `prisma` y `redis` son singletons compartidos por los dos bloques de abajo.
+ * Cuando cada describe cerraba el suyo, el primero en terminar dejaba a Redis
+ * desconectado y el carrito de invitado del segundo respondía 503 — un fallo
+ * que parecía del código y era del montaje de la prueba. Jest ejecuta este
+ * `afterAll` cuando han terminado todos los describes del fichero.
+ */
+afterAll(async () => {
+  await prisma.$disconnect()
+  redis.disconnect()
+})
+
 describe('Checkout end-to-end (integración)', () => {
   afterAll(async () => {
     const u = await prisma.user.findUnique({ where: { email: user.email } })
@@ -25,8 +39,6 @@ describe('Checkout end-to-end (integración)', () => {
       await prisma.order.deleteMany({ where: { userId: u.id } })
       await prisma.user.delete({ where: { id: u.id } })
     }
-    await prisma.$disconnect()
-    redis.disconnect()
   })
 
   it('registra, agrega al carrito, hace checkout y cancela el pedido', async () => {
@@ -98,11 +110,6 @@ describe('Checkout end-to-end (integración)', () => {
 
 describe('Checkout de invitado (sin usuario ni contraseña)', () => {
   const guestId = `guest-${Date.now()}`
-
-  afterAll(async () => {
-    await prisma.$disconnect()
-    redis.disconnect()
-  })
 
   it('agrega al carrito, hace checkout y paga sin sesión', async () => {
     // 1) Toma un producto del catálogo (viene del seed)
