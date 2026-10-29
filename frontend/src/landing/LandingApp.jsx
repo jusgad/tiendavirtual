@@ -1,4 +1,5 @@
 import PieLegal from '../shared/PieLegal.jsx'
+import BotonWhatsApp from './BotonWhatsApp.jsx'
 import Combo from './Combo.jsx'
 import Crema from './Crema.jsx'
 import Faq from './Faq.jsx'
@@ -58,6 +59,10 @@ export default function LandingApp() {
       </main>
       <PieLegal dejarSitioAbajo />
       <StickyBuyBar />
+      {/* Fuera de `main`: es ayuda disponible en toda la página, no una parte
+          del recorrido. Va el último para que, en orden de tabulación, llegue
+          después del contenido y no antes. */}
+      <BotonWhatsApp />
     </div>
   )
 }

@@ -117,3 +117,58 @@ export function useDesplazado(umbral = 12) {
 
   return desplazado
 }
+
+/**
+ * ¿Está a la vista la barra de compra fija?
+ *
+ * Vive aquí y no dentro de `StickyBuyBar` porque hay dos cosas pegadas abajo
+ * —la barra y el botón de WhatsApp— y la segunda tiene que apartarse cuando
+ * aparece la primera. Con la regla en un solo sitio no pueden discrepar.
+ *
+ * La barra entra cuando la transición cruza la mitad de la pantalla, que es
+ * donde el combo empieza a tener sentido como combo, y se esconde mientras la
+ * banda del combo está a la vista: ahí ya hay un botón de compra más grande, y
+ * dos iguales a la vez solo estorban.
+ *
+ * Se decide por posición de scroll y no con `IntersectionObserver`: el
+ * observador necesitaba un margen negativo para distinguir «asomó 80 px por
+ * abajo» de «llegué», y su entrega se vuelve irregular cuando la pestaña no
+ * está visible. Una comparación de coordenadas da el mismo resultado y se
+ * puede comprobar leyendo dos números.
+ */
+export function useBarraDeCompraVisible() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const transicion = document.querySelector('.lp-transicion')
+    if (!transicion) return undefined
+    const combo = document.getElementById('comprar')
+
+    // Se mide directo en el evento, como hace `useDesplazado`, sin envolverlo
+    // en `requestAnimationFrame`: son dos lecturas de posición sin escrituras
+    // intercaladas, así que no fuerzan recálculos en cadena, y `setVisible`
+    // no hace nada cuando el valor no cambia.
+    //
+    // La condición se recalcula entera cada vez, sin recordar que ya se llegó:
+    // quien vuelve arriba a releer la apertura no debería encontrarse un
+    // precio flotando sobre ella, que es justo lo que la banda 2 evita.
+    const medir = () => {
+      const t = transicion.getBoundingClientRect()
+      const alcanzada = t.top < window.innerHeight * 0.5
+
+      const c = combo?.getBoundingClientRect()
+      const enCombo = Boolean(c && c.top < window.innerHeight && c.bottom > 0)
+      setVisible(alcanzada && !enCombo)
+    }
+
+    medir()
+    window.addEventListener('scroll', medir, { passive: true })
+    window.addEventListener('resize', medir)
+    return () => {
+      window.removeEventListener('scroll', medir)
+      window.removeEventListener('resize', medir)
+    }
+  }, [])
+
+  return visible
+}
