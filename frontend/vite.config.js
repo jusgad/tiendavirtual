@@ -2,6 +2,12 @@ import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Dentro del contenedor, el código entra por un montaje desde Windows, y los
+// avisos de fichero modificado no cruzan esa frontera: Vite no se enteraba de
+// ningún cambio y había que reiniciar el contenedor para ver una edición.
+// Sondear cuesta algo de CPU, así que solo se activa ahí.
+const enContenedor = process.env.VITE_NO_OPEN === 'true'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -9,7 +15,8 @@ export default defineConfig({
     port: 5173,
     // Dentro de un contenedor no hay navegador que abrir, y el intento
     // ensucia el log con un error que no significa nada.
-    open: process.env.VITE_NO_OPEN !== 'true',
+    open: !enContenedor,
+    watch: enContenedor ? { usePolling: true, interval: 300 } : undefined,
   },
   build: {
     rollupOptions: {

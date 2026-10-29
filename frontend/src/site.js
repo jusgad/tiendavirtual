@@ -13,16 +13,34 @@ export const WHATSAPP_PHONE = '573105676187'
  * forma clara quién vende: identificación, dirección y datos de contacto. Los
  * textos legales de `legal.html` leen de aquí, así que se edita una sola vez.
  *
- * Mientras digan «POR DEFINIR» se ven así en la página publicada: es a
- * propósito, para que no se olvide.
+ * Mientras digan «POR DEFINIR» siguen viéndose así en `legal.html`: es a
+ * propósito, para que no se olvide. El pie de las demás páginas sí los
+ * oculta mientras no estén, para no enseñarle un marcador de posición a
+ * quien entra a comprar.
  */
 export const COMERCIANTE = {
   razonSocial: 'POR DEFINIR — nombre o razón social registrada',
   nit: 'POR DEFINIR — NIT o cédula',
   direccion: 'POR DEFINIR — dirección física',
-  ciudad: 'Medellín, Colombia',
-  correo: 'POR DEFINIR — correo de contacto',
+  ciudad: 'Bogotá, Colombia',
+  correo: 'jusga.adarve@gmail.com',
   telefono: '+57 310 567 6187',
+}
+
+/** ¿Este dato del comerciante sigue sin definir? */
+export const sinDefinir = (valor) => !valor || valor.startsWith('POR DEFINIR')
+
+/**
+ * Crédito de quien construyó la tienda.
+ *
+ * Va aparte del comerciante a propósito: son dos cosas distintas. El
+ * comerciante es quien vende y responde legalmente ante quien compra; esto
+ * es solo la firma de quien hizo el sitio. Mezclarlos haría que los textos
+ * legales dijeran que la política de datos la publica el desarrollador.
+ */
+export const CREDITO = {
+  autor: 'jusga developer',
+  correo: 'jusga.adarve@gmail.com',
 }
 
 /**

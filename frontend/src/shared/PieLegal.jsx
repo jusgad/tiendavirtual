@@ -1,4 +1,4 @@
-import { COMERCIANTE } from '../site.js'
+import { COMERCIANTE, CREDITO, sinDefinir } from '../site.js'
 
 /**
  * Pie con los enlaces legales y quién vende.
@@ -42,8 +42,23 @@ export default function PieLegal({ sobreOscuro = false, dejarSitioAbajo = false 
           Seguir mi pedido
         </a>
       </nav>
+      {/* Mientras no haya razón social ni NIT solo se muestra la ciudad: un
+          «POR DEFINIR» delante de quien va a comprar no informa de nada y
+          resta confianza justo donde hace falta. El recordatorio de que
+          faltan sigue en `legal.html` y en `site.js`. */}
       <p className="mt-3">
-        {COMERCIANTE.razonSocial} · NIT {COMERCIANTE.nit} · {COMERCIANTE.ciudad}
+        {sinDefinir(COMERCIANTE.razonSocial)
+          ? COMERCIANTE.ciudad
+          : `${COMERCIANTE.razonSocial} · NIT ${COMERCIANTE.nit} · ${COMERCIANTE.ciudad}`}
+      </p>
+      <p className="mt-1">Hecho por {CREDITO.autor}</p>
+      {/* El correo en su propia línea y escrito entero: en un pie, un enlace
+          que solo dice «escríbenos» obliga a pasar el ratón por encima para
+          saber a dónde va, y desde el móvil ni eso. */}
+      <p className="mt-0.5">
+        <a href={`mailto:${CREDITO.correo}`} className="font-bold hover:underline">
+          {CREDITO.correo}
+        </a>
       </p>
     </footer>
   )
