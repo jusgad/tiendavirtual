@@ -2,6 +2,7 @@ import request from 'supertest'
 import { createApp } from '../../src/app'
 import { prisma } from '../../src/shared/database/prisma'
 import { redis } from '../../src/shared/cache/redis'
+import { env } from '../../src/shared/config/env'
 
 // Flujo end-to-end: requiere Postgres migrado y con seed (productos).
 const app = createApp(prisma)
@@ -140,17 +141,24 @@ describe('Checkout de invitado (sin usuario ni contraseña)', () => {
     expect(cart.body.cart.itemCount).toBe(0)
 
     // 5) Prepara el pago sin sesión (el pedido no tiene dueño -> se permite).
-    // Solo se envía el pedido: los datos de tarjeta los captura el widget de
-    // Wompi en el navegador, este backend ya no los recibe.
+    // Solo se envía el pedido: los datos de tarjeta los captura Mercado Pago
+    // en su propio sitio, este backend no los recibe.
     const pay = await request(app).post('/api/payments').send({ orderId: order.id })
     expect(pay.status).toBe(201)
     expect(pay.body.payment.status).toBe('PENDING')
-    expect(pay.body.payment.method).toBe('WOMPI')
-
-    // La configuración del widget viaja firmada y con el monto en centavos.
+    expect(pay.body.payment.method).toBe('MERCADO_PAGO')
     expect(pay.body.checkout.reference).toBe(order.orderNumber)
-    expect(pay.body.checkout.amountInCents).toBe(order.total * 100)
-    expect(pay.body.checkout.signature).toMatch(/^[a-f0-9]{64}$/)
+    expect(pay.body.checkout.amount).toBe(order.total)
+
+    // En CI no hay credenciales de Mercado Pago, así que el adaptador no llama
+    // a su API y devuelve el checkout marcado como «sin configurar». Que este
+    // test no dependa de la red es justamente lo que se comprueba aquí.
+    expect(pay.body.checkout.configured).toBe(false)
+
+    // Y, pase lo que pase, por aquí no sale ninguna credencial privada.
+    const serializado = JSON.stringify(pay.body)
+    expect(serializado).not.toContain(env.MERCADO_PAGO_ACCESS_TOKEN)
+    expect(serializado).not.toContain(env.MERCADO_PAGO_WEBHOOK_SECRET)
 
     // 6) Seguimiento público: con nº de pedido + correo, sin sesión
     const track = await request(app)

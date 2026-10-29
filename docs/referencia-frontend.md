@@ -165,8 +165,12 @@ con un único índice `step` sobre el array `STEPS`:
 | 0 | Cuenta | `AuthStep` | Login, registro, o **continuar como invitado** |
 | 1 | Tienda | `ShopStep` | Catálogo + carrito lateral con control de cantidad |
 | 2 | Envío | `CheckoutFormStep` | Dirección, cupón, empaque discreto → crea el pedido |
-| 3 | Pago | `PaymentStep` | Abre el widget de Wompi y verifica el resultado contra el backend |
-| 4 | Confirmación | `ConfirmationStep` | Resumen, estado real del pago y datos para el seguimiento |
+| 3 | Pago | `PaymentStep` | Manda el navegador al checkout de Mercado Pago |
+
+No hay un quinto paso de confirmación: se paga **fuera del sitio** y Mercado
+Pago devuelve a la clienta a `track.html`, que es la página que consulta el
+estado real del pedido. Una pantalla de confirmación dentro del checkout sería
+una pantalla a la que nunca se llega.
 
 Indicador visual de progreso: `components/StepIndicator.jsx`.
 
@@ -178,7 +182,6 @@ Indicador visual de progreso: `components/StepIndicator.jsx`.
 | `user` | Usuario autenticado, o `null` si es invitado |
 | `step` | Índice del paso actual |
 | `order` | Pedido creado en el paso "Envío" |
-| `payment` | `{ payment, instructions }` devuelto por `POST /payments` |
 | `cartVersion` | Contador que fuerza remontar `ShopStep` tras fusionar carritos |
 
 ### Sesión persistente
@@ -320,38 +323,28 @@ que descuento y envío se calculan al confirmar — porque es el backend quien l
 calcula.
 
 **`PaymentStep`** — **no pide datos de tarjeta**. Al entrar llama a
-`POST /payments` para obtener la configuración firmada y muestra un único botón
-que abre el widget de Wompi, donde el cliente elige entre tarjeta, Nequi, PSE o
-Bancolombia. Sus fases:
+`POST /payments`, que crea el cobro en Mercado Pago, y muestra un único botón
+que lleva al checkout de Mercado Pago, donde la clienta elige entre tarjeta,
+PSE, Efecty o su saldo. Sus fases:
 
 ```
-preparing → ready → paying (widget abierto) → verifying (consultando) → onPaid
+preparing → ready → leaving (navegando a Mercado Pago)
 ```
 
-Cuando el widget se cierra, **no se cree lo que informa**: pasa a "verificando"
-y consulta `GET /orders/track` cada 3 s, hasta 20 veces (~60 s), esperando que
-el estado del pedido deje de ser `PENDING`. La única fuente de verdad es el
-webhook, que llega al backend por su cuenta. Si se agota la espera, se continúa
-igualmente y la confirmación lo explica.
+No hay fase de verificación porque no hay nada que verificar desde aquí: la
+clienta se va del sitio. Al terminar, Mercado Pago la devuelve a `track.html`
+(la URL la decide el backend, en `MERCADO_PAGO_BACK_URL`), y es **esa** página
+la que sondea el estado real. La fuente de verdad sigue siendo el webhook.
 
-Si el cliente cierra el widget sin pagar, vuelve a `ready` sin error.
+Detecta además el **backend sin credenciales** (`checkout.configured === false`)
+y, en vez de navegar a ninguna parte, muestra qué hay que poner en
+`backend/.env`. Y avisa con un aviso visible cuando el cobro es de prueba
+(`checkout.sandbox`), para que nadie crea que cobró de verdad.
 
-Detecta además la **llave pública de ejemplo** (`pub_test_0000…`) y, en vez de
-abrir un widget que fallaría, muestra qué hay que configurar en `backend/.env`.
-
-**`ConfirmationStep`** — tres desenlaces según el estado real leído del backend:
-
-| Estado | Mensaje |
-|---|---|
-| Pedido pagado | «¡Pago confirmado!» + «Ya estamos preparando tu pedido» |
-| Wompi rechazó | «El pago no se completó», con el pedido aún reservado |
-| Sin confirmar aún | «Estamos esperando la confirmación» (PSE puede tardar minutos) |
-
-Siempre muestra el desglose y, destacado, **el número de pedido y el correo**:
-son las dos cosas que hacen falta para consultar el seguimiento sin cuenta.
-
-**`wompi.js`** — carga del script externo (una sola vez, deduplicada) e
-invocación del widget. Aislado del componente para poder simularlo en tests.
+**`mercadopago.js`** — `estaConfigurado()` y `irAMercadoPago()`. Tres líneas de
+navegación, aisladas del componente para poder probarlas sin DOM. Usa
+`location.assign` y no `replace` a propósito: así el botón «atrás» devuelve al
+checkout de la tienda si la clienta se arrepiente.
 
 ---
 
@@ -558,10 +551,10 @@ npm run dev
 
 | Hueco | Detalle |
 |---|---|
-| Credenciales de Wompi | El widget está integrado, pero con la llave de ejemplo no cobra. Faltan las credenciales reales en `backend/.env` |
-| Vista de seguimiento pendiente | `api.trackOrder` ya existe y `PaymentStep` la usa para verificar, pero **no hay una pantalla `track.html`**. Hasta que exista, `WOMPI_REDIRECT_URL` apunta a una página inexistente: afecta a PSE y Bancolombia, que sacan al cliente del sitio |
+| Credenciales de Mercado Pago | El flujo está integrado, pero con el token de ejemplo no cobra. Faltan las credenciales reales en `backend/.env` |
+| URL de notificación sin configurar | Mercado Pago tiene que poder alcanzar el webhook desde internet. Sin `MERCADO_PAGO_NOTIFICATION_URL` (o su equivalente en el panel), los pedidos se quedan en `PENDING` para siempre aunque la clienta pague |
 | Sin CI | Ningún workflow hace lint ni build de `frontend/**` |
-| Cobertura de tests parcial | `checkout/api.js` y `checkout/wompi.js` están probados (22 tests). Los componentes no; el panel aún no tiene tests |
+| Cobertura de tests parcial | La lógica pura está probada (106 tests en 10 archivos), `checkout/mercadopago.js` incluido. Los componentes no: Vitest corre en entorno `node`, sin DOM |
 | Sin recuperación de contraseña | La API la expone; la demo no la usa |
 | Sin direcciones guardadas | La demo siempre envía `shippingAddress`; nunca usa `addressId` ni `/api/addresses` |
 | Sin historial de pedidos | `GET /orders` no se consume; `api.getOrder` está definido pero no se llama |

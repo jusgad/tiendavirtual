@@ -1,51 +1,109 @@
 import { PaymentMethod } from './paymentMethod'
 import { PaymentStatus } from './paymentStatus'
 
-// -------- Pasarela de pago (Wompi) --------
+// -------- Pasarela de pago (Mercado Pago) --------
 
 export interface BuildCheckoutInput {
   /** Referencia que verá la pasarela. Usamos el número de pedido legible. */
   reference: string
-  /** Monto en la unidad principal (COP). La pasarela lo quiere en centavos. */
+  /** Monto en la unidad principal (COP). */
   amount: number
   currency: string
+  /** Descripción del cobro que verá la clienta en la pasarela. */
+  description: string
 }
 
 /**
- * Datos que el widget de Wompi necesita en el navegador. `signature` es la firma
- * de integridad: impide que el cliente altere el monto antes de pagar.
- * Aquí NO viaja ningún secreto — solo la llave pública y el hash ya calculado.
+ * Lo que el navegador necesita para ir a pagar.
+ *
+ * Con Mercado Pago no hay nada que firmar aquí: el backend crea una
+ * «preferencia» contra su API y recibe una URL (`initPoint`) a la que se
+ * manda a la clienta. El monto vive del lado de Mercado Pago, así que no hay
+ * forma de alterarlo desde el navegador.
+ *
+ * Aquí NO viaja ningún secreto: `publicKey` es pública por definición.
  */
 export interface CheckoutConfig {
+  /**
+   * `false` cuando el backend todavía tiene el token de marcador de posición
+   * de `.env.example`. El frontend lo usa para decirlo con claridad en vez de
+   * mandar a la clienta a una URL vacía.
+   */
+  configured: boolean
+  /** Id de la preferencia creada en Mercado Pago. Vacío si `configured` es false. */
+  preferenceId: string
+  /** URL del checkout de Mercado Pago. Vacía si `configured` es false. */
+  initPoint: string
   publicKey: string
-  currency: string
-  amountInCents: number
   reference: string
-  signature: string
-  redirectUrl: string | null
+  amount: number
+  currency: string
+  /** true si la preferencia se creó con credenciales de prueba (no cobra dinero real). */
+  sandbox: boolean
 }
 
-/** Resultado de un evento `transaction.updated` ya verificado. */
+/**
+ * Lo que llega en el webhook, ya traducido desde HTTP.
+ *
+ * Mercado Pago firma el aviso con datos que viven en tres sitios distintos
+ * (cabeceras, query string y cuerpo), así que el puerto los pide todos en vez
+ * de recibir solo el cuerpo como hacía la pasarela anterior.
+ */
+export interface IncomingPaymentEvent {
+  body: unknown
+  /** Cabecera `x-signature`: `ts=...,v1=...`. */
+  signatureHeader: string | null
+  /** Cabecera `x-request-id`. Entra en la firma. */
+  requestId: string | null
+  /** `data.id` de la query string. Es el valor que Mercado Pago firma. */
+  queryDataId: string | null
+  /**
+   * `type` de la query string. Mercado Pago lo manda en los dos sitios; se
+   * recoge también de aquí porque un aviso cuyo tipo no se reconoce se
+   * descarta en silencio, y «el pago no se confirma nunca» es el fallo más
+   * difícil de ver desde fuera.
+   */
+  queryType: string | null
+}
+
+/** Resultado de un aviso ya verificado y consultado contra la API. */
 export interface PaymentEventResult {
   /** Referencia del comercio: nuestro `orderNumber`. */
   reference: string
-  /** Id de la transacción en Wompi. */
+  /** Id del pago en Mercado Pago. */
   transactionId: string
   status: PaymentStatus
 }
 
 /**
- * Puerto de la pasarela de pago. Un solo proveedor (Wompi), no un registro por
- * método: el dominio no sabe nada de HTTP ni del formato de sus payloads.
+ * Tres desenlaces posibles de un aviso, y la diferencia importa:
+ *
+ * - `invalid`  → la firma no cuadra. Se responde 401 y no se toca nada.
+ * - `ignored`  → la firma es buena pero el aviso no nos concierne (avisos de
+ *   `merchant_order`, pruebas del panel, estados que no conocemos). Se
+ *   responde 200: si respondiéramos error, Mercado Pago reintentaría el mismo
+ *   aviso durante horas por algo que nunca vamos a procesar.
+ * - `payment`  → hay un resultado de pago que aplicar.
+ */
+export type PaymentEventOutcome =
+  | { kind: 'invalid' }
+  | { kind: 'ignored'; reason: string }
+  | { kind: 'payment'; result: PaymentEventResult }
+
+/**
+ * Puerto de la pasarela de pago. Un solo proveedor (Mercado Pago), no un
+ * registro por método: el dominio no sabe nada de HTTP ni del formato de sus
+ * payloads.
+ *
+ * Los dos métodos son asíncronos porque los dos hablan con la API de Mercado
+ * Pago: crear la preferencia es una petición, y un aviso de webhook solo trae
+ * el id del pago, así que hay que ir a preguntar en qué quedó.
  */
 export interface PaymentGateway {
-  /** Arma la configuración firmada que consumirá el widget en el navegador. */
-  buildCheckout(input: BuildCheckoutInput): CheckoutConfig
-  /**
-   * Verifica el checksum del evento y extrae el resultado.
-   * Devuelve null si el checksum no cuadra o el evento no es interpretable.
-   */
-  verifyEvent(payload: unknown): PaymentEventResult | null
+  /** Crea la preferencia de pago y devuelve a dónde mandar el navegador. */
+  buildCheckout(input: BuildCheckoutInput): Promise<CheckoutConfig>
+  /** Verifica la firma del aviso y consulta el pago real. */
+  verifyEvent(event: IncomingPaymentEvent): Promise<PaymentEventOutcome>
 }
 
 // -------- Persistencia y pedido --------
@@ -58,7 +116,8 @@ export interface PaymentRecord {
   amount: number
   currency: string
   externalReference: string | null
-  wompiTransactionId: string | null
+  /** Id del pago en la pasarela. Llega en el aviso, no antes. */
+  providerTransactionId: string | null
 }
 
 export interface PaymentRepository {
@@ -77,7 +136,7 @@ export interface PaymentRepository {
     id: string,
     status: PaymentStatus,
     rawPayload: unknown,
-    wompiTransactionId: string | null,
+    providerTransactionId: string | null,
   ): Promise<PaymentRecord>
 }
 
@@ -105,9 +164,9 @@ export interface OrderPaymentGateway {
    *
    * Devuelve los datos de contacto **solo si la transición se aplicó**, y
    * `null` si el pedido ya no estaba PENDING. Así el aviso de pago sale una
-   * sola vez aunque Wompi reenvíe el mismo evento: la idempotencia del correo
-   * la da la misma guarda que la del estado, sin un segundo mecanismo que
-   * mantener en sincronía.
+   * sola vez aunque Mercado Pago reenvíe el mismo evento: la idempotencia del
+   * correo la da la misma guarda que la del estado, sin un segundo mecanismo
+   * que mantener en sincronía.
    */
   markPaid(orderId: string): Promise<PaidOrderContact | null>
 }
@@ -115,7 +174,7 @@ export interface OrderPaymentGateway {
 /**
  * Aviso de pago confirmado. No lanza, por el mismo motivo que en el checkout:
  * el pago ya está cobrado y registrado cuando esto se invoca, y un webhook que
- * responde error hace que Wompi reintente el evento en bucle.
+ * responde error hace que Mercado Pago reintente el evento en bucle.
  */
 export interface PaymentNotifier {
   orderPaid(data: { to: string; orderNumber: string; total: number }): Promise<void>

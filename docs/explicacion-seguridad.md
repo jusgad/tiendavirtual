@@ -185,9 +185,9 @@ desactivan con `NODE_ENV=test` para no introducir inestabilidad en los tests.
 ## Pagos
 
 **El backend nunca ve un número de tarjeta.** Es la propiedad de seguridad más
-importante del sistema: el cliente teclea sus datos dentro del widget de Wompi,
-en su navegador, y `POST /payments` solo acepta un `orderId`. El DTO ni siquiera
-tiene un campo donde poner una tarjeta.
+importante del sistema: la clienta teclea sus datos en el sitio de Mercado
+Pago, y `POST /payments` solo acepta un `orderId`. El DTO ni siquiera tiene un
+campo donde poner una tarjeta.
 
 Esto mantiene el proyecto **fuera del alcance de PCI-DSS**. La versión anterior
 recibía PAN y CVV en el propio endpoint, lo que habría sido un problema de
@@ -195,14 +195,16 @@ cumplimiento real al llegar a producción.
 
 Lo que sí hace el backend:
 
-- **Firma de integridad** del widget: `SHA256(referencia + montoEnCentavos + moneda + WOMPI_INTEGRITY_SECRET)`. Impide que el cliente altere el importe en el navegador. El secreto nunca viaja; solo el hash.
-- **Verifica el checksum** de cada evento (`SHA256(valores + timestamp + WOMPI_EVENTS_SECRET)`) con comparación en tiempo constante (`crypto.timingSafeEqual`), no `===`.
+- **El monto lo fija el servidor**, no el navegador: se crea una *preferencia* contra la API de Mercado Pago con el total del pedido, y el navegador solo recibe la URL a la que ir. No hay nada firmado que el cliente pueda manipular porque no hay nada que el cliente lleve.
+- **Verifica la firma** de cada aviso (`HMAC-SHA256("id:…;request-id:…;ts:…;", MERCADO_PAGO_WEBHOOK_SECRET)`) con comparación en tiempo constante (`crypto.timingSafeEqual`), no `===`.
+- **No se cree el aviso**: el aviso solo trae el id del pago. El estado se lee consultando `GET /v1/payments/{id}` contra Mercado Pago, autenticado con el access token.
 - **Nunca confía en el redirect** del navegador como prueba de pago: la única fuente de verdad es el webhook verificado.
-- **Idempotencia en dos capas**: un pago ya `APPROVED` no se degrada jamás, y la reentrega del mismo evento (misma transacción y estado) no reprocesa. Un reintento legítimo con transacción nueva sí se procesa.
-- **Secretos obligatorios en producción**: el arranque falla si los secretos de Wompi siguen siendo los de ejemplo, **o si las llaves son de sandbox** (`pub_test_`/`prv_test_`).
-- En `Payment.rawPayload` se guarda el payload del **evento**, no el de la petición del cliente.
+- **Idempotencia en dos capas**: un pago ya `APPROVED` no se degrada jamás (salvo a `REFUNDED`, que es información nueva y real), y la reentrega del mismo aviso (mismo pago y estado) no reprocesa. Un reintento legítimo con un pago nuevo sí se procesa.
+- **Un aviso con firma válida pero no procesable responde 200**, no un error. Parece contraintuitivo, pero un error hace que Mercado Pago reintente durante horas algo que nunca se va a procesar.
+- **Secretos obligatorios en producción**: el arranque falla si el secreto del webhook o el access token siguen siendo los de ejemplo, si el access token es de prueba (`TEST-`), o si `MERCADO_PAGO_API_URL` apunta a algo que no es la API real — eso último le entregaría el access token a ese host.
+- En `Payment.rawPayload` se guarda el cuerpo del **aviso**, no el de la petición del cliente.
 
-Detalle en [decisiones de diseño](explicacion-decisiones.md#pagos-con-wompi-sacar-la-tarjeta-del-backend).
+Detalle en [decisiones de diseño](explicacion-decisiones.md#pagos-con-mercado-pago-sacar-la-tarjeta-del-backend).
 
 ## Seguimiento público de pedidos
 
@@ -306,15 +308,15 @@ Sé honesto con esta lista antes de exponer la API.
 ```
 [ ] NODE_ENV=production
 [ ] JWT_ACCESS_SECRET largo y aleatorio (≥ 32 bytes)
-[ ] WOMPI_INTEGRITY_SECRET y WOMPI_EVENTS_SECRET propios, de tu cuenta de Wompi
-[ ] WOMPI_PUBLIC_KEY / WOMPI_PRIVATE_KEY de PRODUCCIÓN (pub_prod_/prv_prod_),
-    no las de sandbox
+[ ] MERCADO_PAGO_WEBHOOK_SECRET propio, del panel de Mercado Pago
+[ ] MERCADO_PAGO_ACCESS_TOKEN de PRODUCCIÓN (APP_USR-…), no el de prueba (TEST-)
+[ ] MERCADO_PAGO_API_URL sin definir (o la API real): nunca otro host
 [ ] ADMIN_PASSWORD propio, no el de .env.example
 [ ] CORS_ORIGIN con la lista real de orígenes, nunca *
 [ ] TRUST_PROXY=1 si corre detrás de ALB/CloudFront
 [ ] Secretos en el gestor de la plataforma, no en un .env plano
 [ ] TLS terminado antes de la app; HTTP redirige a HTTPS
-[ ] URL de eventos configurada en el panel de Wompi apuntando al webhook
+[ ] URL de notificación configurada en Mercado Pago apuntando al webhook
 [ ] Cambiar la contraseña del admin sembrado tras el primer despliegue
 [ ] Backups automáticos de Postgres verificados (probar una restauración)
 [ ] Rotación y retención de logs configuradas

@@ -94,7 +94,7 @@ funciona el sistema, sino hacia dónde va.
 
 | Documento | Cubre |
 |---|---|
-| [Blueprint de finalización](pomass-tiendavirtual-blueprint.md) | Plan de 15 pasos hasta producción: Wompi, Supabase, Railway, Vercel, seguimiento de pedido sin cuenta |
+| [Blueprint de finalización](pomass-tiendavirtual-blueprint.md) | Plan de 15 pasos hasta producción: pasarela de pago, Supabase, Railway, Vercel, seguimiento de pedido sin cuenta. **Escrito cuando la pasarela era Wompi**; hoy es Mercado Pago |
 | [Análisis de brechas](analisis-brechas-blueprint.md) | Contraste del blueprint contra el código real: qué está hecho, qué falta, qué el blueprint no cubre |
 
 ---

@@ -60,7 +60,7 @@ export const DOCUMENTOS = [
           'Si creas cuenta, tu contraseña, que se guarda cifrada y que nadie —tampoco nosotros— puede leer.',
         ],
         cierre:
-          '**No guardamos los datos de tu tarjeta.** El pago lo procesa la pasarela Wompi en su propia plataforma; nosotros solo recibimos la confirmación de si el pago fue aprobado o rechazado.',
+          '**No guardamos los datos de tu tarjeta.** El pago lo procesa la pasarela Mercado Pago en su propia plataforma; nosotros solo recibimos la confirmación de si el pago fue aprobado o rechazado.',
       },
       {
         titulo: 'Para qué los usamos',
@@ -77,7 +77,7 @@ export const DOCUMENTOS = [
         titulo: 'Con quién los compartimos',
         items: [
           'Con la transportadora, para poder entregarte el pedido: nombre, dirección y teléfono.',
-          'Con la pasarela de pagos Wompi, para procesar el cobro.',
+          'Con la pasarela de pagos Mercado Pago, para procesar el cobro.',
           'Con las autoridades, cuando la ley lo exija.',
         ],
       },

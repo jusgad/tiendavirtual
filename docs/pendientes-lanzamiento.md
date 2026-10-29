@@ -68,11 +68,14 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
   desde esta máquina — las dos cadenas van por el pooler, y el script lo
   impone.
 
-- [ ] **B5 · Credenciales de Wompi** — a medias
-  Las cuatro llaves de **producción** ya están en `.env`. Falta: cambiar a las
-  de sandbox para probar sin cobrar de verdad, y registrar la URL de Eventos
-  en el panel de Wompi — hoy está vacía, así que **ningún pago se
-  confirmaría**: el pedido se quedaría en PENDING para siempre.
+- [ ] **B5 · Credenciales de Mercado Pago** — sin empezar
+  La tienda cambió de pasarela: las llaves de Wompi que había en `.env` ya no
+  sirven de nada. Hay que crear la aplicación en el
+  [panel de Mercado Pago](https://www.mercadopago.com.co/developers/panel),
+  poner `MERCADO_PAGO_ACCESS_TOKEN` y `MERCADO_PAGO_PUBLIC_KEY` (primero las
+  de prueba, `TEST-…`), y registrar la URL de notificación con su secreto en
+  `MERCADO_PAGO_WEBHOOK_SECRET`. **Sin esa URL ningún pago se confirma**: el
+  pedido se quedaría en PENDING para siempre.
 
 - [ ] **B6 · QA end-to-end en sandbox**
   Los tests de integración compilan pero nunca se han ejecutado aquí (Docker
@@ -95,7 +98,7 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
     proveedor está caído, se registra en el log y la compra sigue.
   - **El aviso de pago no se duplica**: `markPaid` devuelve los datos de
     contacto solo si la guarda `PENDING → PAID` dejó pasar, así que un
-    reintento de Wompi no manda un segundo correo.
+    reintento de Mercado Pago no manda un segundo correo.
   - **La recuperación de contraseña ya funciona de verdad.** Antes el token se
     generaba y solo se exponía fuera de producción: en la tienda real nadie lo
     recibía. Ahora llega por correo, hay pantalla para usarlo
@@ -157,10 +160,10 @@ credenciales y datos tuyos.
 ```
 1. Completa COMERCIANTE en site.js  (5 minutos)
 2. B4 — Supabase (`npm run supabase:setup`) + Redis + desplegar
-3. B5 — llaves de sandbox de Wompi + registrar la URL de Eventos
+3. B5 — credenciales de prueba de Mercado Pago + registrar la URL de notificación
 4. Resend — crear cuenta, verificar el dominio, poner RESEND_API_KEY
 5. B6 — comprar de mentira de punta a punta
-6. Llaves de producción de Wompi
+6. Credenciales de producción de Mercado Pago (APP_USR-…)
 7. R2-R3 cuando haya tráfico
 ```
 
@@ -174,13 +177,16 @@ credenciales y datos tuyos.
 | `CORS_ORIGIN` | La misma dirección. En producción `*` está prohibido. |
 | `RESEND_API_KEY` | resend.com → API Keys. |
 | `EMAIL_FROM` | Un remitente de un dominio verificado en Resend. |
-| `WOMPI_*` | Las cuatro de sandbox primero; las de producción al final. |
+| `MERCADO_PAGO_*` | Las de prueba primero (`TEST-…`); las de producción al final. |
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ADMIN_PASSWORD` | Valores propios. El arranque falla si quedan los de ejemplo. |
 
-### La URL de Eventos de Wompi
+### La URL de notificación de Mercado Pago
 
-En el panel de Wompi, campo «URL de Eventos»:
-`https://TU-BACKEND/api/payments/webhook`
+En el panel de Mercado Pago, en **Webhooks > Configurar notificación**:
+`https://TU-BACKEND/api/payments/webhook/mercadopago`
+
+Marca el evento **Pagos** y copia la clave secreta que te da a
+`MERCADO_PAGO_WEBHOOK_SECRET`.
 
 **Hoy está vacía. Mientras siga así, ningún pago se confirma**: el cliente
 paga y el pedido se queda en PENDING para siempre. Es lo primero que hay que

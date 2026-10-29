@@ -56,7 +56,8 @@ export function pasosConEstado(status) {
 
 /**
  * ¿Conviene volver a consultar? Solo mientras el pago no se haya confirmado:
- * el webhook de Wompi puede tardar unos segundos en llegar, y hasta que llega
+ * el webhook de Mercado Pago puede tardar unos segundos en llegar, y hasta
+ * que llega
  * el pedido sigue en PENDING aunque el cliente ya haya pagado.
  */
 export function esperaConfirmacion(status) {

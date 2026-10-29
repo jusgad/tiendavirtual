@@ -1,39 +1,32 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, formatCOP } from '../api'
-import { isPlaceholderKey, openWompiCheckout } from '../wompi'
+import { estaConfigurado, irAMercadoPago } from '../mercadopago'
 import { Card, ErrorBanner, PrimaryButton, SecondaryButton } from '../components/ui'
 
-// Cada cuánto y cuántas veces se pregunta al backend si el pago ya se confirmó.
-const POLL_INTERVAL_MS = 3000
-const POLL_ATTEMPTS = 20 // ~60 s
+const MEDIOS = ['💳 Tarjeta', '🏦 PSE', '🏪 Efecty', '💙 Mercado Pago']
 
-const MEDIOS = ['💳 Tarjeta', '📲 Nequi', '🏦 PSE', '💜 Bancolombia']
-
-export default function PaymentStep({ order, contactEmail, onPaid }) {
-  // preparing → ready → paying → verifying → (onPaid)
+/**
+ * Último paso dentro de la tienda: de aquí se sale hacia Mercado Pago.
+ *
+ * No hay nada que sondear después de darle a «Pagar»: la clienta se va del
+ * sitio, paga allí y Mercado Pago la devuelve a `track.html`, que es la página
+ * que sabe consultar en qué quedó el pedido. La confirmación de verdad no la
+ * escribe el navegador sino el webhook.
+ */
+export default function PaymentStep({ order }) {
+  // preparing → ready → leaving | error
   const [phase, setPhase] = useState('preparing')
-  const [payment, setPayment] = useState(null)
   const [checkout, setCheckout] = useState(null)
-  const [transaction, setTransaction] = useState(null)
   const [error, setError] = useState(null)
-  const cancelled = useRef(false)
-
-  useEffect(() => {
-    cancelled.current = false
-    return () => {
-      cancelled.current = true
-    }
-  }, [])
 
   // Prepara el pago en cuanto se entra al paso: el backend crea (o reutiliza)
-  // el registro y devuelve la configuración firmada del widget.
+  // el registro y el cobro en Mercado Pago, y devuelve a dónde hay que ir.
   useEffect(() => {
     let vivo = true
     api
       .initiatePayment({ orderId: order.id })
       .then((res) => {
         if (!vivo) return
-        setPayment(res.payment)
         setCheckout(res.checkout)
         setPhase('ready')
       })
@@ -47,50 +40,12 @@ export default function PaymentStep({ order, contactEmail, onPaid }) {
     }
   }, [order.id])
 
-  /**
-   * Pregunta al backend por el estado real del pedido. El widget informa lo que
-   * cree, pero la única fuente de verdad es el webhook de Wompi, que llega al
-   * backend por su cuenta. Se consulta el seguimiento público porque funciona
-   * igual para invitados que para usuarios con sesión.
-   */
-  const esperarConfirmacion = async () => {
-    for (let intento = 0; intento < POLL_ATTEMPTS; intento++) {
-      if (cancelled.current) return null
-      try {
-        const { order: seguimiento } = await api.trackOrder({
-          orderNumber: order.orderNumber,
-          email: contactEmail,
-        })
-        if (seguimiento.status !== 'PENDING') return seguimiento.status
-      } catch {
-        // Un fallo puntual de consulta no interrumpe la espera.
-      }
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
-    }
-    return null // se agotó la espera; el webhook aún no ha llegado
-  }
-
-  const pagar = async () => {
+  const pagar = () => {
     setError(null)
-    setPhase('paying')
+    setPhase('leaving')
     try {
-      const tx = await openWompiCheckout(checkout)
-
-      if (!tx) {
-        // El cliente cerró el widget sin completar el pago.
-        setPhase('ready')
-        return
-      }
-
-      setTransaction(tx)
-      setPhase('verifying')
-
-      const estadoFinal = await esperarConfirmacion()
-      if (cancelled.current) return
-
-      onPaid({ payment, transaction: tx, orderStatus: estadoFinal })
+      irAMercadoPago(checkout)
     } catch (err) {
-      if (cancelled.current) return
       setError(err.message)
       setPhase('ready')
     }
@@ -117,22 +72,7 @@ export default function PaymentStep({ order, contactEmail, onPaid }) {
     )
   }
 
-  if (phase === 'verifying') {
-    return (
-      <Card className="mx-auto max-w-md text-center">
-        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-peach-100 border-t-peach-500" />
-        <h2 className="font-serif text-xl text-[#5A2E12]">Verificando tu pago…</h2>
-        <p className="mt-2 text-sm text-[#8A6A4A]">
-          Estamos esperando la confirmación de Wompi. No cierres esta ventana.
-        </p>
-        {transaction?.id && (
-          <p className="mt-3 text-xs text-[#B5AFA0]">Transacción {transaction.id}</p>
-        )}
-      </Card>
-    )
-  }
-
-  const sinConfigurar = isPlaceholderKey(checkout?.publicKey)
+  const sinConfigurar = !estaConfigurado(checkout)
 
   return (
     <Card className="mx-auto max-w-md">
@@ -150,7 +90,7 @@ export default function PaymentStep({ order, contactEmail, onPaid }) {
 
       <h2 className="mb-2 font-serif text-xl text-[#5A2E12]">Paga de forma segura</h2>
       <p className="mb-4 text-sm text-[#6A3A1C]">
-        Al continuar se abrirá el checkout de <strong>Wompi</strong>, donde eliges cómo pagar:
+        Te llevamos a <strong>Mercado Pago</strong>, donde eliges cómo pagar:
       </p>
 
       <div className="mb-5 grid grid-cols-2 gap-2">
@@ -168,32 +108,38 @@ export default function PaymentStep({ order, contactEmail, onPaid }) {
 
       {sinConfigurar ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <p className="font-bold">Wompi no está configurado todavía</p>
+          <p className="font-bold">Mercado Pago no está configurado todavía</p>
           <p className="mt-1">
-            El backend está devolviendo la llave pública de ejemplo. Pon tus credenciales de{' '}
+            El backend aún tiene las credenciales de ejemplo. Pon las tuyas del{' '}
             <a
-              href="https://comercios.wompi.co"
+              href="https://www.mercadopago.com.co/developers/panel"
               target="_blank"
               rel="noreferrer"
               className="underline"
             >
-              comercios.wompi.co
+              panel de desarrolladores
             </a>{' '}
             en <code className="rounded bg-amber-100 px-1">backend/.env</code> (
-            <code className="rounded bg-amber-100 px-1">WOMPI_PUBLIC_KEY</code> y{' '}
-            <code className="rounded bg-amber-100 px-1">WOMPI_INTEGRITY_SECRET</code>) y reinicia
-            la API.
+            <code className="rounded bg-amber-100 px-1">MERCADO_PAGO_ACCESS_TOKEN</code> y{' '}
+            <code className="rounded bg-amber-100 px-1">MERCADO_PAGO_WEBHOOK_SECRET</code>) y
+            reinicia la API.
           </p>
         </div>
       ) : (
-        <PrimaryButton onClick={pagar} disabled={phase === 'paying'}>
-          {phase === 'paying' ? 'Abriendo Wompi…' : `Pagar ${formatCOP(order.total)}`}
+        <PrimaryButton onClick={pagar} disabled={phase === 'leaving'}>
+          {phase === 'leaving' ? 'Abriendo Mercado Pago…' : `Pagar ${formatCOP(order.total)}`}
         </PrimaryButton>
       )}
 
+      {checkout?.sandbox && !sinConfigurar && (
+        <p className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-center text-xs font-bold text-sky-800">
+          Modo de pruebas: no se cobra dinero real.
+        </p>
+      )}
+
       <p className="mt-4 text-center text-xs text-[#B5AFA0]">
-        🔒 Tus datos de pago se ingresan dentro de Wompi. Esta tienda nunca ve el número de tu
-        tarjeta.
+        🔒 Tus datos de pago se ingresan en Mercado Pago. Esta tienda nunca ve el número de tu
+        tarjeta. Al terminar volverás al seguimiento de tu pedido.
       </p>
     </Card>
   )

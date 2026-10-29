@@ -19,7 +19,7 @@ Descripción completa del esquema PostgreSQL, tal como está definido en
 |---|---|---|
 | `Role` | `CLIENT`, `ADMIN` | `User.role` (default `CLIENT`) |
 | `OrderStatus` | `PENDING`, `PAID`, `PREPARING`, `SHIPPED`, `DELIVERED`, `CANCELLED` | `Order.status` (default `PENDING`) |
-| `PaymentMethod` | `WOMPI` | `Payment.method` |
+| `PaymentMethod` | `MERCADO_PAGO` | `Payment.method` |
 | `PaymentStatus` | `PENDING`, `APPROVED`, `DECLINED`, `REFUNDED` | `Payment.status` (default `PENDING`) |
 | `CouponType` | `PERCENTAGE`, `FIXED` | `Coupon.type` |
 
@@ -31,7 +31,7 @@ Descripción completa del esquema PostgreSQL, tal como está definido en
                  ▼
              PENDING ──────────────────────┐
                  │                         │
-   webhook de Wompi APROBADO               │  cancelación
+   webhook de Mercado Pago APROBADO        │  cancelación
    (única forma de llegar a PAID)          │  · POST /orders/:id/cancel   (cliente)
                  │                         │  · PATCH /admin/orders/:id/status
                  ▼                         │    (admin)
@@ -257,16 +257,16 @@ Mismo razonamiento: si el precio del catálogo sube mañana, el pedido de ayer n
 | `status` | `PaymentStatus` | default `PENDING` |
 | `amount` | Decimal(12,2) | Copiado del `total` del pedido |
 | `currency` | string | default `"COP"` |
-| `externalReference` | string? | La referencia que ve Wompi: es el **`orderNumber`** del pedido. **Indexado** — es la clave por la que el webhook encuentra el pago |
-| `wompiTransactionId` | string? | Id de la transacción que asigna Wompi. Llega en el evento, no antes. **Indexado** |
-| `rawPayload` | Json? | Payload del evento, para trazabilidad |
+| `externalReference` | string? | La referencia que ve la pasarela: es el **`orderNumber`** del pedido. Viaja a Mercado Pago como `external_reference`. **Indexado** — es la clave por la que el webhook encuentra el pago |
+| `providerTransactionId` | string? | Id del pago en la pasarela. Llega con el webhook, no antes. **Indexado** |
+| `rawPayload` | Json? | Cuerpo del aviso, para trazabilidad |
 
 El esquema permite **varios** pagos por pedido, pero el caso de uso reutiliza el
-pago `PENDING` existente cuando el cliente reintenta, para que la referencia
+pago `PENDING` existente cuando la clienta reintenta, para que la referencia
 resuelva a una sola fila.
 
-`wompiTransactionId` es lo que distingue una **reentrega** del mismo evento (se
-ignora) de un **reintento** real con una transacción nueva (sí se procesa).
+`providerTransactionId` es lo que distingue una **reentrega** del mismo aviso
+(se ignora) de un **reintento** real con un pago nuevo (sí se procesa).
 
 ---
 
@@ -336,10 +336,17 @@ Viven en [`backend/prisma/migrations/`](../backend/prisma/migrations/):
 | `0001_init` | Esquema completo inicial |
 | `0002_guest_orders` | `Order.userId` pasa a opcional + `Order.guestEmail`, habilitando el checkout sin cuenta |
 | `0003_wompi_payments` | `PaymentMethod` pasa de `NEQUI/DAVIPLATA/CREDIT_CARD` a `WOMPI`, y aparece `Payment.wompiTransactionId` |
+| `0004_order_tracking` | `Order.carrier` y `Order.trackingNumber`, para el seguimiento del envío |
+| `0005_mercado_pago` | Cambio de pasarela: `WOMPI` pasa a `MERCADO_PAGO` y `Payment.wompiTransactionId` a `providerTransactionId` |
 
 > `0003` reemplaza el tipo enum en vez de editarlo: Postgres no permite quitar
 > valores de un enum, así que se crea `PaymentMethod_new`, se convierte la
 > columna y se renombra. Los pagos que existieran se remapean a `WOMPI`.
+>
+> `0005` **no** hace eso: usa `ALTER TYPE … RENAME VALUE`, que conserva las
+> filas. Recrear el tipo obligaría a remapear pagos que a estas alturas ya
+> pueden ser reales. El índice se renombra también, para que Prisma no lo vea
+> como uno de más y proponga recrearlo en la siguiente migración.
 
 La migración inicial se generó con `prisma migrate diff --from-empty`, es decir
 **sin necesidad de una base de datos corriendo**. Sirve como técnica para

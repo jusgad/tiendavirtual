@@ -146,9 +146,10 @@ Detalle completo de componentes, cliente de API y sistema de diseño en
 ## Frontend — demo de checkout
 
 `checkout.html` es una segunda página, independiente de la landing, que **sí
-consume la API del backend**. Implementa el flujo de compra completo en cinco
-pasos: Cuenta → Tienda → Envío → Pago → Confirmación, con soporte para comprar
-sin crear cuenta.
+consume la API del backend**. Implementa el flujo de compra completo en cuatro
+pasos: Cuenta → Tienda → Envío → Pago, con soporte para comprar sin crear
+cuenta. Del paso de pago se sale hacia Mercado Pago, que al terminar devuelve
+a la clienta a `track.html` para ver el estado real del pedido.
 
 Es el único punto donde las dos aplicaciones se tocan: el botón *Comprar* de la
 landing redirige aquí.
@@ -166,8 +167,8 @@ Necesita el backend vivo. Recorrido guiado en
 
 API REST completa para operar la tienda: autenticación con roles, catálogo con
 búsqueda/filtros y caché, carrito (usuario + invitado), checkout transaccional
-con cupones y envío, y pagos con adaptadores por proveedor colombiano
-(Nequi/Daviplata/tarjeta) vía webhook firmado.
+con cupones y envío, y pagos con **Mercado Pago** (Checkout Pro) confirmados
+por webhook firmado.
 
 Construida en **arquitectura limpia/hexagonal**, modular por dominio, con
 Postgres + Prisma, Redis, JWT, validación con Zod, tests con Jest/Supertest y
@@ -185,7 +186,7 @@ endpoints en **[docs/referencia-api.md](docs/referencia-api.md)**.
 | Catálogo (productos, categorías, marcas, búsqueda/filtros, caché Redis) | ✅ |
 | Carrito (persistente por usuario + invitado en Redis, validación de stock, merge) | ✅ |
 | Pedidos/Checkout (transaccional, stock atómico, cupones, envío, empaque discreto) | ✅ |
-| Pagos (adaptadores Nequi/Daviplata/tarjeta, webhook firmado) | ✅ |
+| Pagos (Mercado Pago Checkout Pro, webhook firmado e idempotente) | ✅ |
 | Cupones (CRUD admin) | ✅ |
 | Reseñas (compra verificada, auto-aprobadas) | ✅ |
 | Panel de administración/reportes (ventas, top productos, pedidos por estado) | ✅ |

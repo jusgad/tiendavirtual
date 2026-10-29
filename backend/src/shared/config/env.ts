@@ -3,9 +3,28 @@ import { z } from 'zod'
 
 // Valores por defecto SOLO aptos para desarrollo. En producción se prohíben
 // explícitamente (ver superRefine) para evitar desplegar con secretos conocidos.
-export const INSECURE_WOMPI_INTEGRITY_SECRET = 'dev_wompi_integrity_change_me'
-export const INSECURE_WOMPI_EVENTS_SECRET = 'dev_wompi_events_change_me'
+export const INSECURE_MERCADO_PAGO_WEBHOOK_SECRET = 'dev_mercadopago_webhook_change_me'
 export const INSECURE_ADMIN_PASSWORD = 'Admin123*'
+
+/**
+ * Access token de marcador: con él el backend no llama a la API y el checkout
+ * se marca como «sin configurar». Útil en desarrollo y en CI, prohibido en
+ * producción (ver superRefine).
+ */
+export const PLACEHOLDER_MERCADO_PAGO_ACCESS_TOKEN = 'TEST-0000000000000000-000000-0'
+
+/** API real de Mercado Pago. Lo único que se admite en producción. */
+export const MERCADO_PAGO_API_URL = 'https://api.mercadopago.com'
+
+/**
+ * URL opcional que tolera venir vacía.
+ *
+ * `dotenv` carga `VAR=` como cadena vacía, no como ausente, así que un
+ * `.optional()` a secas haría que el backend se negara a arrancar con el
+ * `.env.example` tal cual viene. Aquí el vacío significa «no configurada».
+ */
+const urlOpcional = () =>
+  z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional())
 
 // Validación centralizada de variables de entorno. Si algo falta o es inválido,
 // el proceso falla al arrancar (fail-fast) en vez de romperse en runtime.
@@ -36,20 +55,35 @@ const envSchema = z
     SHIPPING_FLAT_RATE: z.coerce.number().nonnegative().default(12900),
     FREE_SHIPPING_THRESHOLD: z.coerce.number().nonnegative().default(150000),
 
-    // ---- Wompi (pasarela de pago) ----
-    // Llave pública: viaja al navegador para inicializar el widget. No es secreta.
-    WOMPI_PUBLIC_KEY: z.string().min(1).default('pub_test_000000000000000000000000'),
-    // Llave privada: solo para consultar transacciones contra la API de Wompi.
-    WOMPI_PRIVATE_KEY: z.string().min(1).default('prv_test_000000000000000000000000'),
-    // Secreto de integridad: firma referencia+monto+moneda que consume el widget.
-    WOMPI_INTEGRITY_SECRET: z.string().min(8).default(INSECURE_WOMPI_INTEGRITY_SECRET),
-    // Secreto de eventos: verifica el checksum de los webhooks de Wompi.
-    WOMPI_EVENTS_SECRET: z.string().min(8).default(INSECURE_WOMPI_EVENTS_SECRET),
-    // A dónde vuelve el cliente tras pagar en el widget. Debe apuntar al frontend.
-    WOMPI_REDIRECT_URL: z.string().url().optional(),
-    // Permite desplegar un entorno de PRUEBAS con NODE_ENV=production y llaves
-    // de sandbox de Wompi. Sin esto no se podría montar un staging realista.
-    // En la tienda real debe quedar en false: con true no entra dinero.
+    // ---- Mercado Pago (pasarela de pago) ----
+    // Access token: credencial PRIVADA, firma todas las llamadas a la API.
+    // `TEST-…` son las de prueba y `APP_USR-…` las de producción.
+    MERCADO_PAGO_ACCESS_TOKEN: z.string().min(1).default(PLACEHOLDER_MERCADO_PAGO_ACCESS_TOKEN),
+    // Llave pública: puede viajar al navegador. No es secreta.
+    MERCADO_PAGO_PUBLIC_KEY: z.string().min(1).default('TEST-00000000-0000-0000-0000-000000000000'),
+    // Secreto del webhook (panel: Webhooks > Configurar notificación). Es lo
+    // que impide que alguien falsifique una confirmación de pago.
+    MERCADO_PAGO_WEBHOOK_SECRET: z.string().min(8).default(INSECURE_MERCADO_PAGO_WEBHOOK_SECRET),
+    // URL PÚBLICA de nuestro webhook, p. ej. https://api.tutienda.co/api/payments/webhook/mercadopago
+    // Si se deja vacía, Mercado Pago usa la que esté configurada en su panel;
+    // si tampoco hay ninguna, ningún pago se confirmaría jamás.
+    MERCADO_PAGO_NOTIFICATION_URL: urlOpcional(),
+    // A dónde vuelve la clienta tras pagar. Si se deja vacía se usa
+    // `FRONTEND_URL/track.html`, que es la página de seguimiento del pedido.
+    MERCADO_PAGO_BACK_URL: urlOpcional(),
+    // Lo que verá en el extracto de su tarjeta. Máximo 16 caracteres.
+    MERCADO_PAGO_STATEMENT_DESCRIPTOR: z.string().max(16).default('POMASS'),
+    // SOLO PARA PRUEBAS: apunta el backend a un doble local de la API de
+    // Mercado Pago, para poder recorrer el flujo entero sin internet. En
+    // producción se exige la API real (ver superRefine): si no, el access
+    // token acabaría viajando a donde diga esta variable.
+    MERCADO_PAGO_API_URL: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.string().url().default(MERCADO_PAGO_API_URL),
+    ),
+    // Permite desplegar un entorno de PRUEBAS con NODE_ENV=production y
+    // credenciales de prueba. Sin esto no se podría montar un staging
+    // realista. En la tienda real debe quedar en false: con true no entra dinero.
     PAYMENTS_SANDBOX: z
       .enum(['true', 'false'])
       .default('false')
@@ -83,28 +117,35 @@ const envSchema = z
       }
     }
     requireSecret(
-      cfg.WOMPI_INTEGRITY_SECRET,
-      INSECURE_WOMPI_INTEGRITY_SECRET,
-      'WOMPI_INTEGRITY_SECRET',
-      'Define el WOMPI_INTEGRITY_SECRET de tu cuenta de Wompi en producción (el valor por defecto permite alterar el monto del cobro)',
+      cfg.MERCADO_PAGO_WEBHOOK_SECRET,
+      INSECURE_MERCADO_PAGO_WEBHOOK_SECRET,
+      'MERCADO_PAGO_WEBHOOK_SECRET',
+      'Define el secreto del webhook de tu cuenta de Mercado Pago en producción (el valor por defecto permite falsificar confirmaciones de pago)',
     )
     requireSecret(
-      cfg.WOMPI_EVENTS_SECRET,
-      INSECURE_WOMPI_EVENTS_SECRET,
-      'WOMPI_EVENTS_SECRET',
-      'Define el WOMPI_EVENTS_SECRET de tu cuenta de Wompi en producción (el valor por defecto permite falsificar confirmaciones de pago)',
+      cfg.MERCADO_PAGO_ACCESS_TOKEN,
+      PLACEHOLDER_MERCADO_PAGO_ACCESS_TOKEN,
+      'MERCADO_PAGO_ACCESS_TOKEN',
+      'Define el access token de tu cuenta de Mercado Pago: con el de ejemplo el checkout ni siquiera abre',
     )
-    // Las llaves de prueba de Wompi no cobran de verdad. Se bloquean salvo que
-    // se declare explícitamente que este despliegue ES un entorno de pruebas.
-    const usaSandbox =
-      cfg.WOMPI_PUBLIC_KEY.startsWith('pub_test_') || cfg.WOMPI_PRIVATE_KEY.startsWith('prv_test_')
-    if (usaSandbox && !cfg.PAYMENTS_SANDBOX) {
+    // Desviar la API a otro host mandaría el access token a ese host. Es útil
+    // para probar en local; en producción es, como poco, una fuga.
+    if (cfg.MERCADO_PAGO_API_URL !== MERCADO_PAGO_API_URL) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['WOMPI_PUBLIC_KEY'],
+        path: ['MERCADO_PAGO_API_URL'],
+        message: `En producción MERCADO_PAGO_API_URL debe ser ${MERCADO_PAGO_API_URL} (o no definirse): apuntarla a otro sitio le entrega tu access token`,
+      })
+    }
+    // Las credenciales de prueba no cobran de verdad. Se bloquean salvo que se
+    // declare explícitamente que este despliegue ES un entorno de pruebas.
+    if (cfg.MERCADO_PAGO_ACCESS_TOKEN.startsWith('TEST-') && !cfg.PAYMENTS_SANDBOX) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MERCADO_PAGO_ACCESS_TOKEN'],
         message:
-          'Estás usando llaves de sandbox de Wompi con NODE_ENV=production: ningún pago real entraría. ' +
-          'Usa las llaves pub_prod_/prv_prod_, o declara PAYMENTS_SANDBOX=true si esto es un entorno de pruebas.',
+          'Estás usando credenciales de prueba de Mercado Pago con NODE_ENV=production: ningún pago real entraría. ' +
+          'Usa el access token APP_USR-…, o declara PAYMENTS_SANDBOX=true si esto es un entorno de pruebas.',
       })
     }
     requireSecret(

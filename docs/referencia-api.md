@@ -600,9 +600,9 @@ Todas verifican pertenencia por `userId`, tanto en el caso de uso como en el rep
 
 ## Pagos · `/api/payments`
 
-La pasarela es **Wompi**, un único proveedor que internamente ofrece tarjeta,
-Nequi, PSE y Bancolombia. El cliente elige el medio dentro del widget de Wompi,
-en su navegador.
+La pasarela es **Mercado Pago** (Checkout Pro), un único proveedor que
+internamente ofrece tarjeta, PSE, Efecty y saldo de Mercado Pago. La clienta
+elige el medio en el sitio de Mercado Pago, no aquí.
 
 > **Este backend nunca recibe número de tarjeta ni CVV.** Es la razón de ser de
 > la integración: mantiene el proyecto fuera del alcance de PCI-DSS. `POST
@@ -610,11 +610,14 @@ en su navegador.
 
 ### `POST /payments` 🔓
 
-Prepara el pago de un pedido `PENDING` y devuelve la configuración firmada que
-el widget necesita. **No cobra nada**: el cobro ocurre dentro del widget.
+Prepara el pago de un pedido `PENDING`: crea la *preferencia* contra la API de
+Mercado Pago y devuelve la URL a la que hay que mandar el navegador. **No cobra
+nada**: el cobro ocurre en el sitio de Mercado Pago.
 
-Si el cliente reintenta (cerró el widget, le rechazaron la tarjeta), se reutiliza
-el mismo registro de pago en vez de crear uno nuevo.
+Si la clienta reintenta (cerró el checkout, le rechazaron la tarjeta), se
+reutiliza el mismo registro de pago, y la cabecera `X-Idempotency-Key` hace que
+Mercado Pago devuelva la preferencia que ya existía en vez de abrir un segundo
+cobro por lo mismo.
 
 **Body**
 
@@ -629,31 +632,35 @@ el mismo registro de pago en vez de crear uno nuevo.
   "payment": {
     "id": "uuid",
     "orderId": "uuid",
-    "method": "WOMPI",
+    "method": "MERCADO_PAGO",
     "status": "PENDING",
-    "amount": 79900,
+    "amount": 89900,
     "currency": "COP",
     "externalReference": "PA-2026-A3F91C",
-    "wompiTransactionId": null
+    "providerTransactionId": null
   },
   "checkout": {
-    "publicKey": "pub_test_…",
-    "currency": "COP",
-    "amountInCents": 7990000,
+    "configured": true,
+    "preferenceId": "123456789-abcd-…",
+    "initPoint": "https://www.mercadopago.com.co/checkout/v1/redirect?pref_id=…",
+    "publicKey": "TEST-…",
     "reference": "PA-2026-A3F91C",
-    "signature": "9a3f…",
-    "redirectUrl": "https://tudominio.com/track.html"
+    "amount": 89900,
+    "currency": "COP",
+    "sandbox": true
   }
 }
 ```
 
 **Sobre `checkout`:**
 
-- `reference` es el **número de pedido**: es lo que Wompi devolverá en el webhook.
-- `amountInCents` es el total en centavos (COP × 100).
-- `signature` es la **firma de integridad**: `SHA256(reference + amountInCents + currency + WOMPI_INTEGRITY_SECRET)`. Impide que el cliente altere el importe en el navegador. El secreto nunca viaja.
+- `initPoint` es a dónde se manda el navegador. Es lo único que hace el frontend.
+- `reference` es el **número de pedido**: viaja como `external_reference` y es lo que devolverá el pago consultado tras el webhook.
+- **No hay nada que firmar**, a diferencia de la pasarela anterior: el monto ya quedó fijado del lado de Mercado Pago al crear la preferencia, así que no hay forma de alterarlo desde el navegador.
+- `configured` es `false` cuando el backend todavía tiene el access token de ejemplo. En ese caso no se llama a la API y `initPoint` viene vacío: sirve para que el frontend lo diga en vez de mandar a la clienta a ninguna parte.
+- `sandbox` es `true` con credenciales de prueba: el pago no cobra dinero real.
 
-**Errores**: `404 NOT_FOUND` si el pedido no existe o no es tuyo · `409 CONFLICT` si no está `PENDING`.
+**Errores**: `404 NOT_FOUND` si el pedido no existe o no es tuyo · `409 CONFLICT` si no está `PENDING` · `503 SERVICE_UNAVAILABLE` si Mercado Pago no respondió.
 
 ---
 
@@ -663,49 +670,46 @@ el mismo registro de pago en vez de crear uno nuevo.
 
 ---
 
-### `POST /payments/webhook/wompi`
+### `POST /payments/webhook/mercadopago`
 
-Evento `transaction.updated` de Wompi. **Es la única fuente de verdad de un
-pago**: nunca se confía en el redirect del navegador.
+Aviso de Mercado Pago. **Es la única fuente de verdad de un pago**: nunca se
+confía en el redirect del navegador.
 
-No lleva autenticación de usuario. La confianza viene del **checksum que Wompi
-incluye dentro del propio cuerpo** (`signature.checksum`), no de una cabecera.
+No lleva autenticación de usuario. La confianza viene de la **firma HMAC-SHA256
+de la cabecera `x-signature`**.
 
-**Body** (forma de Wompi)
+> **El aviso no dice en qué quedó el pago**, solo que cambió. Tras verificar la
+> firma, el backend consulta `GET /v1/payments/{id}` contra la API de Mercado
+> Pago y usa **esa** respuesta. El cuerpo del aviso no se cree para nada.
 
-```json
-{
-  "event": "transaction.updated",
-  "data": {
-    "transaction": {
-      "id": "01-1730000000-12345",
-      "reference": "PA-2026-A3F91C",
-      "status": "APPROVED",
-      "amount_in_cents": 7990000
-    }
-  },
-  "timestamp": 1730000000,
-  "signature": {
-    "properties": ["transaction.id", "transaction.status", "transaction.amount_in_cents"],
-    "checksum": "3B9F…"
-  }
-}
+**Entrada**
+
+| Dónde | Qué |
+|---|---|
+| Query `data.id` | Id del pago. Es el valor que entra en la firma |
+| Cabecera `x-signature` | `ts=1730000000,v1=9a3f…` |
+| Cabecera `x-request-id` | Entra en la firma |
+| Body | `{ "type": "payment", "action": "payment.updated", "data": { "id": "111222333" } }` |
+
+**Cálculo de la firma**
+
+```
+HMAC-SHA256( "id:<data.id>;request-id:<x-request-id>;ts:<ts>;" , MERCADO_PAGO_WEBHOOK_SECRET )
 ```
 
-**Cálculo del checksum**: se concatenan los valores de cada ruta de
-`signature.properties` (leídas dentro de `data`, en ese orden), luego el
-`timestamp`, luego `WOMPI_EVENTS_SECRET`; de todo eso, SHA-256 en hexadecimal.
-La comparación es en tiempo constante y tolerante a mayúsculas.
+El `data.id` va en minúsculas y los tramos que no vengan se omiten enteros. La
+comparación es en tiempo constante y tolerante a mayúsculas.
 
 **Mapeo de estados**
 
-| Wompi | `PaymentStatus` | ¿Mueve el pedido a `PAID`? |
+| Mercado Pago | `PaymentStatus` | ¿Mueve el pedido a `PAID`? |
 |---|---|---|
-| `APPROVED` | `APPROVED` | Sí |
-| `DECLINED` | `DECLINED` | No |
-| `VOIDED` | `DECLINED` | No |
-| `ERROR` | `DECLINED` | No |
-| `PENDING` | `PENDING` | No |
+| `approved` | `APPROVED` | Sí |
+| `authorized` | `PENDING` | No — retenido, no cobrado |
+| `pending` / `in_process` | `PENDING` | No |
+| `in_mediation` | `PENDING` | No — disputa abierta |
+| `rejected` / `cancelled` | `DECLINED` | No |
+| `refunded` / `charged_back` | `REFUNDED` | No |
 
 **`200 OK`**
 
@@ -713,15 +717,22 @@ La comparación es en tiempo constante y tolerante a mayúsculas.
 { "received": true, "status": "APPROVED" }
 ```
 
+**Avisos ignorados.** Un aviso con firma válida que no se puede procesar
+responde `200` con `{ "ignored": true, "reason": "…" }`, no un error: Mercado
+Pago reintenta durante horas lo que no le responda 200, y estos no van a
+procesarse nunca. Pasa con los avisos que no son de pago (`merchant_order`),
+los pagos inexistentes (las pruebas del panel mandan ids inventados), los pagos
+sin `external_reference` y los estados que el backend todavía no mapea.
+
 **Idempotencia**, en dos capas:
 
-- Un pago ya `APPROVED` **nunca se degrada**, llegue lo que llegue después.
-- La reentrega del mismo evento (misma transacción y mismo estado) responde `"idempotent": true` sin reprocesar.
+- Un pago ya `APPROVED` **nunca se degrada**… salvo a `REFUNDED`: un reembolso o un contracargo sí son información nueva y real sobre el dinero. El pedido se queda en `PAID`; devolverlo es decisión de la tienda.
+- La reentrega del mismo aviso (mismo pago y mismo estado) responde `"idempotent": true` sin reprocesar.
 
-Pero un **reintento legítimo sí funciona**: tras un `DECLINED`, una transacción
-nueva con estado `APPROVED` sí aprueba el pedido.
+Pero un **reintento legítimo sí funciona**: tras un `DECLINED`, un pago nuevo
+con estado `approved` sí aprueba el pedido.
 
-**Errores**: `401 UNAUTHORIZED` si el checksum no cuadra o el evento no es interpretable · `404 NOT_FOUND` si la referencia no corresponde a ningún pago.
+**Errores**: `401 UNAUTHORIZED` si la firma no cuadra · `404 NOT_FOUND` si la referencia no corresponde a ningún pago · `503 SERVICE_UNAVAILABLE` si no se pudo consultar el pago contra Mercado Pago (Mercado Pago reintentará).
 
 Guía paso a paso: [Cómo probar el flujo de pagos](howto-probar-pagos.md).
 
@@ -970,7 +981,7 @@ Tres reglas que no se pueden saltar:
 | 37 | DELETE | `/api/addresses/:id` | 🔒 |
 | 38 | POST | `/api/payments` | 🔓 |
 | 39 | GET | `/api/payments/:id` | 🔒 |
-| 40 | POST | `/api/payments/webhook/wompi` | checksum de Wompi |
+| 40 | POST | `/api/payments/webhook/mercadopago` | firma `x-signature` de Mercado Pago |
 | 41 | GET | `/api/coupons` | 🔒👑 |
 | 42 | GET | `/api/coupons/:id` | 🔒👑 |
 | 43 | POST | `/api/coupons` | 🔒👑 |

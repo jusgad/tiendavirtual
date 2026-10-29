@@ -33,9 +33,9 @@ const PREGUNTAS = [
   },
   {
     pregunta: '¿Cómo puedo pagar?',
-    texto: 'Con tarjeta, Nequi, PSE o Bancolombia, a través de la pasarela Wompi. Nosotros no guardamos los datos de tu tarjeta.',
+    texto: 'Con tarjeta, PSE o Efecty, a través de la pasarela Mercado Pago. Nosotros no guardamos los datos de tu tarjeta.',
     respuesta: (
-      <>Con tarjeta, Nequi, PSE o Bancolombia, a través de la pasarela Wompi. Nosotros no guardamos los datos de tu tarjeta.</>
+      <>Con tarjeta, PSE o Efecty, a través de la pasarela Mercado Pago. Nosotros no guardamos los datos de tu tarjeta.</>
     ),
   },
   {

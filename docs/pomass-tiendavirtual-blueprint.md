@@ -5,6 +5,16 @@
 > Tipo de blueprint: **finalización/integración** de un repo existente — no es un build desde cero.
 > Repo base: https://github.com/jusgad/tiendavirtual (rama `main`, HEAD `be9695a` al momento de este análisis)
 
+> ### ⚠️ Obsoleto en un punto: la pasarela de pago
+>
+> Este documento se escribió cuando la pasarela era **Wompi**. La tienda usa
+> hoy **Mercado Pago** (Checkout Pro), lo que cambia las credenciales, la ruta
+> del webhook y la forma de confirmar un pago. Todo lo demás sigue valiendo.
+>
+> Para lo vigente: [cómo probar los pagos](howto-probar-pagos.md) ·
+> [referencia de la API](referencia-api.md#pagos--apipayments) ·
+> [decisiones de diseño](explicacion-decisiones.md#pagos-con-mercado-pago-sacar-la-tarjeta-del-backend).
+
 ---
 
 ## 0. Contexto para quien ejecute este blueprint

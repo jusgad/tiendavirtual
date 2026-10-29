@@ -8,8 +8,8 @@ import { esCancelado, esperaConfirmacion, pasosConEstado } from './trackModel.js
 import PieLegal from '../shared/PieLegal.jsx'
 
 // Espera de la confirmación del webhook al volver de pagar: hasta ~1 minuto.
-// El widget informa el pago, pero la verdad la escribe el webhook de Wompi, y
-// puede tardar unos segundos en llegar.
+// Mercado Pago devuelve a la clienta en cuanto termina, pero la verdad la
+// escribe el webhook, que puede tardar unos segundos más en llegar.
 const SONDEO_MS = 3000
 const SONDEOS_MAX = 20
 
@@ -124,10 +124,15 @@ export default function TrackApp() {
     [],
   )
 
-  // Al volver de pagar, Wompi agrega `?id=` a la URL. Si además recordamos el
-  // pedido, se consulta solo: quien acaba de pagar no debería teclear nada.
+  // Al volver de pagar, Mercado Pago añade sus propios parámetros a la URL
+  // (`payment_id`, `collection_id`, `external_reference`…). Si además
+  // recordamos el pedido, se consulta solo: quien acaba de pagar no debería
+  // teclear nada.
   useEffect(() => {
-    const vieneDePagar = new URLSearchParams(window.location.search).has('id')
+    const params = new URLSearchParams(window.location.search)
+    const vieneDePagar = ['payment_id', 'collection_id', 'external_reference'].some((p) =>
+      params.has(p),
+    )
     if (vieneDePagar && recordado) {
       consultar(recordado.orderNumber, recordado.email)
     }
