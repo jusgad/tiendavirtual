@@ -1,7 +1,6 @@
 import { ConflictError, NotFoundError, UnauthorizedError } from '../../../shared/errors/AppError'
 import {
   CheckoutConfig,
-  IncomingPaymentEvent,
   OrderPaymentGateway,
   PaymentGateway,
   PaymentNotifier,
@@ -12,9 +11,9 @@ import { PaymentMethod } from '../domain/paymentMethod'
 import { PaymentStatus } from '../domain/paymentStatus'
 
 /**
- * Prepara el pago de un pedido: crea (o reutiliza) el registro de pago, crea
- * el cobro en Mercado Pago y devuelve a dónde hay que mandar el navegador.
- * No cobra nada: el cobro ocurre en el sitio de Mercado Pago.
+ * Prepara el pago de un pedido: crea (o reutiliza) el registro de pago y
+ * devuelve la configuración firmada que el widget de Wompi necesita en el
+ * navegador. No cobra nada: el cobro ocurre dentro del widget.
  */
 export class StartPaymentUseCase {
   constructor(
@@ -33,39 +32,39 @@ export class StartPaymentUseCase {
       throw new ConflictError('El pedido no está pendiente de pago')
     }
 
-    // Si la clienta vuelve a intentar (cerró el checkout, le rechazaron la
+    // Si el cliente vuelve a intentar (cerró el widget, le rechazaron la
     // tarjeta), se reutiliza el mismo registro en vez de acumular filas: la
-    // referencia que ve Mercado Pago es el número de pedido y debe resolver a
-    // un único pago.
+    // referencia que ve Wompi es el número de pedido y debe resolver a un
+    // único pago.
     const existing = await this.payments.findPendingByOrderId(order.id)
     const payment =
       existing ??
       (await this.payments.create({
         orderId: order.id,
-        method: PaymentMethod.MERCADO_PAGO,
+        method: PaymentMethod.WOMPI,
         amount: order.total,
         currency: order.currency,
         externalReference: order.orderNumber,
       }))
 
-    const checkout = await this.gateway.buildCheckout({
+    const checkout = this.gateway.buildCheckout({
       reference: order.orderNumber,
       amount: order.total,
       currency: order.currency,
-      description: `Pedido ${order.orderNumber} · PomAss`,
     })
 
     return { payment, checkout }
   }
 }
 
-export type WebhookOutcome =
-  | { status: PaymentStatus; idempotent?: boolean }
-  | { ignored: true; reason: string }
+export interface WebhookOutcome {
+  status: PaymentStatus
+  idempotent?: boolean
+}
 
 /**
- * Procesa un aviso de webhook de Mercado Pago. Es la ÚNICA fuente de verdad de
- * un pago: nunca se confía en el redirect del navegador.
+ * Procesa un evento `transaction.updated` de Wompi. Es la ÚNICA fuente de
+ * verdad de un pago: nunca se confía en el redirect del navegador.
  */
 export class HandleWebhookUseCase {
   constructor(
@@ -75,39 +74,33 @@ export class HandleWebhookUseCase {
     private readonly notifier: PaymentNotifier,
   ) {}
 
-  async execute(event: IncomingPaymentEvent): Promise<WebhookOutcome> {
-    const outcome = await this.gateway.verifyEvent(event)
-    if (outcome.kind === 'invalid') throw new UnauthorizedError('Firma del evento inválida')
-    // Aviso auténtico pero que no nos toca procesar. Se responde 200 a
-    // propósito: con un error, Mercado Pago lo reintentaría durante horas.
-    if (outcome.kind === 'ignored') return { ignored: true, reason: outcome.reason }
+  async execute(payload: unknown): Promise<WebhookOutcome> {
+    const result = this.gateway.verifyEvent(payload)
+    if (!result) throw new UnauthorizedError('Checksum de evento inválido')
 
-    const result = outcome.result
     const payment = await this.payments.findByExternalReference(result.reference)
     if (!payment) throw new NotFoundError('Pago no encontrado')
 
-    // Un pago ya aprobado no se degrada… salvo a REFUNDED: un reembolso o un
-    // contracargo sí son información nueva y real sobre el dinero. El pedido
-    // se deja como está; devolverlo a mano es decisión de la tienda.
-    if (payment.status === PaymentStatus.APPROVED && result.status !== PaymentStatus.REFUNDED) {
+    // Un pago ya aprobado no se degrada nunca, llegue lo que llegue después.
+    if (payment.status === PaymentStatus.APPROVED) {
       return { status: PaymentStatus.APPROVED, idempotent: true }
     }
 
-    // Reentrega del mismo aviso (Mercado Pago reintenta si no recibe 200).
-    if (payment.status === result.status && payment.providerTransactionId === result.transactionId) {
+    // Reentrega del mismo evento (Wompi reintenta si no recibe 200 a tiempo).
+    if (payment.status === result.status && payment.wompiTransactionId === result.transactionId) {
       return { status: payment.status, idempotent: true }
     }
 
-    await this.payments.markStatus(payment.id, result.status, event.body, result.transactionId)
+    await this.payments.markStatus(payment.id, result.status, payload, result.transactionId)
 
     if (result.status === PaymentStatus.APPROVED) {
       // Devuelve datos solo si la guarda PENDING -> PAID dejó pasar, así que
-      // el correo sale una vez aunque Mercado Pago reenvíe el aviso.
+      // el correo sale una vez aunque Wompi reenvíe el evento.
       const pedido = await this.orders.markPaid(payment.orderId)
       if (pedido?.contactEmail) {
         // El puerto promete no lanzar, pero aquí se refuerza: si una excepción
-        // subiera, el webhook respondería error y Mercado Pago reintentaría el
-        // aviso en bucle por un pago que ya quedó bien registrado.
+        // subiera, el webhook respondería error y Wompi reintentaría el evento
+        // en bucle por un pago que ya quedó bien registrado.
         try {
           await this.notifier.orderPaid({
             to: pedido.contactEmail,

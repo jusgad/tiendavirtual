@@ -6,41 +6,24 @@ registerSchemas({
     properties: {
       id: { type: 'string', format: 'uuid' },
       orderId: { type: 'string', format: 'uuid' },
-      method: { type: 'string', enum: ['MERCADO_PAGO'] },
+      method: { type: 'string', enum: ['WOMPI'] },
       status: { type: 'string', enum: ['PENDING', 'APPROVED', 'DECLINED', 'REFUNDED'] },
       amount: { type: 'number' },
       currency: { type: 'string', example: 'COP' },
-      externalReference: {
-        type: 'string',
-        nullable: true,
-        description: 'Número de pedido; es la referencia que ve Mercado Pago',
-      },
-      providerTransactionId: {
-        type: 'string',
-        nullable: true,
-        description: 'Id del pago en Mercado Pago. Llega con el webhook, no antes.',
-      },
+      externalReference: { type: 'string', nullable: true, description: 'Número de pedido; es la referencia que ve Wompi' },
+      wompiTransactionId: { type: 'string', nullable: true },
     },
   },
   CheckoutConfig: {
     type: 'object',
-    description:
-      'A dónde mandar el navegador para pagar. No lleva secretos: la preferencia ya está ' +
-      'creada del lado de Mercado Pago con el monto fijado, así que no hay nada que firmar.',
+    description: 'Datos firmados para inicializar el widget de Wompi en el navegador.',
     properties: {
-      configured: {
-        type: 'boolean',
-        description:
-          'false cuando el backend todavía tiene el access token de ejemplo. El frontend lo ' +
-          'usa para avisar en vez de mandar a la clienta a una URL vacía.',
-      },
-      preferenceId: { type: 'string' },
-      initPoint: { type: 'string', description: 'URL del checkout de Mercado Pago' },
       publicKey: { type: 'string' },
-      reference: { type: 'string' },
-      amount: { type: 'number' },
       currency: { type: 'string', example: 'COP' },
-      sandbox: { type: 'boolean', description: 'true con credenciales de prueba (no cobra dinero real)' },
+      amountInCents: { type: 'integer' },
+      reference: { type: 'string' },
+      signature: { type: 'string', description: 'Firma de integridad SHA-256' },
+      redirectUrl: { type: 'string', nullable: true },
     },
   },
 })
@@ -51,12 +34,11 @@ registerPaths({
   '/payments': {
     post: {
       tags: ['Pagos'],
-      summary: 'Preparar el pago de un pedido (crea la preferencia de Mercado Pago)',
+      summary: 'Preparar el pago de un pedido (devuelve la configuración del widget de Wompi)',
       description:
-        'Crea o reutiliza el registro de pago del pedido, crea el cobro en Mercado Pago y ' +
-        'devuelve la URL a la que hay que mandar el navegador. **No recibe datos de tarjeta**: ' +
-        'la clienta los teclea en el sitio de Mercado Pago. Admite invitados si el pedido ' +
-        'también es de invitado.',
+        'Crea o reutiliza el registro de pago del pedido y devuelve los datos firmados que el ' +
+        'widget de Wompi necesita. **No recibe datos de tarjeta**: el cliente los teclea dentro ' +
+        'del widget, en su navegador. Admite invitados si el pedido también es de invitado.',
       security: authed,
       requestBody: {
         required: true,
@@ -87,7 +69,6 @@ registerPaths({
         },
         404: { description: 'Pedido no encontrado' },
         409: { description: 'El pedido no está pendiente de pago' },
-        503: { description: 'Mercado Pago no respondió' },
       },
     },
   },
@@ -104,30 +85,15 @@ registerPaths({
       },
     },
   },
-  '/payments/webhook/mercadopago': {
+  '/payments/webhook/wompi': {
     post: {
       tags: ['Pagos'],
-      summary: 'Webhook de Mercado Pago',
+      summary: 'Webhook de Wompi (evento transaction.updated)',
       description:
-        'Única fuente de verdad de un pago. No lleva autenticación de usuario: se verifica la ' +
-        'firma HMAC-SHA256 de la cabecera `x-signature`, calculada sobre `data.id` (query), ' +
-        '`x-request-id` y el `ts` de la propia cabecera. El aviso solo trae el id del pago, así ' +
-        'que el backend consulta su estado real contra la API antes de tocar nada.\n\n' +
-        'Es idempotente: reentregas del mismo aviso responden `idempotent: true` sin ' +
-        'reprocesar, y un pago aprobado solo cambia si llega un reembolso o un contracargo. ' +
-        'Los avisos que no son de pago (p. ej. `merchant_order`) responden 200 con ' +
-        '`ignored: true` para que Mercado Pago deje de reintentarlos.',
-      parameters: [
-        {
-          name: 'data.id',
-          in: 'query',
-          required: false,
-          schema: { type: 'string' },
-          description: 'Id del pago. Es el valor que entra en la firma.',
-        },
-        { name: 'x-signature', in: 'header', required: true, schema: { type: 'string', example: 'ts=1700000000,v1=abc…' } },
-        { name: 'x-request-id', in: 'header', required: false, schema: { type: 'string' } },
-      ],
+        'Única fuente de verdad de un pago. No lleva autenticación de usuario: se verifica el ' +
+        'checksum que Wompi incluye en `signature.checksum` del propio cuerpo. Es idempotente: ' +
+        'reentregas del mismo evento responden `idempotent: true` sin reprocesar, y un pago ya ' +
+        'aprobado nunca se degrada.',
       requestBody: {
         required: true,
         content: {
@@ -135,19 +101,38 @@ registerPaths({
             schema: {
               type: 'object',
               properties: {
-                type: { type: 'string', example: 'payment' },
-                action: { type: 'string', example: 'payment.updated' },
-                data: { type: 'object', properties: { id: { type: 'string' } } },
+                event: { type: 'string', example: 'transaction.updated' },
+                data: {
+                  type: 'object',
+                  properties: {
+                    transaction: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        reference: { type: 'string' },
+                        status: { type: 'string', enum: ['APPROVED', 'DECLINED', 'VOIDED', 'ERROR', 'PENDING'] },
+                        amount_in_cents: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+                timestamp: { type: 'integer' },
+                signature: {
+                  type: 'object',
+                  properties: {
+                    properties: { type: 'array', items: { type: 'string' } },
+                    checksum: { type: 'string' },
+                  },
+                },
               },
             },
           },
         },
       },
       responses: {
-        200: { description: 'Aviso procesado, ignorado, o repetido (idempotente)' },
-        401: { description: 'Firma del evento inválida' },
+        200: { description: 'Evento procesado (o ignorado por idempotencia)' },
+        401: { description: 'Checksum de evento inválido' },
         404: { description: 'Pago no encontrado para esa referencia' },
-        503: { description: 'Mercado Pago no respondió a la consulta del pago' },
       },
     },
   },

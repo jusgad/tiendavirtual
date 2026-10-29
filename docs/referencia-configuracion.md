@@ -73,27 +73,21 @@ REDIS_URL=redis://localhost:6379
 | `SHIPPING_FLAT_RATE` | number ≥ 0 | `12900` | Tarifa plana de envío en COP |
 | `FREE_SHIPPING_THRESHOLD` | number ≥ 0 | `150000` | Envío gratis cuando el neto (subtotal − descuento) alcanza este monto. Un `0` desactiva el envío gratis |
 
-### Pagos · Mercado Pago
+### Pagos · Wompi
 
-Las credenciales salen del [panel de desarrolladores](https://www.mercadopago.com.co/developers/panel),
-en *Tus integraciones* > tu aplicación. Empieza con las de prueba (`TEST-…`) y
-cámbialas por las de producción (`APP_USR-…`) al lanzar.
+Las cuatro credenciales salen del panel de [Wompi](https://comercios.wompi.co).
+Empieza con las de sandbox y cámbialas por las de producción al lanzar.
 
 | Variable | Tipo | Default | Descripción |
 |---|---|---|---|
-| `MERCADO_PAGO_ACCESS_TOKEN` | string | `TEST-0000…-000000-0` | **Credencial privada.** Firma todas las llamadas a la API. Con el valor por defecto el backend ni llama a Mercado Pago: devuelve el checkout marcado `configured: false` |
-| `MERCADO_PAGO_PUBLIC_KEY` | string | `TEST-00000000-…` | Llave pública. Puede viajar al navegador; no es secreta |
-| `MERCADO_PAGO_WEBHOOK_SECRET` | string ≥ 8 | `dev_mercadopago_webhook_change_me` | Verifica la firma de los webhooks. Con el valor por defecto se podrían **falsificar confirmaciones de pago** |
-| `MERCADO_PAGO_NOTIFICATION_URL` | URL | — | URL **pública** de nuestro webhook. Vacía = se usa la del panel de Mercado Pago; si tampoco hay ninguna, **ningún pago se confirma nunca** |
-| `MERCADO_PAGO_BACK_URL` | URL | `FRONTEND_URL/track.html` | A dónde vuelve la clienta tras pagar |
-| `MERCADO_PAGO_STATEMENT_DESCRIPTOR` | string ≤ 16 | `POMASS` | Lo que verá en el extracto de su tarjeta |
-| `MERCADO_PAGO_API_URL` | URL | `https://api.mercadopago.com` | **Solo para pruebas.** Apunta el backend a un doble local (ver [cómo probar los pagos](howto-probar-pagos.md)). En producción solo se admite la API real |
+| `WOMPI_PUBLIC_KEY` | string | `pub_test_0000…` | Llave pública. **Viaja al navegador** para inicializar el widget; no es secreta |
+| `WOMPI_PRIVATE_KEY` | string | `prv_test_0000…` | Llave privada. Solo para consultar transacciones contra la API de Wompi |
+| `WOMPI_INTEGRITY_SECRET` | string ≥ 8 | `dev_wompi_integrity_change_me` | Firma el monto que consume el widget. Con el valor por defecto se podría **alterar el importe del cobro** |
+| `WOMPI_EVENTS_SECRET` | string ≥ 8 | `dev_wompi_events_change_me` | Verifica el checksum de los webhooks. Con el valor por defecto se podrían **falsificar confirmaciones de pago** |
+| `WOMPI_REDIRECT_URL` | URL | — | A dónde vuelve el cliente tras pagar. Debe apuntar al frontend |
 
-> Las tres URL opcionales toleran venir vacías (`VAR=`), que es como las trae
-> `.env.example`: vacío significa «no configurada», no «URL inválida».
-
-> `PAYMENTS_WEBHOOK_SECRET` y las variables `WOMPI_*` **ya no existen**. Si las
-> tienes en tu `.env`, puedes borrarlas.
+> `PAYMENTS_WEBHOOK_SECRET` **ya no existe**: lo reemplazan los dos secretos de
+> Wompi. Si lo tienes en tu `.env`, puedes borrarlo.
 
 ### Seed
 
@@ -119,10 +113,9 @@ Cuando `NODE_ENV=production`, el arranque **falla** si:
 
 | Condición | Por qué |
 |---|---|
-| `MERCADO_PAGO_WEBHOOK_SECRET` sigue siendo el de ejemplo | Permitiría falsificar confirmaciones de pago |
-| `MERCADO_PAGO_ACCESS_TOKEN` sigue siendo el de ejemplo | El checkout ni siquiera abriría |
-| `MERCADO_PAGO_ACCESS_TOKEN` empieza por `TEST-` | Es una credencial de prueba: ningún pago real entraría |
-| `MERCADO_PAGO_API_URL` apunta a algo que no es la API real | Le estaría entregando el access token a ese host |
+| `WOMPI_INTEGRITY_SECRET` sigue siendo el de ejemplo | Permitiría alterar el importe del cobro |
+| `WOMPI_EVENTS_SECRET` sigue siendo el de ejemplo | Permitiría falsificar confirmaciones de pago |
+| `WOMPI_PUBLIC_KEY` o `WOMPI_PRIVATE_KEY` empiezan por `pub_test_`/`prv_test_` | Son llaves de sandbox: ningún pago real entraría |
 | `ADMIN_PASSWORD` sigue siendo `Admin123*` | Es una credencial pública conocida |
 | `CORS_ORIGIN` es `*` | Hay que especificar los orígenes permitidos |
 
@@ -201,12 +194,12 @@ npx jest -t "aplica cupón porcentual"
 
 | Suite | Cantidad | Requisitos |
 |---|---|---|
-| Backend `tests/unit/` | 229 tests en 22 suites | Ninguno — dobles en memoria |
-| Backend `tests/integration/` | 16 tests en 3 archivos (`auth`, `catalog`, `checkout`) | Postgres migrado |
-| Frontend `src/**/*.test.js` | 106 tests en 10 archivos | Ninguno — `fetch` y navegación simulados |
+| Backend `tests/unit/` | 212 tests en 22 suites | Ninguno — dobles en memoria |
+| Backend `tests/integration/` | 19 tests en 3 archivos (`auth`, `catalog`, `checkout`) | Postgres migrado |
+| Frontend `src/**/*.test.js` | 114 tests en 10 archivos | Ninguno — `fetch` y widget simulados |
 
 Los unitarios del backend cubren la lógica crítica: stock, checkout, precios,
-cupones, pagos (firma e idempotencia de Mercado Pago), transiciones de estado del
+cupones, pagos (firma e idempotencia de Wompi), transiciones de estado del
 pedido, seguimiento, tokens, reseñas y reportes. Los del frontend cubren la
 renovación de token del cliente de API.
 

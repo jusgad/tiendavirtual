@@ -1,10 +1,10 @@
 // Recuerda el último pedido para prellenar la página de seguimiento.
 //
-// Hace falta porque se paga fuera del sitio: Mercado Pago devuelve a la
-// clienta a `track.html` en una carga nueva, donde el estado de React del
-// checkout ya no existe. Mercado Pago sí pone el número de pedido en la URL
-// (`external_reference`), pero no el correo, y el seguimiento pide los dos.
-// Sin esto, quien acaba de pagar tendría que teclearlo a mano.
+// Hace falta porque los medios de pago que sacan al cliente del sitio (PSE,
+// Bancolombia) lo devuelven a `track.html` en una carga nueva: el estado de
+// React del checkout ya no existe, y Wompi solo agrega el id de la transacción
+// a la URL, no el número de pedido. Sin esto, quien acaba de pagar tendría que
+// teclear a mano el número que vio un segundo antes.
 //
 // No es una credencial: son los mismos dos datos que el cliente puede escribir
 // en el formulario. Guardarlos solo ahorra tecleo.

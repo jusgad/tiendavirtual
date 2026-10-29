@@ -240,7 +240,7 @@ usuario: si te la roban, cambiarla te devuelve el control de verdad.
 
 ---
 
-## Pagos con Mercado Pago: sacar la tarjeta del backend
+## Pagos con Wompi: sacar la tarjeta del backend
 
 ### El problema
 
@@ -253,50 +253,40 @@ tienda de un solo producto, ese coste es prohibitivo.
 
 Había además un problema de forma. El módulo modelaba "un adaptador por método"
 (`NequiProvider`, `DaviplataProvider`, `CreditCardProvider`) porque simulaba
-proveedores distintos. Mercado Pago es **un solo proveedor** que internamente
-ofrece tarjeta, PSE, Efecty y saldo: forzarlo a ese patrón habría dejado tres
+proveedores distintos. Wompi es **un solo proveedor** que internamente ofrece
+tarjeta, Nequi, PSE y Bancolombia: forzarlo a ese patrón habría dejado tres
 clases hablándole a la misma API.
-
-> **Nota histórica.** La primera pasarela real fue Wompi, con su widget
-> embebido y su firma de integridad. El cambio a Mercado Pago conservó el
-> puerto `PaymentGateway` y toda la lógica de idempotencia; lo que cambió es
-> cómo se arma el cobro y cómo se verifica el aviso, y eso vive entero en el
-> adaptador. Que el cambio se resolviera sustituyendo una clase de
-> infraestructura es, en la práctica, la justificación del puerto.
 
 ### El enfoque
 
-**El número de tarjeta nunca llega al servidor.** La clienta lo teclea en el
-sitio de Mercado Pago. `POST /payments` solo acepta un `orderId` — el DTO ya no
-tiene siquiera un campo donde poner una tarjeta.
+**El número de tarjeta nunca llega al servidor.** El cliente lo teclea dentro
+del widget de Wompi, en su navegador. `POST /payments` solo acepta un `orderId`
+— el DTO ya no tiene siquiera un campo donde poner una tarjeta.
 
-Lo que el backend hace es crear el cobro y verificar el aviso
-([`mercadoPagoGateway.ts`](../backend/src/modules/payments/infrastructure/mercadoPagoGateway.ts)):
+Lo que el backend hace es firmar y verificar:
 
-**1. El monto lo fija el servidor.** Se crea una *preferencia* contra
-`POST /checkout/preferences` con el total del pedido y su `external_reference`,
-y lo único que vuelve al navegador es el `init_point` al que ir. No hace falta
-firmar el importe porque el importe nunca viaja con el cliente: vive del lado
-de Mercado Pago desde el primer momento.
-
-**2. Firma del aviso** para el webhook:
+**1. Firma de integridad** para el widget
+([`wompiGateway.ts`](../backend/src/modules/payments/infrastructure/wompiGateway.ts)):
 
 ```
-HMAC-SHA256( "id:<data.id>;request-id:<x-request-id>;ts:<ts>;" , MERCADO_PAGO_WEBHOOK_SECRET )
+SHA256(referencia + montoEnCentavos + moneda + WOMPI_INTEGRITY_SECRET)
+```
+
+Sin ella, un cliente podría abrir las herramientas de desarrollo y pagar $1.000
+por un pedido de $79.900. El secreto nunca sale del servidor; solo viaja el hash.
+
+**2. Checksum del evento** para el webhook:
+
+```
+SHA256(concat(valores de signature.properties) + timestamp + WOMPI_EVENTS_SECRET)
 ```
 
 Con comparación en tiempo constante (`crypto.timingSafeEqual`), no `===`: una
 comparación normal termina en el primer byte distinto, y ese tiempo variable
 permite reconstruir la firma correcta byte a byte.
 
-**3. No se cree el aviso.** Aquí está la diferencia de fondo con la pasarela
-anterior: el aviso de Mercado Pago **no dice en qué quedó el pago**, solo que
-cambió. Verificada la firma, el backend consulta `GET /v1/payments/{id}` y usa
-esa respuesta. Un atacante que de algún modo colara un aviso firmado seguiría
-sin poder decidir el resultado.
-
 **Un único `PaymentGateway`** sustituye al registro de proveedores. El medio
-concreto que eligió la clienta llega en el pago consultado y se guarda en
+concreto que eligió el cliente llega en el evento y se guarda en
 `Payment.rawPayload`; dejó de ser un valor del enum.
 
 ### Idempotencia en dos capas
@@ -309,24 +299,23 @@ distinguirlos:
 // Un pago ya aprobado no se degrada nunca, llegue lo que llegue después.
 if (payment.status === PaymentStatus.APPROVED) return { status: APPROVED, idempotent: true }
 
-// Reentrega del mismo aviso: mismo pago y mismo estado.
-if (payment.status === result.status && payment.providerTransactionId === result.transactionId) {
+// Reentrega del mismo evento: misma transacción y mismo estado.
+if (payment.status === result.status && payment.wompiTransactionId === result.transactionId) {
   return { status: payment.status, idempotent: true }
 }
 ```
 
-La clave es `providerTransactionId`. Comparar solo el estado —como hacía la versión
+La clave es `wompiTransactionId`. Comparar solo el estado —como hacía la versión
 anterior— habría bloqueado los reintentos legítimos: tras un `DECLINED`, el
 `APPROVED` de una transacción nueva se habría descartado como "ya procesado" y
 el cliente habría pagado sin recibir su pedido.
 
 ### Trade-offs
 
-- **La clienta sale del sitio.** Checkout Pro es una página de Mercado Pago, no un widget embebido: su aspecto y sus mensajes de error no son tuyos, y el checkout de la tienda pierde el paso de confirmación (lo recoge `track.html`). A cambio, no gestionas datos de tarjeta. Mantenerla dentro exigiría Checkout Bricks, que sí toca tokens de tarjeta y es bastante más trabajo.
-- **Cobrar pasó a depender de la red.** `buildCheckout` ya no es una función pura: hace una petición HTTP, y por eso el puerto es asíncrono y un fallo de la API responde `503` y no `500`. La pasarela anterior firmaba en local y no podía fallar así.
-- **Confirmar un pago cuesta dos saltos**, no uno: el aviso llega y hay que ir a preguntar. Es más lento y más frágil, pero es lo que hace que el contenido del aviso no importe.
-- **Dependencia de un proveedor.** Mercado Pago cubre bien Colombia y buena parte de Latinoamérica. El puerto `PaymentGateway` deja la puerta abierta a otro adaptador: cambiar de Wompi a Mercado Pago consistió, de hecho, en sustituir la clase que lo implementa.
-- **El backend no compara el monto del pago** con el total del pedido. El monto lo fijó el servidor al crear la preferencia, así que no es un agujero, pero es una comprobación barata que aún no está.
+- **Menos control sobre la experiencia de pago.** El widget es de Wompi: su aspecto y sus mensajes de error no son tuyos. A cambio, no gestionas datos de tarjeta.
+- **Dependencia de un proveedor colombiano.** Wompi cubre bien el mercado local (tarjeta, Nequi, PSE, Bancolombia) pero no sirve para vender fuera de Colombia. El puerto `PaymentGateway` deja la puerta abierta a otro adaptador si algún día hace falta.
+- **El backend no compara el monto del evento** con el total del pedido. La firma de integridad ya impide alterarlo en el navegador, así que no es un agujero, pero es una comprobación barata que aún no está.
+- **El checksum se calcula sobre el cuerpo ya parseado.** Para el formato de Wompi (campos concatenados) es correcto. Si algún día hiciera falta firmar el **cuerpo crudo**, habría que añadir un callback `verify` a `express.json()`.
 
 ---
 

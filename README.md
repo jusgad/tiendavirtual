@@ -143,17 +143,16 @@ npm run preview    # sirve el build de producción
 Detalle completo de componentes, cliente de API y sistema de diseño en
 **[docs/referencia-frontend.md](docs/referencia-frontend.md)**.
 
-## Probarlo entero en local
+## Probarlo en local
 
 ```bash
 docker compose up --build
 ```
 
-Levanta base, caché, API, frontend y una **pasarela de pago simulada**, y deja
-la tienda en <http://localhost:5173> lista para recorrer una compra de
-principio a fin: al pagar aterrizas en una pasarela de mentira donde eliges si
-el pago se aprueba o se rechaza, y el aviso que manda va firmado igual que lo
-haría Mercado Pago. Detalle en
+Levanta base, caché, API y frontend, y deja la tienda en
+<http://localhost:5173>. El cobro en sí ocurre dentro del widget de Wompi, que
+necesita credenciales de sandbox; la confirmación por webhook sí se prueba
+entera y sin internet con `backend/scripts/wompi-falso.mjs`. Detalle en
 [cómo probar el flujo de pagos](docs/howto-probar-pagos.md).
 
 Es un entorno de **pruebas**: los secretos están a la vista en
@@ -163,10 +162,9 @@ Es un entorno de **pruebas**: los secretos están a la vista en
 ## Frontend — demo de checkout
 
 `checkout.html` es una segunda página, independiente de la landing, que **sí
-consume la API del backend**. Implementa el flujo de compra completo en cuatro
-pasos: Cuenta → Tienda → Envío → Pago, con soporte para comprar sin crear
-cuenta. Del paso de pago se sale hacia Mercado Pago, que al terminar devuelve
-a la clienta a `track.html` para ver el estado real del pedido.
+consume la API del backend**. Implementa el flujo de compra completo en cinco
+pasos: Cuenta → Tienda → Envío → Pago → Confirmación, con soporte para comprar
+sin crear cuenta.
 
 Es el único punto donde las dos aplicaciones se tocan: el botón *Comprar* de la
 landing redirige aquí.
@@ -184,8 +182,8 @@ Necesita el backend vivo. Recorrido guiado en
 
 API REST completa para operar la tienda: autenticación con roles, catálogo con
 búsqueda/filtros y caché, carrito (usuario + invitado), checkout transaccional
-con cupones y envío, y pagos con **Mercado Pago** (Checkout Pro) confirmados
-por webhook firmado.
+con cupones y envío, y pagos con adaptadores por proveedor colombiano
+(Nequi/Daviplata/tarjeta) vía webhook firmado.
 
 Construida en **arquitectura limpia/hexagonal**, modular por dominio, con
 Postgres + Prisma, Redis, JWT, validación con Zod, tests con Jest/Supertest y
@@ -203,7 +201,7 @@ endpoints en **[docs/referencia-api.md](docs/referencia-api.md)**.
 | Catálogo (productos, categorías, marcas, búsqueda/filtros, caché Redis) | ✅ |
 | Carrito (persistente por usuario + invitado en Redis, validación de stock, merge) | ✅ |
 | Pedidos/Checkout (transaccional, stock atómico, cupones, envío, empaque discreto) | ✅ |
-| Pagos (Mercado Pago Checkout Pro, webhook firmado e idempotente) | ✅ |
+| Pagos (adaptadores Nequi/Daviplata/tarjeta, webhook firmado) | ✅ |
 | Cupones (CRUD admin) | ✅ |
 | Reseñas (compra verificada, auto-aprobadas) | ✅ |
 | Panel de administración/reportes (ventas, top productos, pedidos por estado) | ✅ |

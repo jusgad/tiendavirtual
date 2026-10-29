@@ -94,7 +94,7 @@ El mismo patrón se repite en los 8 módulos existentes.
 | `catalog` | Productos, categorías, marcas; búsqueda/filtros/paginación; **caché Redis** con invalidación por versión de namespace | `ListProductsUseCase` (cache-aside) |
 | `cart` | Carrito por usuario (Postgres) o invitado (Redis) tras una misma interfaz `CartStore`; merge al iniciar sesión | `AddItemUseCase`, `MergeGuestCartUseCase` |
 | `orders` | Checkout **transaccional**: descuento de stock atómico, aplicación de cupones, cálculo de envío, snapshots de ítems/dirección, cancelación con restauración de stock. Admite invitados | `pricing.ts` (envío + descuento puros), `CheckoutUseCase` |
-| `payments` | Mercado Pago (Checkout Pro): crea la preferencia contra su API, verifica la firma del webhook y consulta el pago real, transición `PENDING → PAID` | `StartPaymentUseCase`, `HandleWebhookUseCase` |
+| `payments` | Adaptadores stub por proveedor (Nequi/Daviplata/tarjeta), webhook verificado por firma HMAC, transición `PENDING → PAID` | `InitiatePaymentUseCase`, `HandleWebhookUseCase` |
 | `coupons` | CRUD de gestión (solo admin). La *aplicación* de un cupón en el checkout vive en `orders`, no aquí | `CreateCouponUseCase`, `UpdateCouponUseCase` |
 | `reviews` | Reseñas con **compra verificada**: exige un pedido propio `DELIVERED` con ese producto. Auto-aprobadas | `CreateReviewUseCase`, `PurchaseVerificationGateway` |
 | `admin` | Reportes: ventas por periodo, productos más vendidos, conteo de pedidos por estado | `reportFilters.ts` (rangos y límites puros) |
@@ -128,10 +128,8 @@ Infraestructura **compartida** (no es un dominio, la usan todos) en
   emite uno nuevo; reusar un token ya consumido es rechazado (mitiga robo de
   tokens).
 - **Webhooks de pago verificados e idempotentes**: la firma HMAC evita que
-  cualquiera llame al webhook; si el mismo aviso llega dos veces, la segunda
+  cualquiera llame al webhook; si el mismo evento llega dos veces, la segunda
   vez no reprocesa (se compara el estado actual del pago antes de aplicar).
-  Y el contenido del aviso tampoco se cree: solo trae el id del pago, así que
-  el estado se lee consultando la API de Mercado Pago.
 - **Checkout de invitado**: un tipo de dominio (`CartOwner`, unión etiquetada
   `user | guest`) nombra la ambigüedad en vez de esparcir comprobaciones de
   `userId` nulo, y el middleware `optionalAuth` permite servir a los dos
@@ -146,7 +144,7 @@ sacrificó a cambio**, está desarrollada en
 - **`tests/unit/`**: prueban casos de uso y lógica de dominio con **dobles en
   memoria** (`fakes.ts` por módulo) — sin Postgres, sin Redis, sin HTTP.
   Rápidos (~12 s) y son los que cubren la lógica crítica (stock, checkout,
-  precios, cupones, pagos, tokens, reseñas, reportes). **229 tests en 22
+  precios, cupones, pagos, tokens, reseñas, reportes). **212 tests en 22
   suites** hoy.
 - **`tests/integration/`**: usan Supertest contra la app real (`createApp()`)
   y una base de datos Postgres migrada, para verificar que las capas
@@ -168,8 +166,8 @@ dominio porque no tiene lógica de negocio propia: la conversión ocurre en
 WhatsApp.
 
 La **demo de checkout** (`checkout.html` → `checkout/CheckoutApp.jsx`) sí
-consume la API. Su estructura es un orquestador de 4 pasos con el estado
-compartido en `CheckoutApp` (`user`, `step`, `order`) y un cliente
+consume la API. Su estructura es un orquestador de 5 pasos con el estado
+compartido en `CheckoutApp` (`user`, `step`, `order`, `payment`) y un cliente
 HTTP aislado en `checkout/api.js` que concentra tokens, cabeceras y errores. Los
 pasos no saben nada de `fetch`.
 

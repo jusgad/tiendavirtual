@@ -7,10 +7,8 @@ import {
 import {
   BuildCheckoutInput,
   CheckoutConfig,
-  IncomingPaymentEvent,
   OrderForPayment,
   OrderPaymentGateway,
-  PaymentEventOutcome,
   PaymentEventResult,
   PaymentGateway,
   PaymentRecord,
@@ -49,7 +47,7 @@ class FakePayments implements PaymentRepository {
     const rec: PaymentRecord = {
       id: `pay-${this.records.length + 1}`,
       status: PaymentStatus.PENDING,
-      providerTransactionId: null,
+      wompiTransactionId: null,
       ...data,
     }
     this.records.push(rec)
@@ -64,52 +62,29 @@ class FakePayments implements PaymentRepository {
   async findPendingByOrderId(orderId: string) {
     return this.records.find((r) => r.orderId === orderId && r.status === PaymentStatus.PENDING) ?? null
   }
-  async markStatus(
-    id: string,
-    status: PaymentStatus,
-    _raw: unknown,
-    providerTransactionId: string | null,
-  ) {
+  async markStatus(id: string, status: PaymentStatus, _raw: unknown, wompiTransactionId: string | null) {
     const r = this.records.find((x) => x.id === id)!
     r.status = status
-    r.providerTransactionId = providerTransactionId
+    r.wompiTransactionId = wompiTransactionId
     return r
   }
 }
 
-/**
- * Pasarela simulada. `outcome` es lo que devolverá `verifyEvent`: por defecto
- * una firma inválida, que es el caso que no debe tocar nada.
- */
 class FakeGateway implements PaymentGateway {
-  constructor(private outcome: PaymentEventOutcome = { kind: 'invalid' }) {}
-  async buildCheckout(input: BuildCheckoutInput): Promise<CheckoutConfig> {
+  constructor(private eventResult: PaymentEventResult | null = null) {}
+  buildCheckout(input: BuildCheckoutInput): CheckoutConfig {
     return {
-      configured: true,
-      preferenceId: 'pref-simulada',
-      initPoint: `https://mp.test/checkout/${input.reference}`,
-      publicKey: 'TEST-llave-publica',
-      reference: input.reference,
-      amount: input.amount,
+      publicKey: 'pub_test_abc',
       currency: input.currency,
-      sandbox: true,
+      amountInCents: input.amount * 100,
+      reference: input.reference,
+      signature: 'firma-simulada',
+      redirectUrl: null,
     }
   }
-  async verifyEvent(): Promise<PaymentEventOutcome> {
-    return this.outcome
+  verifyEvent(): PaymentEventResult | null {
+    return this.eventResult
   }
-}
-
-/** Azúcar: la mayoría de los tests solo quieren «un pago con este resultado». */
-const conResultado = (result: PaymentEventResult) => new FakeGateway({ kind: 'payment', result })
-
-/** Un aviso cualquiera: la pasarela simulada no mira su contenido. */
-const AVISO: IncomingPaymentEvent = {
-  body: { type: 'payment', data: { id: '1' } },
-  signatureHeader: 'ts=1,v1=x',
-  requestId: 'req-1',
-  queryDataId: '1',
-  queryType: 'payment',
 }
 
 const order: OrderForPayment = {
@@ -121,18 +96,18 @@ const order: OrderForPayment = {
 }
 
 describe('StartPaymentUseCase', () => {
-  it('crea el pago y devuelve a dónde mandar el navegador', async () => {
+  it('crea el pago y devuelve la configuración del widget', async () => {
     const payments = new FakePayments()
     const useCase = new StartPaymentUseCase(new FakeOrders(order), payments, new FakeGateway())
 
     const res = await useCase.execute('user-1', 'order-1')
 
     expect(res.payment.status).toBe(PaymentStatus.PENDING)
-    expect(res.payment.method).toBe(PaymentMethod.MERCADO_PAGO)
-    // La referencia que ve Mercado Pago es el número de pedido.
+    expect(res.payment.method).toBe(PaymentMethod.WOMPI)
+    // La referencia que ve Wompi es el número de pedido.
     expect(res.payment.externalReference).toBe('PA-2026-ABC')
+    expect(res.checkout.amountInCents).toBe(7990000)
     expect(res.checkout.reference).toBe('PA-2026-ABC')
-    expect(res.checkout.initPoint).toContain('PA-2026-ABC')
   })
 
   it('permite pagar sin sesión un pedido de invitado', async () => {
@@ -173,7 +148,7 @@ describe('HandleWebhookUseCase', () => {
     const payments = new FakePayments()
     await payments.create({
       orderId: 'order-1',
-      method: PaymentMethod.MERCADO_PAGO,
+      method: PaymentMethod.WOMPI,
       amount: 79900,
       currency: 'COP',
       externalReference: 'PA-2026-ABC',
@@ -187,21 +162,21 @@ describe('HandleWebhookUseCase', () => {
     status: PaymentStatus.APPROVED,
   }
 
-  it('rechaza (401) si la firma del aviso no es válida', async () => {
-    const useCase = new HandleWebhookUseCase(new FakePayments(), new FakeOrders(order), new FakeGateway(), new SpyNotifier())
-    await expect(useCase.execute(AVISO)).rejects.toMatchObject({ statusCode: 401 })
+  it('rechaza (401) si el checksum no es válido', async () => {
+    const useCase = new HandleWebhookUseCase(new FakePayments(), new FakeOrders(order), new FakeGateway(null), new SpyNotifier())
+    await expect(useCase.execute({})).rejects.toMatchObject({ statusCode: 401 })
   })
 
   it('aprueba el pago, guarda el id de transacción y marca el pedido como PAID', async () => {
     const payments = await conPagoPendiente()
     const orders = new FakeOrders(order)
-    const useCase = new HandleWebhookUseCase(payments, orders, conResultado(aprobado), new SpyNotifier())
+    const useCase = new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado), new SpyNotifier())
 
-    const res = await useCase.execute(AVISO)
+    const res = await useCase.execute({})
 
-    expect(res).toEqual({ status: PaymentStatus.APPROVED })
+    expect(res.status).toBe(PaymentStatus.APPROVED)
     expect(orders.paidCalls).toEqual(['order-1'])
-    expect(payments.records[0].providerTransactionId).toBe('txn-001')
+    expect(payments.records[0].wompiTransactionId).toBe('txn-001')
   })
 
   it('rechaza el pago sin marcar el pedido como PAID', async () => {
@@ -210,57 +185,25 @@ describe('HandleWebhookUseCase', () => {
     const useCase = new HandleWebhookUseCase(
       payments,
       orders,
-      conResultado({ ...aprobado, status: PaymentStatus.DECLINED }),
+      new FakeGateway({ ...aprobado, status: PaymentStatus.DECLINED }),
       new SpyNotifier(),
     )
 
-    const res = await useCase.execute(AVISO)
+    const res = await useCase.execute({})
 
-    expect(res).toEqual({ status: PaymentStatus.DECLINED })
+    expect(res.status).toBe(PaymentStatus.DECLINED)
     expect(orders.paidCalls).toEqual([])
-  })
-
-  it('ignora (200) un aviso auténtico que no nos concierne, sin tocar nada', async () => {
-    const payments = await conPagoPendiente()
-    const orders = new FakeOrders(order)
-    const gateway = new FakeGateway({ kind: 'ignored', reason: 'tipo merchant_order' })
-
-    const res = await new HandleWebhookUseCase(payments, orders, gateway, new SpyNotifier()).execute(AVISO)
-
-    // 200 a propósito: con un error, Mercado Pago reintentaría durante horas
-    // un aviso que nunca vamos a procesar.
-    expect(res).toEqual({ ignored: true, reason: 'tipo merchant_order' })
-    expect(payments.records[0].status).toBe(PaymentStatus.PENDING)
-    expect(orders.paidCalls).toEqual([])
-  })
-
-  it('un reembolso SÍ degrada un pago ya aprobado: es información nueva y real', async () => {
-    const payments = await conPagoPendiente()
-    const orders = new FakeOrders(order)
-    await new HandleWebhookUseCase(payments, orders, conResultado(aprobado), new SpyNotifier()).execute(AVISO)
-
-    const res = await new HandleWebhookUseCase(
-      payments,
-      orders,
-      conResultado({ ...aprobado, transactionId: 'txn-001', status: PaymentStatus.REFUNDED }),
-      new SpyNotifier(),
-    ).execute(AVISO)
-
-    expect(res).toEqual({ status: PaymentStatus.REFUNDED })
-    expect(payments.records[0].status).toBe(PaymentStatus.REFUNDED)
-    // El pedido no se revierte solo: devolverlo es decisión de la tienda.
-    expect(orders.paidCalls).toEqual(['order-1'])
   })
 
   it('es idempotente ante la reentrega del mismo evento', async () => {
     const payments = await conPagoPendiente()
     const orders = new FakeOrders(order)
-    const useCase = new HandleWebhookUseCase(payments, orders, conResultado(aprobado), new SpyNotifier())
+    const useCase = new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado), new SpyNotifier())
 
-    await useCase.execute(AVISO)
-    const segunda = await useCase.execute(AVISO)
+    await useCase.execute({})
+    const segunda = await useCase.execute({})
 
-    expect(segunda).toEqual({ status: PaymentStatus.APPROVED, idempotent: true })
+    expect(segunda.idempotent).toBe(true)
     expect(orders.paidCalls).toEqual(['order-1']) // no se reprocesa
   })
 
@@ -268,16 +211,17 @@ describe('HandleWebhookUseCase', () => {
     const payments = await conPagoPendiente()
     const orders = new FakeOrders(order)
     // Primero se aprueba...
-    await new HandleWebhookUseCase(payments, orders, conResultado(aprobado), new SpyNotifier()).execute(AVISO)
+    await new HandleWebhookUseCase(payments, orders, new FakeGateway(aprobado), new SpyNotifier()).execute({})
     // ...y después llega un evento de rechazo con otra transacción.
     const res = await new HandleWebhookUseCase(
       payments,
       orders,
-      conResultado({ reference: 'PA-2026-ABC', transactionId: 'txn-002', status: PaymentStatus.DECLINED }),
+      new FakeGateway({ reference: 'PA-2026-ABC', transactionId: 'txn-002', status: PaymentStatus.DECLINED }),
       new SpyNotifier(),
-    ).execute(AVISO)
+    ).execute({})
 
-    expect(res).toEqual({ status: PaymentStatus.APPROVED, idempotent: true })
+    expect(res.status).toBe(PaymentStatus.APPROVED)
+    expect(res.idempotent).toBe(true)
     expect(payments.records[0].status).toBe(PaymentStatus.APPROVED)
   })
 
@@ -288,18 +232,19 @@ describe('HandleWebhookUseCase', () => {
     await new HandleWebhookUseCase(
       payments,
       orders,
-      conResultado({ reference: 'PA-2026-ABC', transactionId: 'txn-001', status: PaymentStatus.DECLINED }),
+      new FakeGateway({ reference: 'PA-2026-ABC', transactionId: 'txn-001', status: PaymentStatus.DECLINED }),
       new SpyNotifier(),
-    ).execute(AVISO)
+    ).execute({})
 
     const res = await new HandleWebhookUseCase(
       payments,
       orders,
-      conResultado({ reference: 'PA-2026-ABC', transactionId: 'txn-002', status: PaymentStatus.APPROVED }),
+      new FakeGateway({ reference: 'PA-2026-ABC', transactionId: 'txn-002', status: PaymentStatus.APPROVED }),
       new SpyNotifier(),
-    ).execute(AVISO)
+    ).execute({})
 
-    expect(res).toEqual({ status: PaymentStatus.APPROVED })
+    expect(res.status).toBe(PaymentStatus.APPROVED)
+    expect(res.idempotent).toBeUndefined()
     expect(orders.paidCalls).toEqual(['order-1'])
   })
 
@@ -307,10 +252,10 @@ describe('HandleWebhookUseCase', () => {
     const useCase = new HandleWebhookUseCase(
       new FakePayments(),
       new FakeOrders(order),
-      conResultado(aprobado),
+      new FakeGateway(aprobado),
       new SpyNotifier(),
     )
-    await expect(useCase.execute(AVISO)).rejects.toMatchObject({ statusCode: 404 })
+    await expect(useCase.execute({})).rejects.toMatchObject({ statusCode: 404 })
   })
 })
 
@@ -327,7 +272,7 @@ describe('HandleWebhookUseCase · aviso de pago', () => {
     const payments = new FakePayments()
     await payments.create({
       orderId: 'order-1',
-      method: PaymentMethod.MERCADO_PAGO,
+      method: PaymentMethod.WOMPI,
       amount: 79900,
       currency: 'COP',
       externalReference: 'PA-2026-ABC',
@@ -345,11 +290,11 @@ describe('HandleWebhookUseCase · aviso de pago', () => {
     const useCase = new HandleWebhookUseCase(
       await conPagoPendiente(),
       new FakeOrders(order),
-      conResultado(aprobado),
+      new FakeGateway(aprobado),
       notifier,
     )
 
-    await useCase.execute(AVISO)
+    await useCase.execute({})
 
     expect(notifier.de('orderPaid')).toEqual([
       { to: 'clienta@ejemplo.co', orderNumber: 'PA-2026-ABC123', total: 79900 },
@@ -361,15 +306,15 @@ describe('HandleWebhookUseCase · aviso de pago', () => {
     await new HandleWebhookUseCase(
       await conPagoPendiente(),
       new FakeOrders(order),
-      conResultado({ ...aprobado, status: PaymentStatus.DECLINED }),
+      new FakeGateway({ ...aprobado, status: PaymentStatus.DECLINED }),
       notifier,
-    ).execute(AVISO)
+    ).execute({})
 
     expect(notifier.de('orderPaid')).toHaveLength(0)
   })
 
   /**
-   * Mercado Pago reintenta el aviso si no recibe 200 a tiempo. La guarda
+   * Wompi reintenta el evento si no recibe 200 a tiempo. La guarda
    * PENDING -> PAID de `markPaid` es la que impide el segundo correo: no hay
    * un mecanismo aparte que pueda quedar desincronizado.
    */
@@ -381,9 +326,9 @@ describe('HandleWebhookUseCase · aviso de pago', () => {
     await new HandleWebhookUseCase(
       await conPagoPendiente(),
       orders,
-      conResultado(aprobado),
+      new FakeGateway(aprobado),
       notifier,
-    ).execute(AVISO)
+    ).execute({})
 
     expect(orders.paidCalls).toEqual(['order-1'])
     expect(notifier.de('orderPaid')).toHaveLength(0)
@@ -396,10 +341,10 @@ describe('HandleWebhookUseCase · aviso de pago', () => {
     const res = await new HandleWebhookUseCase(
       await conPagoPendiente(),
       new FakeOrders(order),
-      conResultado(aprobado),
+      new FakeGateway(aprobado),
       notifier,
-    ).execute(AVISO)
+    ).execute({})
 
-    expect(res).toEqual({ status: PaymentStatus.APPROVED })
+    expect(res.status).toBe(PaymentStatus.APPROVED)
   })
 })

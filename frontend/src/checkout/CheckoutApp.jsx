@@ -16,19 +16,18 @@ import AuthStep from './steps/AuthStep'
 import ShopStep from './steps/ShopStep'
 import CheckoutFormStep from './steps/CheckoutFormStep'
 import PaymentStep from './steps/PaymentStep'
+import ConfirmationStep from './steps/ConfirmationStep'
 import PieLegal from '../shared/PieLegal.jsx'
 
-// Cuatro pasos, no cinco: la confirmación ya no vive aquí. El pago ocurre en
-// el sitio de Mercado Pago y de allí la clienta vuelve a `track.html`, que es
-// la página que consulta el estado real del pedido. Un quinto paso dentro del
-// checkout sería una pantalla a la que nunca se llega.
-const STEPS = ['Cuenta', 'Tienda', 'Envío', 'Pago']
+const STEPS = ['Cuenta', 'Tienda', 'Envío', 'Pago', 'Confirmación']
 
 export default function CheckoutApp() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [user, setUser] = useState(null)
   const [step, setStep] = useState(0) // índice sobre STEPS
   const [order, setOrder] = useState(null) // pedido creado en el paso "Envío"
+  const [contactEmail, setContactEmail] = useState('') // para consultar el seguimiento
+  const [payment, setPayment] = useState(null) // { payment, transaction, orderStatus }
   const [cartVersion, setCartVersion] = useState(0) // fuerza recarga del carrito tras fusionar
   const [sessionExpired, setSessionExpired] = useState(false)
 
@@ -39,6 +38,7 @@ export default function CheckoutApp() {
     setOnSessionExpired(() => {
       setUser(null)
       setOrder(null)
+      setPayment(null)
       setStep(0)
       setSessionExpired(true)
     })
@@ -91,17 +91,30 @@ export default function CheckoutApp() {
     clearSession()
     setUser(null)
     setOrder(null)
+    setPayment(null)
     setStep(0)
     setSessionExpired(false)
   }
 
   const handleOrderPlaced = (createdOrder, email) => {
     setOrder(createdOrder)
-    // Mercado Pago saca a la clienta del sitio y la devuelve a track.html en
-    // una carga nueva, donde este estado ya no existe. Se recuerdan los dos
-    // datos que necesita el seguimiento para no obligarla a teclearlos.
+    setContactEmail(email)
+    // PSE y Bancolombia sacan al cliente del sitio y lo devuelven a track.html
+    // en una carga nueva, donde este estado ya no existe. Se recuerdan los dos
+    // datos que necesita el seguimiento para no obligarlo a teclearlos.
     recordarPedido(createdOrder.orderNumber, email)
     setStep(3)
+  }
+
+  const handlePaymentResult = (result) => {
+    setPayment(result)
+    setStep(4)
+  }
+
+  const restart = () => {
+    setOrder(null)
+    setPayment(null)
+    setStep(1)
   }
 
   return (
@@ -148,7 +161,14 @@ export default function CheckoutApp() {
           ) : step === 2 ? (
             <CheckoutFormStep user={user} onBack={() => setStep(1)} onPlaced={handleOrderPlaced} />
           ) : step === 3 && order ? (
-            <PaymentStep order={order} />
+            <PaymentStep order={order} contactEmail={contactEmail} onPaid={handlePaymentResult} />
+          ) : step === 4 && order && payment ? (
+            <ConfirmationStep
+              order={order}
+              payment={payment}
+              contactEmail={contactEmail}
+              onRestart={restart}
+            />
           ) : (
             <ShopStep key={cartVersion} onContinue={() => setStep(2)} />
           )}

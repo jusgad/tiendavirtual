@@ -284,8 +284,8 @@ antes de operar con clientes de verdad:
 
 | Pendiente | Por qué bloquea |
 |---|---|
-| **Credenciales de Mercado Pago** | Crear la aplicación en el panel, probar con las credenciales `TEST-` y pasar a las `APP_USR-` |
-| **URL de notificación de Mercado Pago** | Registrar `POST /api/payments/webhook/mercadopago` en el panel (o en `MERCADO_PAGO_NOTIFICATION_URL`). Sin ella ningún pago se confirma |
+| **Widget de Wompi en el frontend** | El backend ya está integrado ([`wompiGateway.ts`](../backend/src/modules/payments/infrastructure/wompiGateway.ts)), pero `PaymentStep.jsx` todavía muestra el formulario antiguo. Sin el widget no se puede cobrar |
+| **Credenciales de Wompi** | Crear la cuenta, probar en sandbox y pasar a llaves de producción |
 | **Envío de correos** | Sin él, la recuperación de contraseña no funciona y nadie recibe confirmación de pedido |
 | **Transiciones de estado del pedido** | No hay endpoint para `PAID → PREPARING → SHIPPED → DELIVERED`. Sin eso el cliente nunca ve avanzar su pedido, y las reseñas (que exigen `DELIVERED`) nunca se habilitan |
 | **Panel de administración** | Los endpoints existen; no hay interfaz. Hoy se gestiona con `curl` o Prisma Studio |
@@ -326,11 +326,10 @@ proyecto es multipágina: desactiva la reescritura o excluye `/checkout.html`.
 
 ### El webhook de pago devuelve 401 en producción
 
-`MERCADO_PAGO_WEBHOOK_SECRET` no coincide con el de tu cuenta. Compruébalo en
-el panel de Mercado Pago (**Webhooks > Configurar notificación**) y confirma
-que la URL registrada allí apunta a
-`https://api.tudominio.com/api/payments/webhook/mercadopago`. Ver
-[decisiones de diseño](explicacion-decisiones.md#pagos-con-mercado-pago-sacar-la-tarjeta-del-backend).
+`WOMPI_EVENTS_SECRET` no coincide con el de tu cuenta de Wompi. Compruébalo en
+el panel de Wompi y confirma que la URL de eventos allí apunta a
+`https://api.tudominio.com/api/payments/webhook/wompi`. Ver
+[decisiones de diseño](explicacion-decisiones.md#pagos-con-wompi-sacar-la-tarjeta-del-backend).
 
 ### El catálogo funciona pero el carrito falla
 

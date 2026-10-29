@@ -40,7 +40,9 @@ npx jest -t "aplica cupón porcentual"
 
 **Frontend:** `npm run dev` (:5173), `npm run build`, `npm run preview`. No tests.
 
-**Full test stack (db + redis + API + frontend + a fake Mercado Pago):** from the repo root, `docker compose up --build`, then http://localhost:5173. It brings up the whole store so a purchase can be walked end to end: the checkout redirects to `scripts/mercadopago-falso.mjs`, which signs the webhook exactly as Mercado Pago would. Test-only — the root compose carries throwaway secrets and `NODE_ENV=development` on purpose, and `env.ts` refuses that combination under `NODE_ENV=production`.
+**Full test stack (db + redis + API + frontend):** from the repo root, `docker compose up --build`, then http://localhost:5173. Test-only — the root compose carries throwaway secrets and `NODE_ENV=development` on purpose, and `env.ts` refuses that combination under `NODE_ENV=production`.
+
+Note what it can and cannot cover. The charge itself happens inside Wompi's widget, a script served from their domain, so without real sandbox keys the checkout stops at the payment step and says so. The other half — webhook confirmation, which is where the logic lives — is fully testable offline with `backend/scripts/wompi-falso.mjs --pedido <ORDER_NUMBER>`, which signs a `transaction.updated` event exactly as Wompi would.
 
 **Backend only (Postgres + Redis + API):** from `backend/`, `docker compose up --build` (migrates + seeds + starts), reading real credentials from `backend/.env`.
 

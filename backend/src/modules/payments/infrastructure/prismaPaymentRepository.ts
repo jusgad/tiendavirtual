@@ -22,7 +22,7 @@ type Row = {
   amount: unknown
   currency: string
   externalReference: string | null
-  providerTransactionId: string | null
+  wompiTransactionId: string | null
 }
 
 const toRecord = (p: Row): PaymentRecord => ({
@@ -33,7 +33,7 @@ const toRecord = (p: Row): PaymentRecord => ({
   amount: Number(p.amount),
   currency: p.currency,
   externalReference: p.externalReference,
-  providerTransactionId: p.providerTransactionId,
+  wompiTransactionId: p.wompiTransactionId,
 })
 
 export class PrismaPaymentRepository implements PaymentRepository {
@@ -78,14 +78,14 @@ export class PrismaPaymentRepository implements PaymentRepository {
     id: string,
     status: PaymentStatus,
     rawPayload: unknown,
-    providerTransactionId: string | null,
+    wompiTransactionId: string | null,
   ): Promise<PaymentRecord> {
     const p = await this.prisma.payment.update({
       where: { id },
       data: {
         status: toPrismaPaymentStatus(status),
         rawPayload: rawPayload as Prisma.InputJsonValue,
-        providerTransactionId,
+        wompiTransactionId,
       },
     })
     return toRecord(p)
