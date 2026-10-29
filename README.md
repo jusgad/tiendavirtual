@@ -120,7 +120,7 @@ Vive en [`frontend/`](frontend/) y es un proyecto npm independiente (su propio
   horizontal en móvil.
 - **Hero** de 3 columnas (beneficios · producto en podio · CTA flotante a WhatsApp),
   que colapsa a 1 columna en móvil (< 920px).
-- **Tarjeta de oferta** con precio ($79.900 COP), botones *Comprar ahora* y
+- **Tarjeta de oferta** con precio ($89.900 COP), botones *Comprar ahora* y
   *Comprar por WhatsApp*, sellos de confianza y redes.
 - **Barra sticky** inferior con precio y accesos de compra, y un **toast** de
   confirmación al pulsar *Comprar*.
@@ -204,7 +204,7 @@ real y demuestra el flujo completo de compra.
 
 Lo que **no** está hecho es reemplazar la landing por una tienda de verdad: la
 landing sigue vendiendo por WhatsApp con su precio propio en `site.js`, sin leer
-el catálogo del backend. Los dos precios (el combo a $79.900 de la landing y los
+el catálogo del backend. Los dos precios (el combo a $89.900 de la landing y los
 productos del catálogo) son fuentes de verdad distintas y nada las sincroniza.
 
 Lista completa de lo que falta, por área:

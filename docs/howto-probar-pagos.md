@@ -91,7 +91,7 @@ curl -s -X POST http://localhost:3000/api/payments \
   "checkout": {
     "publicKey": "pub_test_000000000000000000000000",
     "currency": "COP",
-    "amountInCents": 7990000,
+    "amountInCents": 8990000,
     "reference": "PA-2026-A3F91C",
     "signature": "9a3f…",
     "redirectUrl": "http://localhost:5173/track.html"
@@ -126,7 +126,7 @@ node -e "
 const c=require('crypto');
 const SECRET='dev_wompi_events_change_me';
 const REF='<ORDER_NUMBER>';
-const data={transaction:{id:'txn-demo-001',reference:REF,status:'APPROVED',amount_in_cents:7990000}};
+const data={transaction:{id:'txn-demo-001',reference:REF,status:'APPROVED',amount_in_cents:8990000}};
 const props=['transaction.id','transaction.status','transaction.amount_in_cents'];
 const ts=Math.floor(Date.now()/1000);
 const concat=props.map(p=>p.split('.').reduce((a,k)=>a[k],data)).join('');
@@ -137,7 +137,7 @@ console.log(JSON.stringify({event:'transaction.updated',data,timestamp:ts,signat
 
 Copia la línea JSON completa que imprime. La llamaremos `<BODY>`.
 
-> Ajusta `amount_in_cents` si tu pedido no cuesta $79.900. No es obligatorio que
+> Ajusta `amount_in_cents` si tu pedido no cuesta $89.900. No es obligatorio que
 > coincida con el total para que el checksum valide (el backend no lo compara
 > hoy), pero conviene que sea realista.
 

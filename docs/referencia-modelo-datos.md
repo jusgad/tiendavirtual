@@ -369,7 +369,7 @@ Siembra el catálogo **real** del negocio, no datos de ejemplo:
 - **1 admin** — `ADMIN_EMAIL` / `ADMIN_PASSWORD` (defaults `admin@pomass.co` / `Admin123*`). Aborta si `NODE_ENV=production` y la contraseña sigue siendo la de ejemplo.
 - **1 marca** — PomAss (`pomass`).
 - **1 categoría** — Cuidado íntimo (`cuidado-intimo`).
-- **1 producto** — `Estuche PomAss Día + Noche`, `PA-ESTUCHE-DIANOCHE`, $79.900 COP, 2 tubos de 50 ml. El copy sale de [`frontend/src/site.js`](../frontend/src/site.js).
+- **1 producto** — `Estuche PomAss Día + Noche`, `PA-ESTUCHE-DIANOCHE`, $89.900 COP, 2 tubos de 50 ml. El copy sale de [`frontend/src/site.js`](../frontend/src/site.js).
 - **2 imágenes** de producto.
 - **1 cupón** — `BIENVENIDA10`: 10 %, compra mínima $50.000, **tope global de 100 usos**.
 

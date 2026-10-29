@@ -105,7 +105,7 @@ componentes:
 
 | Export | Valor actual | Usado en |
 |---|---|---|
-| `PRICE` | `'$79.900'` | `OfferCard`, `StickyBar` |
+| `PRICE` | `'$89.900'` | `OfferCard`, `StickyBar` |
 | `CURRENCY` | `'COP'` | `OfferCard` |
 | `WHATSAPP_PHONE` | `'573105676187'` | `whatsappUrl()` |
 | `whatsappUrl(message?)` | Construye `https://wa.me/<phone>?text=<mensaje url-encoded>` | `OfferCard`, `FloatingCta`, `StickyBar` |
@@ -114,7 +114,7 @@ componentes:
 
 **Para cambiar el precio o el teléfono, edita solo este archivo.**
 
-Un detalle a tener en cuenta: el precio de la landing (`$79.900` por el combo)
+Un detalle a tener en cuenta: el precio de la landing (`$89.900` por el combo)
 es independiente de los precios del catálogo del backend (`$45.900` por cada
 crema en el seed). Son dos fuentes de verdad distintas y nada las sincroniza.
 

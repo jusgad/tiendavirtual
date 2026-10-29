@@ -54,7 +54,7 @@ crítico.
 | # | Paso del blueprint | En `be9695a` | Ahora |
 |---|---|---|---|
 | 1 | Provisionar Supabase | ❌ | ⚠️ **Código listo**: `directUrl` en el schema y `DIRECT_URL` en env, CI y compose. Falta crear la cuenta y poner las cadenas |
-| 2 | Re-sembrar catálogo real | ❌ | ✅ **Hecho**: 1 marca, 1 categoría, 1 producto (`Estuche PomAss Día + Noche`, $79.900), 2 imágenes |
+| 2 | Re-sembrar catálogo real | ❌ | ✅ **Hecho**: 1 marca, 1 categoría, 1 producto (`Estuche PomAss Día + Noche`, $89.900), 2 imágenes |
 | 3 | `PaymentMethod` → `WOMPI` | ❌ | ✅ **Hecho**: enum + migración `0003_wompi_payments` |
 | 4 | Reescribir `payments` para Wompi | ❌ | ✅ **Hecho**: `WompiGateway`, stubs eliminados, 35 tests |
 | 5 | `GET /orders/track` público | ❌ | ✅ **Hecho**: con rate limit propio y 5 tests |
@@ -391,7 +391,7 @@ Insertado antes del Step 5, como recomendaba este análisis:
 
 ### Step 2 — catálogo real
 
-- 1 marca, 1 categoría, 1 producto (`Estuche PomAss Día + Noche`, $79.900) con el copy de `site.js`.
+- 1 marca, 1 categoría, 1 producto (`Estuche PomAss Día + Noche`, $89.900) con el copy de `site.js`.
 - **2 `ProductImage`**, que antes no se sembraban (hueco ①).
 - Los 7 productos de ejemplo se **desactivan**, no se borran (podrían tener pedidos asociados).
 - El cupón lleva ahora `maxUses: 100`, porque `perUserLimit` no es exigible sin cuentas (hueco ⑤).

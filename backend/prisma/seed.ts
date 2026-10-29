@@ -82,7 +82,7 @@ async function main() {
     where: { slug: 'estuche-pomass-dia-noche' },
     // El precio y el stock sí se refrescan al re-sembrar; el resto del copy no
     // se pisa para no deshacer ediciones hechas desde el panel admin.
-    update: { price: 79900, stock: INITIAL_STOCK, isActive: true },
+    update: { price: 89900, stock: INITIAL_STOCK, isActive: true },
     create: {
       name: 'Estuche PomAss Día + Noche',
       slug: 'estuche-pomass-dia-noche',
@@ -95,7 +95,7 @@ async function main() {
         'fórmula suave y segura para ti.',
       brandId: brand.id,
       categoryId: category.id,
-      price: 79900,
+      price: 89900,
       currency: 'COP',
       presentation: 'Estuche Día + Noche · 2 tubos de 50 ml',
       sizeMl: 100,

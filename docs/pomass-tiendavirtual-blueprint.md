@@ -94,7 +94,7 @@ Agregar `wompiTransactionId String?` (indexado) para poder buscar por el id de t
 Reemplazar el seed genérico por:
 - **1 Brand:** `PomAss` (`slug: pomass`)
 - **1 Category:** algo como `Cuidado íntimo` (`slug: cuidado-intimo`) — no hace falta el árbol de 6 categorías actual, se puede dejar como capacidad futura sin sembrar datos ficticios
-- **1 Product:** `Estuche PomAss Día + Noche`, `sku` único, `price: 79900`, `currency: COP`, `presentation: "Estuche Día + Noche"`, `stock` con el inventario real, descripción/ingredientes/advertencias reales (usa el copy de `frontend/src/site.js` como fuente — ya tiene beneficios día/noche redactados)
+- **1 Product:** `Estuche PomAss Día + Noche`, `sku` único, `price: 89900`, `currency: COP`, `presentation: "Estuche Día + Noche"`, `stock` con el inventario real, descripción/ingredientes/advertencias reales (usa el copy de `frontend/src/site.js` como fuente — ya tiene beneficios día/noche redactados)
 - **2 ProductImage** apuntando a Supabase Storage (ver §5)
 
 No se elimina la capacidad del modelo de tener múltiples productos/marcas/categorías — solo se deja de sembrar datos de ejemplo que no son el negocio real. Cuando el dueño agregue más productos, se hace desde el panel admin que ya existe.
