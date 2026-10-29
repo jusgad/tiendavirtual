@@ -1,11 +1,14 @@
 # Entorno de PRUEBAS: base, caché, API y frontend. Levanta la tienda en local.
 #
-# OJO con el alcance: el cobro ocurre dentro del widget de Wompi, que es un
-# script servido desde su dominio y necesita credenciales de sandbox. Sin
-# ellas el checkout llega hasta el paso de pago y avisa de que falta
-# configurar. La otra mitad —la confirmación por webhook, que es donde vive
-# la lógica— sí se prueba entera y sin internet, con
-# `backend/scripts/wompi-falso.mjs`.
+# Se puede recorrer una compra entera en el navegador porque el widget de
+# Wompi está simulado: `scripts/wompi-widget-falso.mjs` sirve un `widget.js`
+# con la misma forma que el real y, al elegir desenlace, firma el evento y se
+# lo manda al webhook igual que haría Wompi. El sondeo del checkout no se
+# simula: se ejerce de verdad.
+#
+# Lo que NO cubre es que tus llaves funcionen; para eso hace falta el sandbox
+# real. Para confirmar un pago desde la terminal, sin navegador, está
+# `scripts/wompi-falso.mjs`.
 #
 #     docker compose up --build
 #
@@ -89,10 +92,11 @@ services:
       FRONTEND_URL: http://localhost:5173
 
       # --- Wompi ---
-      # Llaves de ejemplo: el widget no abre con ellas y el checkout lo dice.
-      # Para que abra de verdad, pon aquí las tuyas de sandbox.
       PAYMENTS_SANDBOX: "true"
-      WOMPI_PUBLIC_KEY: pub_test_000000000000000000000000
+      # No es la de ceros a propósito: con esa, el checkout se declara «sin
+      # configurar» y ni intenta abrir el widget. Esta no vale en Wompi, pero
+      # aquí quien atiende es el widget simulado.
+      WOMPI_PUBLIC_KEY: pub_test_simulacion_local
       WOMPI_PRIVATE_KEY: prv_test_000000000000000000000000
       WOMPI_INTEGRITY_SECRET: dev_wompi_integrity_change_me
       # Este importa aunque no haya widget: es el secreto con el que
@@ -143,6 +147,24 @@ services:
     # migraciones es idempotente si la API ya lo hizo.
     command: sh -c "npx prisma migrate deploy && npm test"
 
+  # El widget de Wompi, simulado. Ver `backend/scripts/wompi-widget-falso.mjs`.
+  wompi:
+    # Un script suelto sobre la imagen de Node: no merece Dockerfile propio.
+    image: node:20-alpine
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "4100:4100"
+    volumes:
+      - ./backend/scripts:/app/scripts:ro
+    environment:
+      PUERTO: 4100
+      # Lo llama este contenedor, no el navegador: nombre de servicio.
+      BACKEND_URL: http://api:3000
+      # Tiene que coincidir con el de la API o el webhook responde 401.
+      WOMPI_EVENTS_SECRET: dev_wompi_events_change_me
+    command: node scripts/wompi-widget-falso.mjs
+
   frontend:
     image: node:20-alpine
     restart: unless-stopped
@@ -158,6 +180,9 @@ services:
     environment:
       # La ve el navegador, así que es localhost y no el nombre del servicio.
       VITE_API_URL: http://localhost:3000/api
+      # Lo carga el NAVEGADOR, así que localhost y no el nombre del servicio.
+      # Sin esta variable se cargaría el widget real de Wompi.
+      VITE_WOMPI_WIDGET_URL: http://localhost:4100/widget.js
       # Dentro de un contenedor no hay navegador que abrir.
       VITE_NO_OPEN: "true"
     # `--no-save`: al instalar en Linux, npm añade al lockfile los binarios

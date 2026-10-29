@@ -4,7 +4,11 @@
 // aquí para que el componente no tenga que lidiar con la carga del <script>,
 // y para poder simularlo en tests.
 
-const WIDGET_SRC = 'https://checkout.wompi.co/widget.js'
+// De dónde se carga el widget. Es Wompi salvo que se apunte a otro sitio, que
+// es lo que hace el entorno de Docker para poder recorrer una compra sin
+// credenciales de sandbox (ver `backend/scripts/wompi-widget-falso.mjs`).
+// En producción nadie define esta variable y queda la URL de Wompi.
+const WIDGET_SRC = import.meta.env.VITE_WOMPI_WIDGET_URL || 'https://checkout.wompi.co/widget.js'
 
 let loadPromise = null
 

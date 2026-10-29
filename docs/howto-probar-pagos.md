@@ -21,16 +21,26 @@ docker compose up --build
 | <http://localhost:5173/track.html> | Seguimiento del pedido |
 | <http://localhost:3000/api/docs> | Swagger |
 
-> **Hasta dónde llega.** El cobro ocurre dentro del widget de Wompi, que es un
-> script servido desde su dominio: sin credenciales de sandbox, el checkout
-> llega al paso de pago y avisa de que falta configurar. Lo que sí se prueba
-> entero y sin internet es **la confirmación**, que es donde vive la lógica —
-> y es de lo que trata el resto de esta guía.
+**Se puede comprar entero, con el navegador.** El widget de Wompi está
+simulado: al darle a *Pagar* se abre un modal dentro de la página con
+*Aprobar*, *Rechazar* y *Cerrar sin pagar*. Lo que elijas se convierte en un
+evento firmado igual que lo haría Wompi, que va al webhook del backend; el
+checkout lo descubre sondeando el seguimiento, exactamente como en
+producción. Esa parte no se simula: se ejerce.
 
-Para ver qué pasa por dentro:
+Lo sirve `backend/scripts/wompi-widget-falso.mjs`, en el puerto 4100.
+
+> **Lo que NO cubre.** Que tus llaves de Wompi funcionen. Para eso hace falta
+> el sandbox real, y es lo que viene al final de esta guía. Esto comprueba que
+> *tu tienda* hace lo que debe con lo que Wompi le diría.
+
+El resto del documento es la vía manual, con `curl` y sin navegador: sirve
+para ver el mecanismo pieza a pieza y para probar casos sueltos.
+
+Para ver qué pasa por dentro mientras compras:
 
 ```bash
-docker compose logs -f api
+docker compose logs -f api wompi
 ```
 
 Y para empezar de cero, base incluida:
