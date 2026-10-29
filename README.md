@@ -155,6 +155,12 @@ necesita credenciales de sandbox; la confirmación por webhook sí se prueba
 entera y sin internet con `backend/scripts/wompi-falso.mjs`. Detalle en
 [cómo probar el flujo de pagos](docs/howto-probar-pagos.md).
 
+Para correr la batería de tests, integración incluida, sin instalar nada:
+
+```bash
+docker compose run --rm tests
+```
+
 Es un entorno de **pruebas**: los secretos están a la vista en
 `docker-compose.yml` y no se cobra nada. Para desplegar de verdad, ver
 [cómo desplegar](docs/howto-desplegar.md).

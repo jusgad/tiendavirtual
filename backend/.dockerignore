@@ -4,4 +4,5 @@ coverage
 .env
 .git
 *.log
-tests
+# `tests` NO se ignora: la etapa `tester` del Dockerfile los necesita.
+# La imagen final no los copia, así que no engorda.

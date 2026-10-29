@@ -195,13 +195,25 @@ npx jest -t "aplica cupón porcentual"
 | Suite | Cantidad | Requisitos |
 |---|---|---|
 | Backend `tests/unit/` | 212 tests en 22 suites | Ninguno — dobles en memoria |
-| Backend `tests/integration/` | 19 tests en 3 archivos (`auth`, `catalog`, `checkout`) | Postgres migrado |
+| Backend `tests/integration/` | 19 tests en 3 archivos (`auth`, `catalog`, `checkout`) | Postgres migrado + Redis |
 | Frontend `src/**/*.test.js` | 114 tests en 10 archivos | Ninguno — `fetch` y widget simulados |
 
 Los unitarios del backend cubren la lógica crítica: stock, checkout, precios,
 cupones, pagos (firma e idempotencia de Wompi), transiciones de estado del
 pedido, seguimiento, tokens, reseñas y reportes. Los del frontend cubren la
 renovación de token del cliente de API.
+
+La forma cómoda de correrlos todos, integración incluida, es dentro de Docker:
+
+```bash
+docker compose run --rm tests
+```
+
+Usa la base y el Redis del propio stack, así que no hay que tener nada
+instalado en la máquina ni apuntar variables a mano. El servicio vive bajo un
+perfil, de modo que `docker compose up` no lo levanta. Para acotar, se le pasa
+el comando: `docker compose run --rm tests npm run test:unit`, o
+`docker compose run --rm tests npx jest -t "cupón"`.
 
 > **`npm run typecheck` no cubre los tests del backend**: `tsconfig` los excluye.
 > Los errores de compilación de tests solo aparecen al correr jest.

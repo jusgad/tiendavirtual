@@ -25,7 +25,18 @@ RUN npm run build
 RUN npx tsc prisma/seed.ts --outDir dist/prisma --module commonjs --target ES2022 \
     --esModuleInterop --skipLibCheck --resolveJsonModule
 
-# Prune dev dependencies for the runtime image (prisma CLI stays as a dependency)
+# ---------- test stage ----------
+# Sale de `builder` ANTES de podar: los tests necesitan jest, ts-jest y
+# supertest, que son dependencias de desarrollo. No entra en la imagen final.
+FROM builder AS tester
+COPY jest.config.js ./
+COPY tests ./tests
+CMD ["npm", "test"]
+
+# ---------- prune stage ----------
+# La poda vive en su propia etapa para que `tester` pueda salir de `builder`
+# con las dependencias de desarrollo intactas.
+FROM builder AS pruned
 RUN npm prune --omit=dev
 
 # ---------- runtime stage ----------
@@ -40,9 +51,9 @@ RUN apt-get update \
 # `--chown=node` no es cosmético: el contenedor corre como `node`, y
 # `prisma migrate deploy` escribe en `node_modules/@prisma`. Sin esto arranca
 # en bucle quejándose de permisos.
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/dist ./dist
-COPY --from=builder --chown=node:node /app/prisma ./prisma
+COPY --from=pruned --chown=node:node /app/node_modules ./node_modules
+COPY --from=pruned --chown=node:node /app/dist ./dist
+COPY --from=pruned --chown=node:node /app/prisma ./prisma
 COPY --chown=node:node package*.json ./
 
 # Run as the built-in non-root user

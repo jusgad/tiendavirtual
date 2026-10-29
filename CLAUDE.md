@@ -44,6 +44,8 @@ npx jest -t "aplica cupón porcentual"
 
 Note what it can and cannot cover. The charge itself happens inside Wompi's widget, a script served from their domain, so without real sandbox keys the checkout stops at the payment step and says so. The other half — webhook confirmation, which is where the logic lives — is fully testable offline with `backend/scripts/wompi-falso.mjs --pedido <ORDER_NUMBER>`, which signs a `transaction.updated` event exactly as Wompi would.
 
+**Tests in Docker:** `docker compose run --rm tests` from the repo root runs the whole backend suite — integration included — against the stack's own Postgres and Redis. It is the reliable way to run the integration tests: they need a migrated DB and Redis, and the host has neither (a native Postgres squats :5432 with different credentials). The service sits behind a `test` profile, so `up` never starts it. Pass a command to narrow: `docker compose run --rm tests npm run test:unit`.
+
 **Backend only (Postgres + Redis + API):** from `backend/`, `docker compose up --build` (migrates + seeds + starts), reading real credentials from `backend/.env`.
 
 Docker Desktop on this Windows machine lives at `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`, not under `Program Files`; WSL2 has Ubuntu installed and the engine works once the app is launched. Unit tests, typecheck, lint, and both builds still run without Docker; only integration tests and a live backend need it.

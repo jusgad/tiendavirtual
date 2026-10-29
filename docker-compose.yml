@@ -110,6 +110,39 @@ services:
     # Migra, siembra el catálogo y arranca.
     command: sh -c "npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main.js"
 
+  # Las pruebas, dentro de Docker y contra la misma base y caché que la API.
+  #
+  # No se levanta con `up`: está bajo un perfil, así que solo corre cuando se
+  # pide a mano. Existe para que los tests de integración no dependan de que
+  # el host tenga Postgres, Redis ni las variables apuntando al sitio correcto
+  # — que era justo lo que los dejaba sin correr.
+  #
+  #     docker compose run --rm tests                    # toda la suite
+  #     docker compose run --rm tests npm run test:unit  # solo los unitarios
+  #     docker compose run --rm tests npx jest -t "cupón" # un caso suelto
+  tests:
+    build:
+      context: ./backend
+      target: tester
+    profiles: ["test"]
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://pomass:pomass_pass@db:5432/pomass?schema=public
+      DIRECT_URL: postgresql://pomass:pomass_pass@db:5432/pomass?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: secreto_de_pruebas_no_usar_en_produccion
+      # Los de la plantilla: los tests de pagos firman con ellos.
+      WOMPI_INTEGRITY_SECRET: dev_wompi_integrity_change_me
+      WOMPI_EVENTS_SECRET: dev_wompi_events_change_me
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Migra antes: los de integración necesitan el esquema al día, y aplicar
+    # migraciones es idempotente si la API ya lo hizo.
+    command: sh -c "npx prisma migrate deploy && npm test"
+
   frontend:
     image: node:20-alpine
     restart: unless-stopped
