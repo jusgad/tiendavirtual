@@ -1,0 +1,219 @@
+/*
+ * Tokens del rediseño: la estructura que pide el prompt, con los colores del
+ * manual de PomAss.
+ *
+ * El prompt traía su propia paleta (marfil, rosa empolvado, marrón rosado).
+ * No se usa, por decisión tomada antes de empezar: el manual manda que el
+ * durazno es el centro visual de la identidad, y sobre todo el contraste
+ * naranja/magenta es lo que distingue Día de Noche. Con los rosados del
+ * prompt las dos cremas dejarían de diferenciarse por color, que es la
+ * estructura entera de la página.
+ *
+ * Lo que sí se toma del prompt es todo lo demás: los cinco estados ligados al
+ * scroll, la atmósfera fija detrás del canvas, el glass, el CTA discreto y la
+ * escala tipográfica.
+ *
+ * Contraste medido sobre crema #FFF7EF:
+ *   tinta #343553 → 11,1:1      noche #A70B94 → 6,4:1
+ *   coral #F47A4D → 2,6:1 ✗     día #F56A00 → 2,9:1 ✗
+ * Por eso el texto pequeño de acento usa las variantes profundas.
+ */
+
+.pm {
+  /* ---- Paleta de marca ---- */
+  --pm-crema: #fff7ef;
+  --pm-coral: #f47a4d;
+  --pm-coral-hondo: #a8401d;
+  --pm-dia: #f56a00;
+  --pm-dia-hondo: #b94e00;
+  --pm-noche: #a70b94;
+  --pm-noche-hondo: #8a0879;
+  --pm-tinta: #343553;
+  --pm-hoja: #679b3c;
+
+  /* Equivalentes de los roles que nombra el prompt, para no tener que
+     traducir mentalmente en cada componente. */
+  --pm-ink: var(--pm-tinta); /* titulares y marca */
+  --pm-text: var(--pm-tinta); /* texto pequeño; 11,1:1 sobre crema */
+  --pm-acento: var(--pm-coral-hondo); /* acentos que llevan texto */
+
+  /* ---- Atmósfera: la pinta el estado actual ---- */
+  --pm-bg-top: #fff7ef;
+  --pm-bg-bottom: #ffeede;
+  --pm-glow: #ffe6cf;
+  --pm-glow-x: 50%;
+  --pm-glow-y: 42%;
+
+  /* ---- Tipografía ---- */
+  --pm-display: Fraunces, Georgia, serif;
+  --pm-sans: Nunito, system-ui, sans-serif;
+}
+
+/*
+ * Atmósfera fija detrás del canvas. El brillo sigue al producto, que es lo
+ * que ata el degradado CSS a la escena 3D y evita que se vean como dos
+ * capas pegadas.
+ */
+.pm-atmosfera {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      42% 48% at var(--pm-glow-x) var(--pm-glow-y),
+      var(--pm-glow) 0%,
+      transparent 72%
+    ),
+    radial-gradient(70% 60% at 12% 8%, rgba(255, 255, 255, 0.55), transparent 70%),
+    linear-gradient(180deg, var(--pm-bg-top) 0%, var(--pm-bg-bottom) 100%);
+  /* Sin transición: lo interpola el scroll, fotograma a fotograma. Una
+     transición CSS encima haría que el fondo llegue tarde al estado. */
+}
+
+/* El contenido va encima del canvas, que a su vez va encima de la atmósfera. */
+.pm-contenido {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Glass ---- */
+
+.pm-glass {
+  background: rgba(255, 251, 247, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  box-shadow:
+    0 30px 70px -40px rgba(52, 53, 83, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Sobre los paneles oscuros (Noche) el glass claro desaparece: se invierte. */
+.pm-oscuro .pm-glass {
+  background: rgba(255, 247, 239, 0.1);
+  border-color: rgba(255, 247, 239, 0.28);
+  box-shadow:
+    0 30px 70px -40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* ---- CTA discreto ---- */
+
+.pm-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(52, 53, 83, 0.45);
+  background: rgba(255, 251, 247, 0.38);
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  font-family: var(--pm-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pm-tinta);
+  transition:
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pm-cta:hover {
+  transform: translateY(-1px);
+  border-color: var(--pm-tinta);
+  background: rgba(255, 251, 247, 0.62);
+  box-shadow: 0 14px 34px -18px rgba(244, 122, 77, 0.75);
+}
+.pm-oscuro .pm-cta {
+  border-color: rgba(255, 247, 239, 0.5);
+  background: rgba(255, 247, 239, 0.12);
+  color: var(--pm-crema);
+}
+.pm-oscuro .pm-cta:hover {
+  border-color: var(--pm-crema);
+  background: rgba(255, 247, 239, 0.2);
+}
+
+/* ---- Tipografía ---- */
+
+.pm-marca {
+  font-family: var(--pm-display);
+  font-size: clamp(54px, 7vw, 116px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+.pm-titular-xl {
+  font-family: var(--pm-display);
+  font-size: clamp(40px, 5.6vw, 88px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.pm-titular-lg {
+  font-family: var(--pm-display);
+  font-size: clamp(34px, 4.2vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.pm-titular-hero {
+  font-family: var(--pm-display);
+  font-size: clamp(30px, 2.9vw, 46px);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.pm-cuerpo {
+  font-family: var(--pm-sans);
+  font-size: clamp(15px, 1.1vw, 17px);
+  font-weight: 400;
+  line-height: 1.75;
+}
+.pm-cuerpo-lg {
+  font-family: var(--pm-sans);
+  font-size: clamp(18px, 1.55vw, 23px);
+  font-weight: 400;
+  line-height: 1.6;
+}
+.pm-etiqueta {
+  font-family: var(--pm-sans);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+}
+
+/*
+ * Marcador de dato que falta. El prompt pide que se note: un hueco silencioso
+ * se publica sin que nadie se dé cuenta.
+ */
+.pm-pendiente {
+  border-bottom: 1px dashed rgba(52, 53, 83, 0.4);
+}
+
+/* ---- Revelado de titulares palabra a palabra ---- */
+
+.pm-palabra {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-cta {
+    transition: none;
+  }
+  .pm-cta:hover {
+    transform: none;
+  }
+}

@@ -1,4 +1,7 @@
+import { useRef } from 'react'
+import { MotionConfig } from 'framer-motion'
 import PieLegal from '../shared/PieLegal.jsx'
+import Atmosfera from './Atmosfera.jsx'
 import BotonWhatsApp from './BotonWhatsApp.jsx'
 import Combo from './Combo.jsx'
 import Crema from './Crema.jsx'
@@ -9,6 +12,8 @@ import Problema from './Problema.jsx'
 import SiteHeader from './SiteHeader.jsx'
 import StickyBuyBar from './StickyBuyBar.jsx'
 import Transicion from './Transicion.jsx'
+import { useHistoria } from './useHistoria.js'
+import './tokens.css'
 import './landing.css'
 
 /**
@@ -39,30 +44,67 @@ import './landing.css'
  * Sin mascotas, por decisión de la dueña, y sin reseñas: no hay opiniones
  * reales todavía y no se inventan. Cuando las haya, su sitio es entre la
  * banda 7 y la 8.
+ *
+ * ---
+ *
+ * Las nueve bandas se agrupan en los **cinco estados** que mueven la escena
+ * 3D y la atmósfera (`historia.js`). Agrupar y no partir: los estados son el
+ * mismo recorrido del día, visto desde el fondo en vez de desde el contenido.
+ *
+ *   0 Amanecer    Apertura
+ *   1 Día         Problema + banda Día
+ *   2 Transición  Transición
+ *   3 Noche       banda Noche + Marca
+ *   4 Cierre      Combo + Preguntas
+ *
+ * El valor de `historia` es continuo, no un índice: lo que pasa entre dos
+ * estados es lo que hace que la escena fluya en vez de saltar.
  */
 export default function LandingApp() {
+  const raiz = useRef(null)
+  const { historia } = useHistoria()
+
   return (
-    <div className="lp min-h-screen bg-brand-crema font-sans text-brand-tinta">
-      <a href="#contenido" className="lp-skip">
-        Saltar al contenido
-      </a>
-      <SiteHeader />
-      <main id="contenido" tabIndex={-1} className="outline-none">
-        <Hero />
-        <Problema />
-        <Crema modo="dia" />
-        <Transicion />
-        <Crema modo="noche" invertido />
-        <Marca />
-        <Combo />
-        <Faq />
-      </main>
-      <PieLegal dejarSitioAbajo />
-      <StickyBuyBar />
-      {/* Fuera de `main`: es ayuda disponible en toda la página, no una parte
-          del recorrido. Va el último para que, en orden de tabulación, llegue
-          después del contenido y no antes. */}
-      <BotonWhatsApp />
-    </div>
+    // `reducedMotion="user"` respeta la preferencia del sistema en todo el
+    // árbol de Framer Motion de una vez, sin repetirlo componente a componente.
+    <MotionConfig reducedMotion="user">
+      <div ref={raiz} className="pm lp min-h-screen bg-brand-crema font-sans text-brand-tinta">
+        <a href="#contenido" className="lp-skip">
+          Saltar al contenido
+        </a>
+
+        <Atmosfera historia={historia} raiz={raiz} />
+
+        <div className="pm-contenido">
+          <SiteHeader />
+          <main id="contenido" tabIndex={-1} className="outline-none">
+            <div data-historia="0">
+              <Hero />
+            </div>
+            <div data-historia="1">
+              <Problema />
+              <Crema modo="dia" />
+            </div>
+            <div data-historia="2">
+              <Transicion />
+            </div>
+            <div data-historia="3">
+              <Crema modo="noche" invertido />
+              <Marca />
+            </div>
+            <div data-historia="4">
+              <Combo />
+              <Faq />
+            </div>
+          </main>
+          <PieLegal dejarSitioAbajo />
+          <StickyBuyBar />
+          {/* Fuera de `main`: es ayuda disponible en toda la página, no una parte
+              del recorrido. Va el último para que, en orden de tabulación, llegue
+              después del contenido y no antes. */}
+          <BotonWhatsApp />
+        </div>
+      </div>
+    </MotionConfig>
   )
 }
