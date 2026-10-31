@@ -87,7 +87,12 @@ export function buildCatalogModule(prisma: PrismaClient, redis: Redis): Router {
     validate({ query: productListQuerySchema }),
     asyncHandler(productController.list),
   )
-  router.get('/products/:slug', validate({ params: slugParamSchema }), asyncHandler(productController.getBySlug))
+  router.get(
+    '/products/:slug',
+    optionalAuth,
+    validate({ params: slugParamSchema }),
+    asyncHandler(productController.getBySlug),
+  )
   router.post(
     '/products',
     ...adminOnly,

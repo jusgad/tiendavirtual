@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Monorepo with **two independent applications** in separate folders, each with its own `package.json`:
 
-- **`frontend/`** — React + Vite + Tailwind. Contains (a) a marketing **landing** (`index.html` / `src/App.jsx`) that sells via WhatsApp and calls no API, and (b) a **checkout demo** (`checkout.html` / `src/checkout/`) that DOES call the backend API over `fetch`. Vite is configured multi-page (both `.html` files are build inputs in `vite.config.js`). The checkout's API base URL comes from `VITE_API_URL` (`src/checkout/api.js`), defaulting to `http://localhost:3000/api` when unset.
+- **`frontend/`** — React + Vite + Tailwind. Contains (a) a marketing **landing** (`index.html` / `src/App.jsx`) that sells via WhatsApp; its only API call is reading the combo price (`src/landing/precio.js`, falling back to `PRICE` in `site.js` if the API is down) so a price changed in the admin panel shows there too, and (b) a **checkout demo** (`checkout.html` / `src/checkout/`) that DOES call the backend API over `fetch`. Vite is configured multi-page (both `.html` files are build inputs in `vite.config.js`). The checkout's API base URL comes from `VITE_API_URL` (`src/checkout/api.js`), defaulting to `http://localhost:3000/api` when unset.
 - **`backend/`** — Node + TypeScript + Express + Prisma (PostgreSQL) + Redis. A headless e-commerce REST API.
 
 The two are **not wired together in production** — the landing's "Comprar" button redirects to `checkout.html`, which is the only part that hits the backend. Don't assume the landing consumes the API.
@@ -75,6 +75,7 @@ Modules: `auth`, `catalog` (products/categories/brands), `cart`, `orders` (check
 - **Stock is decremented atomically** in the checkout transaction via `updateMany({ where: { id, stock: { gte: qty } } })` + count check — race-safe without locks. Coupon `maxUses` uses the same conditional-update pattern.
 - **Catalog cache invalidation is version-namespaced**: keys are `catalog:v{N}:…` and `invalidate()` does a single `INCR` (never `KEYS`). The cache is fault-tolerant (degrades to no-cache if Redis is down); the guest cart store is not.
 - **Auth** uses JWT access tokens (HS256, algorithm pinned on verify) + opaque refresh tokens (stored hashed, rotated on use, reuse rejected).
+- **Inactive products are admin-only**: hidden from the public list AND from `GET /products/:slug` (404 unless the caller is ADMIN). The seed creates an inactive `producto-nuevo` draft (price 0) as a slot for a future product; `UpdateProductUseCase` refuses to activate any product with price ≤ 0. The seed never overwrites the price on re-seed — the admin panel owns it.
 - **Payment webhooks** are verified by HMAC-SHA256 (`x-signature`) and are idempotent; the whole payment provider layer is a **stub per method** (Nequi/Daviplata/CreditCard) ready to swap for a real gateway.
 - **`env.ts` validates all config with Zod at startup and fails fast.** In `NODE_ENV=production` it additionally refuses insecure defaults (`PAYMENTS_WEBHOOK_SECRET`, `ADMIN_PASSWORD`) and `CORS_ORIGIN=*`. Adding a new env var means adding it here first.
 

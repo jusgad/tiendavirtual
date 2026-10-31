@@ -185,5 +185,37 @@ describe('Catálogo endpoints (integración)', () => {
       const rows = await prisma.productImage.findMany({ where: { productId } })
       expect(rows).toHaveLength(0)
     })
+
+    it('un producto desactivado solo lo ve el admin, también por slug', async () => {
+      const productId = await crearProductoConDosImagenes()
+      const patch = await request(app)
+        .patch(`/api/products/${productId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ isActive: false })
+      expect(patch.status).toBe(200)
+      const slug = patch.body.product.slug as string
+
+      const publico = await request(app).get(`/api/products/${slug}`)
+      expect(publico.status).toBe(404)
+
+      const lista = await request(app).get('/api/products?pageSize=100')
+      expect(lista.body.items.map((p: { id: string }) => p.id)).not.toContain(productId)
+
+      const admin = await request(app).get(`/api/products/${slug}`).set('Authorization', `Bearer ${token}`)
+      expect(admin.status).toBe(200)
+      expect(admin.body.product.isActive).toBe(false)
+    })
+
+    it('el precio que cambia el admin es el que ve el público', async () => {
+      const productId = await crearProductoConDosImagenes()
+      const patch = await request(app)
+        .patch(`/api/products/${productId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ price: 52900 })
+      expect(patch.status).toBe(200)
+
+      const publico = await request(app).get(`/api/products/${patch.body.product.slug}`)
+      expect(Number(publico.body.product.price)).toBe(52900)
+    })
   })
 })

@@ -80,9 +80,10 @@ async function main() {
   // ----- Producto real: el estuche que se vende hoy -----
   const product = await prisma.product.upsert({
     where: { slug: 'estuche-pomass-dia-noche' },
-    // El precio y el stock sí se refrescan al re-sembrar; el resto del copy no
-    // se pisa para no deshacer ediciones hechas desde el panel admin.
-    update: { price: 89900, stock: INITIAL_STOCK, isActive: true },
+    // El precio NO se toca al re-sembrar: lo lleva el panel admin, y el
+    // stack de Docker re-siembra en cada arranque, así que lo pisaría. El
+    // stock sí se refresca; el resto del copy tampoco se pisa.
+    update: { stock: INITIAL_STOCK, isActive: true },
     create: {
       name: 'Estuche PomAss Día + Noche',
       slug: 'estuche-pomass-dia-noche',
@@ -135,6 +136,31 @@ async function main() {
     }
   }
 
+  // ----- Hueco para un producto nuevo -----
+  // Desactivado: no sale en la tienda ni se puede comprar, solo aparece en el
+  // panel admin. No es un producto inventado: no tiene nombre comercial, ni
+  // precio (0, y el panel no deja activarlo así), ni stock. Se rellena desde
+  // el panel y se activa cuando exista de verdad. `update: {}` para que
+  // re-sembrar no deshaga lo que se haya escrito ahí.
+  await prisma.product.upsert({
+    where: { slug: 'producto-nuevo' },
+    update: {},
+    create: {
+      name: 'Producto nuevo (borrador)',
+      slug: 'producto-nuevo',
+      sku: 'PA-NUEVO-1',
+      description:
+        'Hueco para un producto nuevo. Rellena nombre, descripción, precio, stock e imágenes ' +
+        'desde el panel y actívalo cuando esté listo para venderse.',
+      brandId: brand.id,
+      categoryId: category.id,
+      price: 0,
+      currency: 'COP',
+      stock: 0,
+      isActive: false,
+    },
+  })
+
   // ----- Desactiva el catálogo genérico anterior -----
   const { count: desactivados } = await prisma.product.updateMany({
     where: { slug: { in: LEGACY_PRODUCT_SLUGS }, isActive: true },
@@ -162,7 +188,7 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log(
     `✅ Seed completado: admin, marca PomAss, categoría "Cuidado íntimo", ` +
-      `1 producto (stock ${INITIAL_STOCK}), 2 imágenes y cupón BIENVENIDA10.` +
+      `1 producto (stock ${INITIAL_STOCK}), 1 borrador oculto, 2 imágenes y cupón BIENVENIDA10.` +
       (desactivados > 0 ? ` Se desactivaron ${desactivados} productos de ejemplo antiguos.` : ''),
   )
 }

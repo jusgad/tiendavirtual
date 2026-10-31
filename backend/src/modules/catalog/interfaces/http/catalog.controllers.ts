@@ -51,7 +51,8 @@ export class ProductController {
   }
 
   getBySlug = async (req: Request, res: Response) => {
-    res.json({ product: await this.getProduct.execute(req.params.slug) })
+    const includeInactive = req.user?.role === 'ADMIN'
+    res.json({ product: await this.getProduct.execute(req.params.slug, { includeInactive }) })
   }
 
   create = async (req: Request, res: Response) => {

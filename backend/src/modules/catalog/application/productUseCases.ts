@@ -33,22 +33,28 @@ export class ListProductsUseCase {
   }
 }
 
-/** Obtiene un producto por slug (cacheado). */
+/**
+ * Obtiene un producto por slug (cacheado).
+ *
+ * Un producto desactivado no existe para el público: responde igual que uno
+ * que no está, para no delatar los que se preparan en el panel. Solo el
+ * admin lo ve (`includeInactive`).
+ */
 export class GetProductUseCase {
   constructor(
     private readonly products: ProductRepository,
     private readonly cache: CatalogCache,
   ) {}
 
-  async execute(slug: string): Promise<Product> {
+  async execute(slug: string, opts: { includeInactive?: boolean } = {}): Promise<Product> {
     const key = `products:slug:${slug}`
-    const cached = await this.cache.getJson<Product>(key)
-    if (cached) return cached
-
-    const product = await this.products.findBySlug(slug)
-    if (!product) throw new NotFoundError('Producto no encontrado')
-
-    await this.cache.setJson(key, product, ITEM_TTL)
+    let product = await this.cache.getJson<Product>(key)
+    if (!product) {
+      product = await this.products.findBySlug(slug)
+      if (!product) throw new NotFoundError('Producto no encontrado')
+      await this.cache.setJson(key, product, ITEM_TTL)
+    }
+    if (!product.isActive && !opts.includeInactive) throw new NotFoundError('Producto no encontrado')
     return product
   }
 }
@@ -91,6 +97,15 @@ export class UpdateProductUseCase {
   async execute(id: string, data: UpdateProductData): Promise<Product> {
     const existing = await this.products.findById(id)
     if (!existing) throw new NotFoundError('Producto no encontrado')
+
+    // Un producto sin precio no sale a la venta. Pasa con el borrador que
+    // siembra el seed (precio 0 hasta que el admin ponga el real): activarlo
+    // desde la lista, sin pasar por el formulario, lo vendería gratis.
+    const activo = data.isActive ?? existing.isActive
+    const precio = data.price ?? existing.price
+    if (activo && Number(precio) <= 0) {
+      throw new BadRequestError('Ponle un precio mayor que cero antes de activar el producto')
+    }
 
     const updated = await this.products.update(id, data)
     await this.cache.invalidate()

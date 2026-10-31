@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { CURRENCY, NOMBRE_COMBO, PRICE } from '../site.js'
+import { CURRENCY, NOMBRE_COMBO } from '../site.js'
+import { usePrecio } from './precio.js'
 import { useBarraDeCompraVisible } from './hooks.js'
 import { IconArrowRight } from './icons.jsx'
 import { btnPrimario } from './ui.js'
@@ -19,6 +20,7 @@ import { btnPrimario } from './ui.js'
 export default function StickyBuyBar() {
   const barra = useRef(null)
   const visible = useBarraDeCompraVisible()
+  const precio = usePrecio()
 
   // Escondida no debe recibir el foco del teclado: se marca `inert`.
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function StickyBuyBar() {
         <div className="min-w-0">
           <p className="truncate text-sm font-extrabold">Combo {NOMBRE_COMBO}</p>
           <p className="font-display text-xl font-semibold leading-tight">
-            {PRICE} <span className="font-sans text-xs font-bold text-brand-tinta/70">{CURRENCY}</span>
+            {precio} <span className="font-sans text-xs font-bold text-brand-tinta/70">{CURRENCY}</span>
           </p>
         </div>
         <a href="/checkout.html" className={`${btnPrimario} !min-h-[48px] !px-6`}>
