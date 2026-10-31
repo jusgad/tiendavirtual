@@ -289,7 +289,7 @@
   height: 100%;
 }
 .pm-velo-css {
-  animation: pm-derivar 25s ease-in-out infinite alternate;
+  animation: pm-derivar 17s ease-in-out infinite alternate;
   transform-origin: center;
 }
 @keyframes pm-derivar {

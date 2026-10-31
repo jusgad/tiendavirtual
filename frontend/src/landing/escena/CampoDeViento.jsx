@@ -142,6 +142,10 @@ void main() {
 
 const color = (hex) => new THREE.Color(hex)
 
+// Velocidad base del viento del fondo. 1 era el ritmo original; se pidió un
+// poco más vivo. Con `prefers-reduced-motion` sigue frenado por `calidad.tiempo`.
+const RITMO = 1.45
+
 export default function CampoDeViento({ historia, rafaga, calidad }) {
   const { size, gl } = useThree()
 
@@ -231,7 +235,7 @@ export default function CampoDeViento({ historia, rafaga, calidad }) {
     const r = calidad.rafaga ? Math.abs(rafaga.get()) : 0
     // El tiempo corre más rápido con la ráfaga de scroll: el aire reacciona
     // a que la persona avance, no solo al reloj.
-    tiempo.valor += Math.min(delta, 0.05) * (1 + r * 3.5) * calidad.tiempo
+    tiempo.valor += Math.min(delta, 0.05) * RITMO * (1 + r * 3.5) * calidad.tiempo
 
     const u = ruido.uniforms
     u.uTiempo.value = tiempo.valor
