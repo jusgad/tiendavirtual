@@ -77,7 +77,8 @@ Modules: `auth`, `catalog` (products/categories/brands), `cart`, `orders` (check
 - **Auth** uses JWT access tokens (HS256, algorithm pinned on verify) + opaque refresh tokens (stored hashed, rotated on use, reuse rejected).
 - **Inactive products are admin-only**: hidden from the public list AND from `GET /products/:slug` (404 unless the caller is ADMIN). The seed creates an inactive `producto-nuevo` draft (price 0) as a slot for a future product; `UpdateProductUseCase` refuses to activate any product with price ≤ 0. The seed never overwrites the price on re-seed — the admin panel owns it.
 - **Payment webhooks** are verified by HMAC-SHA256 (`x-signature`) and are idempotent; the whole payment provider layer is a **stub per method** (Nequi/Daviplata/CreditCard) ready to swap for a real gateway.
-- **`env.ts` validates all config with Zod at startup and fails fast.** In `NODE_ENV=production` it additionally refuses insecure defaults (`PAYMENTS_WEBHOOK_SECRET`, `ADMIN_PASSWORD`) and `CORS_ORIGIN=*`. Adding a new env var means adding it here first.
+- **`env.ts` validates all config with Zod at startup and fails fast.** In `NODE_ENV=production` it additionally refuses insecure/example defaults (`JWT_ACCESS_SECRET`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`, `ADMIN_PASSWORD`, and a `DATABASE_URL`/`DIRECT_URL` still carrying the example Postgres password) and `CORS_ORIGIN=*`. Adding a new env var means adding it here first. The schema itself is exported as `envSchema` (not just the parsed `env` singleton) so this hardening has its own fixture-based tests (`tests/unit/shared/env.test.ts`) instead of depending on `process.env`.
+- **`backend/docker-compose.yml`** (the real-deploy one, not the root test stack) binds Postgres/Redis ports to `127.0.0.1` only and runs Redis with `--requirepass`: never publish those ports to `0.0.0.0` on a real host.
 
 ## CI
 

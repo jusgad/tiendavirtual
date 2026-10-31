@@ -6,10 +6,21 @@ import { z } from 'zod'
 export const INSECURE_WOMPI_INTEGRITY_SECRET = 'dev_wompi_integrity_change_me'
 export const INSECURE_WOMPI_EVENTS_SECRET = 'dev_wompi_events_change_me'
 export const INSECURE_ADMIN_PASSWORD = 'Admin123*'
+// El texto literal que trae `.env.example` para JWT_ACCESS_SECRET. Pasa la
+// validación de longitud (36 caracteres), así que sin esta guarda un deploy
+// que copiara el ejemplo tal cual arrancaría firmando tokens con un secreto
+// público, leíble por cualquiera en el repo: cualquiera podría forjar un
+// token válido de cualquier usuario, incluida la cuenta ADMIN.
+export const INSECURE_JWT_ACCESS_SECRET = 'cambia_esto_por_un_secreto_largo_y_aleatorio'
+// La contraseña de ejemplo de Postgres. Si DATABASE_URL/DIRECT_URL todavía la
+// llevan en producción, la base queda con una contraseña conocida.
+export const INSECURE_DB_PASSWORD = 'pomass_pass'
 
 // Validación centralizada de variables de entorno. Si algo falta o es inválido,
 // el proceso falla al arrancar (fail-fast) en vez de romperse en runtime.
-const envSchema = z
+// Se exporta (y no solo `env`, el singleton ya parseado) para poder probar el
+// endurecimiento de producción con fixtures, sin depender de `process.env`.
+export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().default(3000),
@@ -113,6 +124,21 @@ const envSchema = z
       'ADMIN_PASSWORD',
       'Define un ADMIN_PASSWORD propio en producción (el valor por defecto es una credencial conocida)',
     )
+    requireSecret(
+      cfg.JWT_ACCESS_SECRET,
+      INSECURE_JWT_ACCESS_SECRET,
+      'JWT_ACCESS_SECRET',
+      'Define un JWT_ACCESS_SECRET propio y aleatorio en producción (el de .env.example es público: con él cualquiera firma tokens válidos de cualquier usuario)',
+    )
+    if (cfg.DATABASE_URL.includes(INSECURE_DB_PASSWORD) || cfg.DIRECT_URL?.includes(INSECURE_DB_PASSWORD)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['DATABASE_URL'],
+        message:
+          'DATABASE_URL/DIRECT_URL todavía llevan la contraseña de ejemplo de Postgres (pomass_pass). ' +
+          'Cambia POSTGRES_PASSWORD y reconstruye las cadenas de conexión antes de desplegar.',
+      })
+    }
     if (cfg.CORS_ORIGIN === '*') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
