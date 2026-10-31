@@ -13,9 +13,7 @@ export const registerSchema = z.object({
   lastName: z.string().min(1, 'Apellido requerido').max(80),
   phone: z.string().min(7).max(20).optional(),
   // Verificación de edad: declaración obligatoria "soy mayor de 18".
-  ageConfirmed: z.literal(true, {
-    errorMap: () => ({ message: 'Debes confirmar que eres mayor de 18 años' }),
-  }),
+  ageConfirmed: z.literal(true, { message: 'Debes confirmar que eres mayor de 18 años' }),
 })
 
 export const loginSchema = z.object({

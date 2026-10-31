@@ -22,8 +22,11 @@ const payloadDelPanel = (extra: Record<string, unknown> = {}) => ({
   name: 'Crema Noche',
   sku: 'POM-NOC-50',
   description: 'Presentación individual.',
-  brandId: '11111111-1111-1111-1111-111111111111',
-  categoryId: '22222222-2222-2222-2222-222222222222',
+  // Zod 4 valida el UUID contra RFC 4122 de verdad (nibble de versión y de
+  // variante incluidos), así que el fixture tiene que ser un UUID v4 válido
+  // y no una secuencia de dígitos repetidos.
+  brandId: '11111111-1111-4111-8111-111111111111',
+  categoryId: '22222222-2222-4222-8222-222222222222',
   price: 49900,
   stock: 10,
   presentation: null,
