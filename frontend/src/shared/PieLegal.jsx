@@ -20,13 +20,13 @@ export default function PieLegal({ sobreOscuro = false, dejarSitioAbajo = false 
 
   return (
     <footer
-      style={{
-        borderTop: `1px solid ${borde}`,
-        color,
-        // 150 y no 70: en móvil la barra crece a dos filas (114 px de alto).
-        paddingBottom: dejarSitioAbajo ? 150 : undefined,
-      }}
-      className="relative z-20 mt-10 px-5 py-7 text-center text-xs leading-relaxed"
+      style={{ borderTop: `1px solid ${borde}`, color }}
+      // La reserva solo hace falta en móvil. En escritorio, al llegar al final
+      // la barra de compra está escondida —el combo sigue a la vista—, y esos
+      // 150 px empujaban el titular del cierre por encima de la pantalla.
+      className={`relative z-20 mt-10 px-5 py-7 text-center text-xs leading-relaxed ${
+        dejarSitioAbajo ? 'pb-[150px] min-[900px]:pb-7' : ''
+      }`}
     >
       <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-bold">
         <a href="/legal.html#datos" className="hover:underline">

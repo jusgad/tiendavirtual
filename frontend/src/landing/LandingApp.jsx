@@ -4,14 +4,14 @@ import PieLegal from '../shared/PieLegal.jsx'
 import Atmosfera from './Atmosfera.jsx'
 import BotonWhatsApp from './BotonWhatsApp.jsx'
 import Combo from './Combo.jsx'
-import Crema from './Crema.jsx'
+import Escenario from './Escenario.jsx'
 import Faq from './Faq.jsx'
 import Hero from './Hero.jsx'
 import Marca from './Marca.jsx'
 import Problema from './Problema.jsx'
+import Ritual from './Ritual.jsx'
 import SiteHeader from './SiteHeader.jsx'
 import StickyBuyBar from './StickyBuyBar.jsx'
-import Transicion from './Transicion.jsx'
 import { useHistoria } from './useHistoria.js'
 import './tokens.css'
 import './landing.css'
@@ -22,58 +22,49 @@ import './landing.css'
  * La página se recorre como se recorre un día, que es el concepto que ya está
  * dentro del sistema de marca: el manual identifica Día con naranja, Noche con
  * magenta-morado, y reserva el degradado que los une para los puntos donde
- * ambos se tocan. Esa es la estructura, y de ahí sale el orden de las bandas.
+ * ambos se tocan.
  *
- * La regla que gobierna todo el archivo: **cada banda hace un trabajo que
- * ninguna otra hace.** La versión anterior repetía el precio cuatro veces, los
- * tubos en tres secciones, los beneficios cinco veces y las promesas de envío
- * nueve veces; cada sección volvía a vender la compra entera en lugar de
- * avanzar un paso. Antes de añadir algo aquí, la pregunta es qué sabe la
- * persona al salir de esa banda que no sabía al entrar.
+ * Desde el rediseño (`PROMPT_REDISENO_POMASS.md`), ese recorrido lo cuentan
+ * tres capas a la vez, ligadas al scroll por un mismo valor, `historia`:
  *
- *   1. Cabecera          identidad y navegación
- *   2. Apertura          la promesa: «Confianza en todo momento»
- *   3. Problema          nombrar en voz normal lo que no se habla
- *   4. Día               neutraliza olores indeseados
- *   5. Transición        por qué son dos cremas y no una
- *   6. Noche             crema íntima blanqueadora
- *   7. Marca             quién la hace y por qué se puede confiar
- *   8. Combo             el ÚNICO sitio con precio y con compra
- *   9. Preguntas y pie   quitar el último freno; obligaciones legales
+ *   - la atmósfera CSS, el degradado de fondo (`Atmosfera`);
+ *   - la escena 3D, con el viento y los tubos (`Escenario` → `escena/`);
+ *   - el contenido, encima de todo.
  *
- * Sin mascotas, por decisión de la dueña, y sin reseñas: no hay opiniones
- * reales todavía y no se inventan. Cuando las haya, su sitio es entre la
- * banda 7 y la 8.
+ * Una sección por estado, y cada una hace un trabajo que ninguna otra hace:
  *
- * ---
+ *   0 Amanecer    Apertura    la promesa: «Confianza en todo momento»
+ *   1 Día         Problema    nombrar en voz normal lo que no se habla
+ *   2 Transición  Ritual      por qué son dos cremas, y cada una con su envase
+ *   3 Noche       Confianza   quién la hace, y las preguntas que frenan
+ *   4 Cierre      Combo       el ÚNICO sitio con precio y con compra
  *
- * Las nueve bandas se agrupan en los **cinco estados** que mueven la escena
- * 3D y la atmósfera (`historia.js`). Agrupar y no partir: los estados son el
- * mismo recorrido del día, visto desde el fondo en vez de desde el contenido.
+ * Antes eran nueve bandas. Las dos de cada crema y la de la transición se
+ * juntaron en el ritual, con una tarjeta por producto generada desde el
+ * catálogo: si entra una tercera crema, aparece sola en el ritual, en la
+ * escena 3D y en el combo.
  *
- *   0 Amanecer    Apertura
- *   1 Día         Problema + banda Día
- *   2 Transición  Transición
- *   3 Noche       banda Noche + Marca
- *   4 Cierre      Combo + Preguntas
- *
- * El valor de `historia` es continuo, no un índice: lo que pasa entre dos
- * estados es lo que hace que la escena fluya en vez de saltar.
+ * Sin mascotas redibujadas, por decisión de la dueña: la mascota solo
+ * aparece donde ya estaba, en la foto real del envase. Y sin reseñas
+ * inventadas: el sitio del testimonio existe y se rellena desde `site.js`.
  */
 export default function LandingApp() {
   const raiz = useRef(null)
-  const { historia } = useHistoria()
+  const { historia, rafaga } = useHistoria()
 
   return (
     // `reducedMotion="user"` respeta la preferencia del sistema en todo el
     // árbol de Framer Motion de una vez, sin repetirlo componente a componente.
     <MotionConfig reducedMotion="user">
-      <div ref={raiz} className="pm lp min-h-screen bg-brand-crema font-sans text-brand-tinta">
+      {/* Sin fondo propio: detrás están la atmósfera y la escena, y un fondo
+          opaco aquí las taparía las dos. */}
+      <div ref={raiz} className="pm lp min-h-screen font-sans">
         <a href="#contenido" className="lp-skip">
           Saltar al contenido
         </a>
 
         <Atmosfera historia={historia} raiz={raiz} />
+        <Escenario historia={historia} rafaga={rafaga} raiz={raiz} />
 
         <div className="pm-contenido">
           <SiteHeader />
@@ -83,25 +74,28 @@ export default function LandingApp() {
             </div>
             <div data-historia="1">
               <Problema />
-              <Crema modo="dia" />
             </div>
             <div data-historia="2">
-              <Transicion />
+              <Ritual />
+            </div>
+            {/* Dos marcas con el mismo valor: entre ellas el recorrido se
+                queda en la noche, y el producto no vuelve al frente hasta
+                pasar las preguntas (ver `historiaEn`). */}
+            <div data-historia="3">
+              <Marca />
             </div>
             <div data-historia="3">
-              <Crema modo="noche" invertido />
-              <Marca />
+              <Faq />
             </div>
             <div data-historia="4">
               <Combo />
-              <Faq />
             </div>
           </main>
           <PieLegal dejarSitioAbajo />
           <StickyBuyBar />
-          {/* Fuera de `main`: es ayuda disponible en toda la página, no una parte
-              del recorrido. Va el último para que, en orden de tabulación, llegue
-              después del contenido y no antes. */}
+          {/* Fuera de `main`: es ayuda disponible en toda la página, no una
+              parte del recorrido. Va el último para que, en orden de
+              tabulación, llegue después del contenido y no antes. */}
           <BotonWhatsApp />
         </div>
       </div>

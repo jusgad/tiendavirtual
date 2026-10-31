@@ -70,13 +70,32 @@ export const NIGHT_BENEFITS = [
 ]
 
 /**
- * Las dos cremas, como las define el manual de marca: cada una tiene UN
- * beneficio principal, que es el que se destaca; el resto acompaña. Los
- * íconos son nombres de `landing/icons.jsx`, no emojis.
+ * El catálogo. Es la ÚNICA fuente de los productos: la escena 3D, las
+ * tarjetas del ritual y el combo se construyen recorriéndolo. Añadir un
+ * producto es añadir una entrada aquí, sin tocar componentes.
+ *
+ * Cada crema tiene UN beneficio principal, como pide el manual de marca: es
+ * el que se destaca; el resto acompaña. Los íconos son nombres de
+ * `landing/icons.jsx`, no emojis.
+ *
+ * Campos que usa el 3D:
+ *
+ * - `color` · el color del plástico del tubo. Se ve en la espalda y en el
+ *   sellado, donde no llega el arte de la etiqueta.
+ * - `momento` · en qué estado del recorrido (0…4, ver `historia.js`) este
+ *   producto pasa al frente. Día en la mañana, Noche en la noche.
+ * - `envase` · la foto frontal del tubo, con fondo transparente, que se usa
+ *   como etiqueta del modelo. Las cotas son píxeles medidos sobre esa foto:
+ *   dónde acaba el sellado de arriba y dónde empieza la tapa. Si un producto
+ *   nuevo no las trae, se calculan solas al cargar la imagen (ver
+ *   `escena/silueta.js`), aunque medirlas a mano es más fiable.
+ *
+ * `enCombo` presente = forma parte del combo, con ese texto como descripción.
  */
 export const PRODUCTOS = {
   dia: {
     id: 'dia',
+    orden: 1,
     nombre: 'Día',
     tipo: 'Crema íntima',
     beneficio: 'Neutraliza olores indeseados.',
@@ -87,9 +106,14 @@ export const PRODUCTOS = {
     // lista arranca en el segundo: repetirlo sería decir lo mismo dos veces
     // en la misma pantalla.
     beneficios: DAY_BENEFITS.slice(1),
+    icono: 'sun',
+    color: '#F26B0F',
+    momento: 1,
+    envase: { imagen: '/images/tubo_dia.png', sellado: 30, tapa: 508 },
   },
   noche: {
     id: 'noche',
+    orden: 2,
     nombre: 'Noche',
     tipo: 'Crema íntima',
     beneficio: 'Crema íntima blanqueadora.',
@@ -97,5 +121,30 @@ export const PRODUCTOS = {
     enCombo: 'Crema íntima blanqueadora · 50 ml',
     imagen: '/images/tubo_noche.png',
     beneficios: NIGHT_BENEFITS.slice(1),
+    icono: 'moon',
+    color: '#9C1A9C',
+    momento: 3,
+    envase: { imagen: '/images/tubo_noche.png', sellado: 36, tapa: 522 },
   },
 }
+
+/** El catálogo en orden de presentación. Es lo que recorren los componentes. */
+export const CATALOGO = Object.values(PRODUCTOS).sort((a, b) => a.orden - b.orden)
+
+/** Lo que entra en el combo, en el mismo orden. */
+export const COMBO = CATALOGO.filter((p) => p.enCombo)
+
+/**
+ * Nombre del combo. El manual pide «Día + Noche» sin inventarle otro, y así
+ * sale; si un día entra otra crema, el nombre la incluye solo.
+ */
+export const NOMBRE_COMBO = COMBO.map((p) => p.nombre).join(' + ')
+
+/**
+ * Testimonios reales de clientas. Vacío a propósito: no hay todavía y no se
+ * inventan. Mientras esté vacío, la banda de confianza no muestra ninguno en
+ * producción, y en desarrollo enseña un marcador para que no se olvide.
+ *
+ * Formato: { texto: '…', autora: 'Nombre o inicial, ciudad' }
+ */
+export const TESTIMONIOS = []

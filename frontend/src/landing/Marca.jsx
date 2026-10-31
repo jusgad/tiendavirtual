@@ -1,19 +1,23 @@
-import Logo from '../shared/Logo.jsx'
-import Revelar from './Reveal.jsx'
+import { TESTIMONIOS } from '../site.js'
 import { IconBox, IconHeart, IconSun } from './icons.jsx'
-import { antetitulo } from './ui.js'
+import { Bloque, Grupo, Item, Titular } from './Movimiento.jsx'
 
 /**
- * Banda 7 · Quién la hace.
+ * Estado 3 · La confianza. Noche.
  *
- * La otra banda que faltaba. Las páginas de referencia construyen confianza
- * con comités médicos, estándares y miles de reseñas; PomAss no tiene nada de
- * eso todavía y no se inventa. Lo que sí tiene es algo que ellas no: una
- * persona con nombre y un país.
+ * Intro a la izquierda, rejilla de tarjetas de cristal con un icono de línea
+ * fina sobre un círculo con un toque de verde hoja, y debajo el sitio del
+ * testimonio.
  *
- * Todo lo que se afirma aquí es verificable. Cuando Paola quiera contar por
- * qué creó la marca, su sitio es el párrafo de abajo: es lo que más confianza
- * genera y ninguna competidora colombiana lo tiene.
+ * Las páginas de referencia construyen confianza con comités médicos y miles
+ * de reseñas. PomAss no tiene nada de eso todavía y no se inventa. Lo que
+ * sí tiene es algo que ellas no: una persona con nombre y un país. Todo lo
+ * que se afirma aquí es verificable.
+ *
+ * **Testimonios.** No hay todavía. Mientras `TESTIMONIOS` esté vacío, en
+ * producción no se muestra nada —un marcador entre corchetes publicado en la
+ * tienda espantaría más que no tener reseñas—, y en desarrollo aparece un
+ * marcador visible para que no se olvide.
  */
 const HECHOS = [
   {
@@ -34,40 +38,57 @@ const HECHOS = [
 ]
 
 export default function Marca() {
-  return (
-    <section aria-labelledby="marca-titulo" className="px-4 py-24 sm:px-6 lg:py-32">
-      <div className="mx-auto max-w-5xl">
-        <Revelar className="text-center">
-          <p className={antetitulo}>Quién está detrás</p>
-          <h2
-            id="marca-titulo"
-            className="mt-4 font-display text-[clamp(2.2rem,5vw,3.6rem)] font-semibold leading-[1.03] tracking-[-.02em]"
-          >
-            Detrás de PomAss hay una persona, <span className="lp-grad-text italic">no un laboratorio.</span>
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-xl leading-relaxed text-brand-tinta/80">
-            PomAss es una marca colombiana creada por Pao Díaz. Dos cremas de 50 ml, pensadas para usarse
-            a diario sin complicarse la vida.
-          </p>
-          <Logo alto={40} className="mx-auto mt-8" />
-        </Revelar>
+  const testimonio = TESTIMONIOS[0]
 
-        <ul className="mt-14 grid gap-4 md:grid-cols-3">
-          {HECHOS.map(({ Icono, titulo, texto }, i) => (
-            <Revelar
-              as="li"
-              key={titulo}
-              retraso={i * 100}
-              className="rounded-3xl bg-white/70 p-7 ring-1 ring-brand-tinta/5"
-            >
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-crema text-brand-coral-deep shadow-sm">
+  return (
+    <section aria-labelledby="marca-titulo" className="px-5 py-28 sm:px-8 lg:px-16 lg:py-40">
+      <div className="mx-auto max-w-6xl">
+        <div className="max-w-2xl">
+          <Bloque>
+            <p className="pm-etiqueta pm-acento">Quién está detrás</p>
+          </Bloque>
+          <Titular
+            id="marca-titulo"
+            className="pm-titular-lg mt-5"
+            texto="Detrás de PomAss hay una persona, no un laboratorio."
+            enfasis={3}
+          />
+          <Bloque retraso={0.2}>
+            <p className="pm-cuerpo-lg pm-suave mt-6">
+              PomAss es una marca colombiana creada por Pao Díaz. Dos cremas de 50 ml, pensadas para
+              usarse a diario sin complicarse la vida.
+            </p>
+          </Bloque>
+        </div>
+
+        <Grupo className="mt-16 grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+          {HECHOS.map(({ Icono, titulo, texto }) => (
+            <Item key={titulo} como="article" className="pm-glass rounded-[24px] p-7">
+              <span className="pm-icono-hoja inline-flex h-12 w-12 items-center justify-center rounded-full">
                 <Icono size={22} />
               </span>
               <h3 className="mt-5 text-lg font-extrabold">{titulo}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-brand-tinta/75">{texto}</p>
-            </Revelar>
+              <p className="pm-cuerpo pm-suave mt-2">{texto}</p>
+            </Item>
           ))}
-        </ul>
+        </Grupo>
+
+        {testimonio ? (
+          <Bloque className="pm-glass mt-12 rounded-[28px] p-8 sm:p-12">
+            <figure>
+              <blockquote className="font-display text-[clamp(22px,2.2vw,32px)] italic leading-snug">
+                «{testimonio.texto}»
+              </blockquote>
+              <figcaption className="pm-etiqueta pm-suave mt-5">{testimonio.autora}</figcaption>
+            </figure>
+          </Bloque>
+        ) : (
+          import.meta.env.DEV && (
+            <p className="pm-pendiente mt-12 inline-block font-display text-xl italic pm-suave">
+              [Testimonio real de una clienta — se publica solo cuando exista]
+            </p>
+          )
+        )}
       </div>
     </section>
   )

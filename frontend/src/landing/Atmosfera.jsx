@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { ESTADO_OSCURO, atmosferaEn } from './historia.js'
+import { atmosferaEn, esOscuro } from './historia.js'
 
 /**
  * El degradado de fondo, fijo detrás del canvas.
@@ -24,7 +24,7 @@ export default function Atmosfera({ historia, raiz }) {
       el.style.setProperty('--pm-bg-top', top)
       el.style.setProperty('--pm-bg-bottom', bottom)
       el.style.setProperty('--pm-glow', glow)
-      raiz?.current?.classList.toggle('pm-oscuro', valor >= ESTADO_OSCURO)
+      raiz?.current?.classList.toggle('pm-oscuro', esOscuro(valor))
     }
 
     pintar(historia.get())

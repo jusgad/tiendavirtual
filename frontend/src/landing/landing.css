@@ -3,8 +3,10 @@
  * `lp-`, así que no afecta al checkout, al seguimiento ni al panel, que
  * comparten `index.css`.
  *
- * Tailwind pone el layout; aquí va lo que Tailwind no expresa bien:
- * degradados de marca, animaciones y el escenario 3D de los tubos.
+ * Los tokens del rediseño —atmósfera, cristal, CTA discreto, tipografía,
+ * composición— viven en `tokens.css`. Aquí queda lo que ya existía y sigue
+ * sirviendo: botones de compra, el arco del ritual, las preguntas, la barra
+ * de compra y el botón de WhatsApp.
  *
  * Contraste medido contra WCAG sobre crema #FFF7EF:
  *   tinta #343553 → 11,1:1      coral #F47A4D → 2,6:1 (no sirve para texto)
@@ -15,7 +17,7 @@
 
 .lp {
   /* `clip` y no `hidden`: `hidden` convierte al contenedor en caja de scroll
-     y rompe la cabecera fija (`position: sticky`). */
+     y rompe los elementos fijos. */
   overflow-x: clip;
 }
 
@@ -34,10 +36,6 @@
 .lp :focus-visible {
   outline: 3px solid #a70b94;
   outline-offset: 3px;
-}
-.lp-panel-noche :focus-visible,
-.lp-transicion :focus-visible {
-  outline-color: #fff7ef;
 }
 
 .lp-skip {
@@ -59,7 +57,7 @@
 
 .lp-grad-text {
   /* Tonos profundos: con el naranja y el coral puros un titular no llega ni
-     al 3:1 que exige el texto grande. */
+     al 3:1 que exige el texto grande. De noche lo aclara `tokens.css`. */
   background-image: linear-gradient(95deg, #b94e00 0%, #c2502a 40%, #a70b94 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -67,27 +65,31 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* ---- Botones ---- */
+/* ---- Botón de compra ---- */
 
+/*
+ * El prompt pide que todos los botones sean discretos, de contorno. Se hace
+ * así con todos menos con este: el de comprar lleva el degradado de marca
+ * porque el manual lo reserva justo para los CTA, y porque es la única
+ * acción de la página que no puede pasar desapercibida.
+ */
 .lp-btn {
   transition:
-    transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1),
-    box-shadow 0.25s ease,
-    background-color 0.25s ease,
-    background-position 0.5s ease,
-    border-color 0.25s ease,
-    color 0.25s ease;
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    background-position 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .lp-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 .lp-btn:active {
   transform: translateY(0) scale(0.98);
 }
 .lp-flecha {
-  transition: transform 0.25s ease;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.lp-btn:hover .lp-flecha {
+.lp-btn:hover .lp-flecha,
+.pm-cta:hover .lp-flecha {
   transform: translateX(3px);
 }
 
@@ -102,166 +104,7 @@
   box-shadow: 0 18px 36px -14px rgba(167, 11, 148, 0.6);
 }
 
-.lp-navlink {
-  transition: background-color 0.2s ease;
-}
-.lp-navlink:hover {
-  background-color: rgba(52, 53, 83, 0.06);
-}
-
-/* ---- Entrada de la apertura ---- */
-
-/*
- * El titular entra por líneas, escalonado. Es la técnica que repiten las
- * galerías de heros y aquí tiene sentido porque el titular es corto: cuatro
- * palabras. No se parte en caracteres a propósito —un elemento por letra
- * infla el DOM y estorba a los lectores de pantalla—, y solo se animan
- * `opacity` y `transform`, que no desplazan nada al reproducirse.
- *
- * El retraso de cada pieza va en `--d`, puesto desde el componente.
- */
-.lp-entrada {
-  opacity: 0;
-  animation: lp-entrar 0.62s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--d, 0ms);
-}
-
-@keyframes lp-entrar {
-  from {
-    opacity: 0;
-    transform: translateY(22px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* ---- Hero ---- */
-
-.lp-hero-fondo {
-  /* Lo que se ve si WebGL no está disponible, y lo que hay debajo mientras
-     carga el ambiente 3D. */
-  background:
-    radial-gradient(60% 55% at 88% 18%, rgba(167, 11, 148, 0.1), transparent 70%),
-    radial-gradient(55% 60% at 8% 82%, rgba(245, 106, 0, 0.13), transparent 70%),
-    linear-gradient(180deg, #fff7ef 0%, #fff0e2 100%);
-}
-
-.lp-bajar-circulo {
-  transition:
-    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
-    background-color 0.3s ease;
-  animation: lp-rebotar 2.4s ease-in-out infinite;
-}
-.lp-bajar:hover .lp-bajar-circulo {
-  transform: translateY(3px);
-  background: #fff;
-}
-@keyframes lp-rebotar {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(6px);
-  }
-}
-
-/* ---- Bandas de crema: Día y Noche ---- */
-
-.lp-escenario {
-  perspective: 1100px;
-  --rx: 0deg;
-  --ry: 0deg;
-}
-
-.lp-panel-dia {
-  background-color: #fde7d5;
-  color: #343553;
-}
-.lp-panel-noche {
-  background-color: #a70b94;
-  color: #fff7ef;
-}
-
-.lp-panel-halo {
-  position: absolute;
-  width: 72%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  filter: blur(44px);
-}
-.lp-crema-halo {
-  left: 14%;
-  top: 14%;
-}
-.lp-panel-dia .lp-panel-halo {
-  background: radial-gradient(circle, rgba(245, 106, 0, 0.42), transparent 68%);
-}
-.lp-panel-noche .lp-panel-halo {
-  background: radial-gradient(circle, rgba(244, 122, 77, 0.55), transparent 68%);
-}
-
-.lp-crema-tubo-caja {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform-style: preserve-3d;
-  transform: rotateX(var(--rx)) rotateY(var(--ry));
-  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.lp-crema-tubo {
-  height: 88%;
-  width: auto;
-  max-width: none;
-  filter: drop-shadow(0 30px 30px rgba(52, 53, 83, 0.3));
-  animation: lp-flotar 6.5s ease-in-out infinite;
-}
-.lp-panel-noche .lp-crema-tubo {
-  animation-delay: -3.2s;
-}
-
-.lp-panel-dia .lp-panel-chip {
-  background: rgba(255, 255, 255, 0.78);
-  color: #b94e00;
-}
-.lp-panel-noche .lp-panel-chip {
-  background: rgba(255, 247, 239, 0.16);
-  color: #fff7ef;
-}
-.lp-panel-dia .lp-panel-icono {
-  background: #fff;
-  color: #b94e00;
-  box-shadow: 0 8px 18px -10px rgba(185, 78, 0, 0.55);
-}
-.lp-panel-noche .lp-panel-icono {
-  background: rgba(255, 247, 239, 0.14);
-  color: #fff7ef;
-  box-shadow: inset 0 0 0 1px rgba(255, 247, 239, 0.3);
-}
-
-@keyframes lp-flotar {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-/* ---- Transición: la bisagra entre Día y Noche ---- */
-
-.lp-transicion {
-  /* El degradado del manual, en sus tonos profundos. Los puros no aguantan
-     texto encima: blanco sobre el naranja #F56A00 da 3,0:1 y el mínimo para
-     texto normal es 4,5:1. Sobre estos, el blanco queda entre 5,1:1 y 6,7:1,
-     y además el tono apagado es el que corresponde a un atardecer. */
-  background-image: linear-gradient(105deg, #b94e00 0%, #a8401d 45%, #a70b94 100%);
-}
+/* ---- Arco del ritual: el sol cruza hacia la luna ---- */
 
 .lp-arco {
   --x: 0%;
@@ -273,11 +116,8 @@
   right: 0;
   bottom: 0;
   height: 1px;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(255, 247, 239, 0.5) 0 6px,
-    transparent 6px 14px
-  );
+  background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 14px);
+  opacity: 0.35;
 }
 .lp-arco-extremo {
   position: absolute;
@@ -288,8 +128,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 247, 239, 0.18);
-  color: rgba(255, 247, 239, 0.75);
+  background: rgba(255, 251, 247, 0.5);
+  opacity: 0.75;
 }
 .lp-arco-sol {
   left: -14px;
@@ -297,7 +137,6 @@
 .lp-arco-luna {
   right: -14px;
 }
-
 .lp-arco-astro {
   position: absolute;
   bottom: 0;
@@ -310,7 +149,7 @@
   border-radius: 50%;
   background: #fff7ef;
   color: #a8401d;
-  box-shadow: 0 0 34px rgba(255, 247, 239, 0.55);
+  box-shadow: 0 0 34px rgba(255, 247, 239, 0.75);
   /* `bottom` ya lo sube el arco; el translate centra el astro sobre la línea
      y lo eleva según el avance. */
   transform: translate(-50%, calc(50% - var(--alto) * 0.75));
@@ -319,52 +158,6 @@
 .lp-arco-astro-luna {
   position: absolute;
   display: inline-flex;
-}
-
-/* ---- Combo ---- */
-
-.lp-combo-disco {
-  position: absolute;
-  inset: 9%;
-  border-radius: 50%;
-  background: conic-gradient(from 200deg, #f56a00, #f47a4d, #a70b94, #f56a00);
-  animation: lp-girar 26s linear infinite;
-}
-.lp-combo-disco::after {
-  content: '';
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  background: #fff7ef;
-}
-.lp-combo-tubo {
-  position: absolute;
-  bottom: 15%;
-  height: 64%;
-  width: auto;
-  max-width: none;
-  filter: drop-shadow(0 24px 24px rgba(52, 53, 83, 0.26));
-  transition: transform 0.55s cubic-bezier(0.34, 1.3, 0.64, 1);
-}
-.lp-combo-tubo-dia {
-  left: 24%;
-  z-index: 2;
-  transform: rotate(-9deg);
-}
-.lp-combo-tubo-noche {
-  right: 24%;
-  transform: rotate(9deg);
-}
-.lp-combo-visual:hover .lp-combo-tubo-dia {
-  transform: translateX(-9%) rotate(-15deg);
-}
-.lp-combo-visual:hover .lp-combo-tubo-noche {
-  transform: translateX(9%) rotate(15deg);
-}
-@keyframes lp-girar {
-  to {
-    transform: rotate(1turn);
-  }
 }
 
 /* ---- Preguntas ---- */
@@ -380,7 +173,7 @@
   grid-template-rows: 1fr;
 }
 .lp-faq-mas {
-  background: rgba(52, 53, 83, 0.06);
+  background: rgba(127, 127, 127, 0.14);
   transition:
     transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
     background-color 0.3s ease,
@@ -426,37 +219,12 @@
     bottom 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
     box-shadow 0.25s ease;
 }
-
 .lp-wa:hover {
   transform: scale(1.07);
   box-shadow: 0 10px 28px rgba(37, 211, 102, 0.5);
 }
 .lp-wa:active {
   transform: scale(0.97);
-}
-@media (prefers-reduced-motion: reduce) {
-  .lp-wa {
-    transition: none;
-  }
-  .lp-wa:hover,
-  .lp-wa:active {
-    transform: none;
-  }
-}
-
-/* ---- Aparición al hacer scroll ---- */
-
-.lp-reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
-    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
-  transition-delay: var(--lp-delay, 0ms);
-}
-.lp-reveal[data-visible='true'] {
-  opacity: 1;
-  transform: none;
 }
 
 /* ---- Menos movimiento ---- */
@@ -468,11 +236,5 @@
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-  }
-  .lp-reveal,
-  .lp-entrada {
-    opacity: 1;
-    transform: none;
-    animation: none !important;
   }
 }

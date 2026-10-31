@@ -29,12 +29,16 @@ export function useHistoria() {
   const rafaga = useMotionValue(0)
 
   const centros = useRef([])
+  const valores = useRef([])
 
   useEffect(() => {
+    // Ordenadas por valor; a igual valor, en el orden del documento (el
+    // `sort` de JavaScript es estable).
     const secciones = Array.from(document.querySelectorAll('[data-historia]')).sort(
       (a, b) => Number(a.dataset.historia) - Number(b.dataset.historia),
     )
     if (secciones.length === 0) return undefined
+    valores.current = secciones.map((s) => Number(s.dataset.historia))
 
     // Se re-mide con `ResizeObserver` porque las alturas cambian cuando
     // terminan de cargar las fuentes y las imágenes: medir una sola vez al
@@ -49,25 +53,7 @@ export function useHistoria() {
     }
 
     const calcular = () => {
-      const lista = centros.current
-      if (lista.length === 0) return
-      const centroVentana = window.scrollY + window.innerHeight / 2
-
-      if (centroVentana <= lista[0]) return crudo.set(0)
-      const ultimo = lista.length - 1
-      if (centroVentana >= lista[ultimo]) return crudo.set(ultimo)
-
-      for (let i = 0; i < ultimo; i++) {
-        const a = lista[i]
-        const b = lista[i + 1]
-        if (centroVentana >= a && centroVentana <= b) {
-          // `b - a` nunca es 0 aquí: son centros de secciones distintas, y
-          // aun así se protege, porque una sección de alto 0 mientras cargan
-          // las fuentes daría NaN y congelaría la escena.
-          const tramo = b - a
-          return crudo.set(i + (tramo > 0 ? (centroVentana - a) / tramo : 0))
-        }
-      }
+      crudo.set(historiaEn(window.scrollY + window.innerHeight / 2, centros.current, valores.current))
     }
 
     medir()
@@ -93,4 +79,36 @@ export function useHistoria() {
   }, [velocidadSuave, rafaga])
 
   return useMemo(() => ({ historia, rafaga }), [historia, rafaga])
+}
+
+/**
+ * El valor de `historia` para una posición de scroll, a partir de los
+ * centros de las secciones marcadas y del valor de cada una.
+ *
+ * Se interpola entre los VALORES de las marcas, no entre sus posiciones en
+ * la lista. Así dos secciones seguidas pueden compartir estado: entre sus
+ * centros el valor se queda quieto. Es lo que usa la banda de la noche para
+ * que el producto no vuelva al frente mientras todavía se leen las
+ * preguntas, que van detrás de la confianza.
+ *
+ * Pura y sin DOM, para poder probarla.
+ */
+export function historiaEn(posicion, centros, valores) {
+  if (centros.length === 0) return 0
+  if (posicion <= centros[0]) return valores[0]
+  const ultimo = centros.length - 1
+  if (posicion >= centros[ultimo]) return valores[ultimo]
+
+  for (let i = 0; i < ultimo; i++) {
+    const a = centros[i]
+    const b = centros[i + 1]
+    if (posicion >= a && posicion <= b) {
+      // Una sección de alto 0 mientras cargan las fuentes daría un tramo de
+      // 0 y una división por cero, y un NaN congelaría la escena.
+      const tramo = b - a
+      const t = tramo > 0 ? (posicion - a) / tramo : 0
+      return valores[i] + (valores[i + 1] - valores[i]) * t
+    }
+  }
+  return valores[ultimo]
 }

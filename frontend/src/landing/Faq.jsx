@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { whatsappUrl } from '../site.js'
-import Revelar from './Reveal.jsx'
+import { Bloque, Titular } from './Movimiento.jsx'
 import { IconPlus } from './icons.jsx'
-import { antetitulo } from './ui.js'
 
 // Cada respuesta se apoya en algo que la tienda ya hace o que ya está escrito
 // en los textos legales. Ninguna promete resultados del producto: el manual
@@ -96,39 +95,47 @@ export default function Faq() {
   const [abierta, setAbierta] = useState(0)
 
   return (
-    <section id="preguntas" aria-labelledby="faq-titulo" className="scroll-mt-24 px-4 py-20 sm:px-6 lg:py-28">
+    // Va dentro del estado de la noche, junto a la confianza: es lo que quita
+    // el último freno, y el producto está retirado en una esquina, así que el
+    // texto tiene todo el centro.
+    <section id="preguntas" aria-labelledby="faq-titulo" className="scroll-mt-24 px-5 py-24 sm:px-8 lg:px-16 lg:py-32">
       <script
         type="application/ld+json"
         // El contenido sale de constantes de este archivo, no de nada que
         // escriba quien visita la página.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(datosEstructurados) }}
       />
-      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
-        <Revelar>
-          <p className={antetitulo}>Preguntas frecuentes</p>
-          <h2
-            id="faq-titulo"
-            className="mt-3 font-display text-[clamp(2.2rem,4.4vw,3.4rem)] font-semibold leading-[1.02] tracking-[-.015em]"
-          >
-            Lo que suelen <span className="lp-grad-text italic">preguntarnos.</span>
-          </h2>
-          <p className="mt-4 text-lg text-brand-tinta/75">
+      {/* En escritorio la lista va a la izquierda y el título a la derecha.
+          No es capricho: al terminar las preguntas el producto vuelve al
+          frente por la derecha, camino del cierre, y con la lista a ese
+          lado pasaba por detrás de las últimas respuestas. Así cruza la
+          columna del título, que a esa altura ya subió fuera de pantalla.
+          En móvil, el título primero, como se lee. */}
+      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_.8fr] lg:gap-16">
+        <div className="lg:order-2">
+          <Bloque>
+            <p className="pm-etiqueta pm-acento">Preguntas frecuentes</p>
+          </Bloque>
+          <Titular id="faq-titulo" className="pm-titular-lg mt-5" texto="Lo que suelen preguntarnos." enfasis={1} />
+          <Bloque retraso={0.2}>
+          <p className="pm-cuerpo-lg pm-suave mt-6">
             ¿No está tu duda? Escríbenos por{' '}
             <a
               href={whatsappUrl()}
               target="_blank"
               rel="noreferrer"
-              className="font-bold text-brand-coral-deep underline underline-offset-4"
+              className="pm-acento font-bold underline underline-offset-4"
             >
               WhatsApp
               <span className="sr-only"> (se abre en otra pestaña)</span>
             </a>
             .
           </p>
-        </Revelar>
+          </Bloque>
+        </div>
 
-        <Revelar retraso={100}>
-          <ul className="divide-y divide-brand-tinta/10 rounded-3xl bg-white/70 px-2 ring-1 ring-brand-tinta/5 sm:px-4">
+        <Bloque retraso={0.1} className="lg:order-1">
+          <ul className="pm-glass divide-y divide-[rgba(127,127,127,.22)] rounded-[28px] px-2 sm:px-5">
             {PREGUNTAS.map(({ pregunta, respuesta }, i) => {
               const abierto = abierta === i
               return (
@@ -162,14 +169,14 @@ export default function Faq() {
                     className={`lp-faq-respuesta ${abierto ? 'is-abierto' : ''}`}
                   >
                     <div className="overflow-hidden">
-                      <p className="px-3 pb-5 text-base leading-relaxed text-brand-tinta/80">{respuesta}</p>
+                      <p className="pm-cuerpo pm-suave px-3 pb-5">{respuesta}</p>
                     </div>
                   </div>
                 </li>
               )
             })}
           </ul>
-        </Revelar>
+        </Bloque>
       </div>
     </section>
   )

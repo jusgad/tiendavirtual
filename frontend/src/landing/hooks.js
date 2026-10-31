@@ -156,8 +156,15 @@ export function useBarraDeCompraVisible() {
       const t = transicion.getBoundingClientRect()
       const alcanzada = t.top < window.innerHeight * 0.5
 
+      // El combo cuenta desde donde empieza su contenido, no su caja: la
+      // sección arranca con 130 px vacíos (para que al final la navbar no
+      // tape el titular), y contando la caja la barra se escondía mientras
+      // aún se leían las preguntas. Tampoco vale mirar solo el titular: en
+      // móvil sale por arriba con el botón grande de compra todavía a la
+      // vista, y habría dos botones de comprar a la vez.
       const c = combo?.getBoundingClientRect()
-      const enCombo = Boolean(c && c.top < window.innerHeight && c.bottom > 0)
+      const margen = combo ? parseFloat(getComputedStyle(combo).paddingTop) || 0 : 0
+      const enCombo = Boolean(c && c.top + margen < window.innerHeight && c.bottom > 0)
       setVisible(alcanzada && !enCombo)
     }
 

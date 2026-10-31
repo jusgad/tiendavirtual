@@ -217,3 +217,282 @@
     transform: none;
   }
 }
+
+/* =========================================================================
+ * Color del texto: cambia con el fondo, y lo hace con transición.
+ *
+ * `@property` registra las variables como colores, y así se pueden animar:
+ * sin esto, al pasar de día a noche el texto cambiaría de golpe mientras el
+ * fondo se funde despacio, y se notaría el salto. Los navegadores que no lo
+ * entienden cambian de golpe, que sigue siendo correcto.
+ * ========================================================================= */
+
+@property --pm-texto {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #343553;
+}
+@property --pm-acento-texto {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #a8401d;
+}
+
+.pm {
+  --pm-texto: #343553;
+  --pm-acento-texto: #a8401d;
+  transition:
+    --pm-texto 0.7s ease,
+    --pm-acento-texto 0.7s ease;
+}
+.pm.pm-oscuro {
+  --pm-texto: #fff7ef;
+  /* Durazno muy claro: 4,6:1 sobre el magenta medio. El coral no llega. */
+  --pm-acento-texto: #ffe3cc;
+}
+
+.pm-contenido {
+  color: var(--pm-texto);
+}
+/* Texto secundario: baja la opacidad en vez de usar otro color, así hereda
+   la transición del principal sin una segunda variable. */
+.pm-suave {
+  opacity: 0.82;
+}
+.pm-acento {
+  color: var(--pm-acento-texto);
+}
+
+/* El degradado de marca en los titulares se aclara de noche: el de tonos
+   profundos desaparecería sobre el magenta. */
+.pm-oscuro .lp-grad-text {
+  background-image: linear-gradient(95deg, #ffd0a8 0%, #ffb08f 45%, #f8c6ee 100%);
+}
+.pm-oscuro :focus-visible {
+  outline-color: #fff7ef;
+}
+
+/* ---- Canvas y respaldo ---- */
+
+.pm-canvas,
+.pm-escena-css {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pm-velos-css {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.pm-velo-css {
+  animation: pm-derivar 25s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+@keyframes pm-derivar {
+  0% {
+    transform: translate(-4vw, 1.5vh) rotate(-1.2deg);
+  }
+  100% {
+    transform: translate(5vw, -2vh) rotate(1.4deg);
+  }
+}
+
+.pm-tubo-css {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: var(--alto, 240px);
+  width: auto;
+  max-width: none;
+  transform: translate(calc(var(--x, 50vw) - 50%), calc(var(--y, 50vh) - 50%)) rotate(var(--giro, 0deg));
+  filter: drop-shadow(0 26px 26px rgba(52, 53, 83, 0.28));
+  transition: opacity 0.4s ease;
+}
+
+/* ---- Navbar: píldora de cristal, oculta sobre la apertura ---- */
+
+.pm-navbar {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 18px;
+  border-radius: 999px;
+  transform: translate(-50%, -18px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pm-navbar.is-visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.pm-navlink {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-tinta);
+  transition: background-color 0.3s ease;
+}
+.pm-navlink:hover {
+  background-color: rgba(52, 53, 83, 0.07);
+}
+/* La navbar es cristal claro siempre, también de noche: el texto de dentro
+   va en tinta y no debe heredar la crema. Sin estas reglas, la de noche
+   invertía su cristal a casi transparente sobre el magenta, con los enlaces
+   en tinta (ilegibles) y el botón en crema sobre cristal claro. */
+.pm-navbar {
+  color: var(--pm-tinta);
+}
+.pm-oscuro .pm-navbar.pm-glass {
+  background: rgba(255, 251, 247, 0.78);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 30px 70px -40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.pm-oscuro .pm-navbar .pm-cta {
+  border-color: rgba(52, 53, 83, 0.45);
+  background: rgba(255, 251, 247, 0.38);
+  color: var(--pm-tinta);
+}
+.pm-oscuro .pm-navbar :focus-visible {
+  outline-color: #a70b94;
+}
+
+/* ---- Apertura ---- */
+
+.pm-hero {
+  position: relative;
+  min-height: 100svh;
+}
+.pm-hero-rejilla {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 40svh auto;
+  gap: 0;
+  padding: 92px 20px 120px;
+}
+@media (min-width: 900px) {
+  .pm-hero-rejilla {
+    grid-template-columns: 1fr 1.25fr 1fr;
+    grid-template-rows: 1fr;
+    align-items: stretch;
+    padding: 56px clamp(24px, 4vw, 64px) 120px;
+  }
+}
+.pm-hero-marca {
+  align-self: start;
+}
+.pm-hero-relato {
+  align-self: center;
+  text-align: center;
+}
+@media (min-width: 900px) {
+  .pm-hero-relato {
+    text-align: left;
+    padding-top: 12svh;
+  }
+}
+
+/* Notas alrededor del producto: solo donde caben sin pisar el texto. */
+.pm-notas {
+  display: none;
+}
+.pm-notas-compactas {
+  display: flex;
+}
+@media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
+  .pm-notas {
+    display: block;
+  }
+  .pm-notas-compactas {
+    display: none;
+  }
+}
+.pm-nota {
+  position: absolute;
+  font-family: var(--pm-display);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.pm-nota-punto {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pm-crema);
+  border: 1.5px solid var(--pm-coral);
+  box-shadow: 0 0 0 5px rgba(244, 122, 77, 0.16);
+  transform: translate(-50%, -50%);
+}
+
+/* Flecha que respira: invita a bajar sin pedirlo a gritos. */
+.pm-respira {
+  animation: pm-respirar 2.6s ease-in-out infinite;
+}
+@keyframes pm-respirar {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+}
+
+/* ---- Cierre ---- */
+
+.pm-cierre {
+  min-height: calc(100svh - 120px);
+  padding-top: 130px;
+}
+/* En móvil el sitio del producto lo reserva un hueco con ancla dentro del
+   combo (`data-ancla-producto="cierre"`), así que aquí basta con dejar
+   pasar la navbar. */
+@media (max-width: 899px) {
+  .pm-cierre {
+    padding-top: 80px;
+  }
+}
+
+/* El icono de las tarjetas de confianza lleva el verde hoja del manual, que
+   es el equivalente de la salvia del prompt: un acento mínimo, nunca un
+   color de superficie. */
+.pm-icono-hoja {
+  background: rgba(103, 155, 60, 0.14);
+  color: #4e7a2a;
+}
+.pm-oscuro .pm-icono-hoja {
+  background: rgba(174, 214, 140, 0.18);
+  color: #d9f0c4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-velo-css,
+  .pm-respira {
+    animation: none;
+  }
+  .pm-navbar {
+    transition: none;
+  }
+}

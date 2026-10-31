@@ -9,32 +9,55 @@ const SUAVE = [0.22, 1, 0.36, 1]
  * El texto se parte en palabras y cada una va dentro de un contenedor con
  * `overflow: hidden`, así que parece que asoman desde debajo de una línea.
  *
+ * El disparo (`whileInView`) va en el titular entero y baja a las palabras
+ * por variantes. No puede ir en cada palabra: al empezar desplazada por
+ * debajo de su máscara, la palabra está recortada del todo, y el
+ * `IntersectionObserver` descuenta ese recorte. Nunca «entraba en pantalla»
+ * y el titular se quedaba invisible para siempre.
+ *
+ * `enfasis` pinta las últimas N palabras en cursiva con el degradado de
+ * marca, que el manual reserva para los titulares clave.
+ *
  * `aria-label` lleva la frase entera y las palabras van ocultas al lector de
  * pantalla: sin eso, partir el texto en veinte `span` hace que algunos
  * lectores lo lean palabra por palabra, con una pausa en cada una.
  */
-export function Titular({ texto, className = '', como: Como = 'h2', id, retraso = 0 }) {
+export function Titular({ texto, className = '', como = 'h2', id, retraso = 0, enfasis = 0 }) {
   const palabras = texto.split(' ')
+  const desdeEnfasis = palabras.length - enfasis
+  const Motion = motion[como] ?? motion.h2
 
   return (
-    <Como id={id} className={className} aria-label={texto}>
+    <Motion
+      id={id}
+      className={className}
+      aria-label={texto}
+      initial="oculto"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
+      variants={{
+        oculto: {},
+        visible: { transition: { staggerChildren: 0.055, delayChildren: retraso } },
+      }}
+    >
       {palabras.map((palabra, i) => (
         <span key={`${palabra}-${i}`} className="pm-palabra" aria-hidden="true">
           <motion.span
             style={{ display: 'inline-block' }}
-            initial={{ y: '105%' }}
-            whileInView={{ y: '0%' }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 1.1, ease: SUAVE, delay: retraso + i * 0.055 }}
+            className={i >= desdeEnfasis ? 'lp-grad-text italic' : undefined}
+            variants={{
+              oculto: { y: '105%' },
+              visible: { y: '0%', transition: { duration: 1.1, ease: SUAVE } },
+            }}
           >
             {palabra}
           </motion.span>
           {/* El espacio va fuera de la máscara: dentro, `overflow: hidden`
               lo recorta y las palabras quedan pegadas. */}
-          {i < palabras.length - 1 ? ' ' : ''}
+          {i < palabras.length - 1 ? '\u00A0' : ''}
         </span>
       ))}
-    </Como>
+    </Motion>
   )
 }
 

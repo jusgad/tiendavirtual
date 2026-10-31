@@ -1,73 +1,186 @@
-import AmbientCanvas from './AmbientCanvas.jsx'
-import { IconArrowDown, IconSparkle } from './icons.jsx'
+import { useRef } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { CATALOGO } from '../site.js'
+import { IconArrowDown, IconArrowRight } from './icons.jsx'
 
 /**
- * Banda 2 · La apertura. Amanecer.
+ * Estado 0 · La apertura. Amanecer.
  *
- * Su único trabajo es la promesa emocional de la marca. Aquí NO va el precio,
- * ni los beneficios funcionales, ni los tubos: cada uno tiene su banda más
- * abajo, y tenerlos aquí era la causa de que la página repitiera el mismo
- * argumento cinco veces.
+ * Composición cinematográfica en tres columnas: la marca arriba a la
+ * izquierda, el producto 3D en el centro (lo pinta la escena, aquí solo se le
+ * deja sitio) y el relato a la derecha. En móvil, la marca arriba, el
+ * producto en medio y el relato debajo.
  *
- * El manual pide que el logo y el producto respiren, y pone el lema en el
- * segundo nivel de la jerarquía, justo después de la marca. Esta banda es
- * exactamente ese nivel: tipografía, luz y nada más.
+ * Lo que NO lleva, a propósito:
  *
- * Entra escalonada, de arriba abajo, para que la lectura siga el mismo orden
- * que la jerarquía. Es la única parte de la página que se anima al cargar; el
- * resto espera a que la persona baje.
+ * - **Precio.** El prompt lo ponía aquí. Esta página lo tiene una sola vez,
+ *   en el combo, por la crítica de diseño que señaló que se repetía; y la
+ *   apertura quedó desde entonces solo para la promesa de marca. Se
+ *   conserva esa decisión.
+ * - **Las frases de perfume del prompt** («aroma que se expande en el
+ *   aire»). PomAss no es un perfume: las notas que rodean al producto son
+ *   sus beneficios reales, tomados del catálogo.
  *
- * La única acción es seguir bajando.
+ * Al bajar, el contenido se desvanece y sube: la escena se queda y el texto
+ * se aparta para la siguiente banda.
  */
 
-// Cada pieza entra 110 ms después de la anterior: lo justo para que se lea
-// como una secuencia y no como un retraso.
-const paso = (n) => ({ '--d': `${n * 110}ms` })
+// Las notas que rodean al producto. Solo datos reales del catálogo: el
+// beneficio principal de cada crema y el último de la noche.
+//
+// Posiciones en % de la columna central. Comprobadas a 1440×810: ninguna
+// nota pisa la marca ni el relato. La de Noche va ENCIMA de su tubo y no a
+// su derecha: a la derecha invadía la columna del relato.
+const NOTAS = [
+  {
+    texto: CATALOGO[0]?.beneficio,
+    estiloTexto: { top: '24%', right: '78%' },
+    inicio: ['22%', '24%'],
+    punto: ['44%', '38%'],
+  },
+  {
+    texto: CATALOGO[1]?.beneficio,
+    estiloTexto: { top: '12%', left: '56%' },
+    inicio: ['60%', '15%'],
+    punto: ['58%', '33%'],
+  },
+  {
+    texto: CATALOGO[1]?.beneficios.at(-1)?.text,
+    estiloTexto: { top: '70%', right: '78%' },
+    inicio: ['22%', '70%'],
+    punto: ['46%', '64%'],
+  },
+].filter((n) => n.texto)
+
+const SUAVE = [0.22, 1, 0.36, 1]
 
 export default function Hero() {
+  const seccion = useRef(null)
+  const { scrollYProgress } = useScroll({ target: seccion, offset: ['start start', 'end start'] })
+  const opacidad = useTransform(scrollYProgress, [0, 0.75], [1, 0])
+  const opacidadFlecha = useTransform(scrollYProgress, [0, 0.12], [1, 0])
+  const subida = useTransform(scrollYProgress, [0, 0.75], [0, -90])
+
   return (
-    <section aria-labelledby="hero-titulo" className="relative isolate overflow-hidden">
-      <div aria-hidden="true" className="lp-hero-fondo absolute inset-0 -z-10" />
-      <AmbientCanvas className="absolute inset-0 -z-10" />
-
-      <div className="mx-auto flex min-h-[86vh] max-w-4xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6">
-        <p
-          style={paso(0)}
-          className="lp-entrada inline-flex items-center gap-2 rounded-full border border-brand-coral/30 bg-white/70 px-4 py-2 text-[13px] font-extrabold uppercase tracking-[.14em] text-brand-coral-deep backdrop-blur"
+    <section ref={seccion} aria-labelledby="hero-titulo" className="pm-hero relative">
+      <motion.div style={{ opacity: opacidad, y: subida }} className="pm-hero-rejilla">
+        {/* Columna 1 · la marca */}
+        <motion.div
+          className="pm-hero-marca"
+          initial={{ opacity: 0, y: 28 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.1, ease: SUAVE }}
         >
-          <IconSparkle size={14} />
-          Cuidado íntimo · Hecho en Colombia
-        </p>
+          {/* La marca es el logotipo, no un texto en Fraunces: el manual
+              prohíbe redibujarlo. Va como imagen y sin enlace, para que el
+              titular se lea «PomAss by Pao Díaz. Confianza en todo
+              momento.» y no arrastre un «ir al inicio» por medio. */}
+          <h1 id="hero-titulo">
+            <img
+              src="/images/logo.png"
+              alt="PomAss by Pao Díaz."
+              width="1281"
+              height="419"
+              className="mx-auto h-[clamp(54px,7vw,104px)] w-auto md:mx-0"
+            />
+            <span className="pm-etiqueta pm-acento mt-5 block text-center md:text-left">
+              Confianza en todo momento.
+            </span>
+          </h1>
+        </motion.div>
 
-        <h1
-          id="hero-titulo"
-          className="mt-7 font-display text-[clamp(3.2rem,9vw,7rem)] font-semibold leading-[.92] tracking-[-.025em] text-brand-tinta"
+        {/* Columna 2 · sitio para el producto, que pinta la escena 3D */}
+        <div className="relative" aria-hidden="true" data-ancla-producto="apertura">
+          <div className="pm-notas absolute inset-0">
+            {NOTAS.map((n, i) => (
+              <Nota key={n.texto} {...n} indice={i} />
+            ))}
+          </div>
+        </div>
+
+        {/* Columna 3 · el relato */}
+        <motion.div
+          className="pm-hero-relato"
+          initial={{ opacity: 0, y: 28 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.1, ease: SUAVE, delay: 0.7 }}
         >
-          <span style={paso(1)} className="lp-entrada block">
-            Confianza
-          </span>
-          <span style={paso(2)} className="lp-entrada lp-grad-text block pb-2 italic">
-            en todo momento.
-          </span>
-        </h1>
+          <p className="pm-etiqueta pm-acento">Cuidado íntimo · Hecho en Colombia</p>
+          <p className="pm-titular-hero mt-4">Una crema para tu día y otra para tu noche.</p>
+          <p className="pm-cuerpo pm-suave mx-auto mt-5 max-w-[380px] md:mx-0">
+            Dos cremas íntimas de 50 ml que se usan como se vive un día: una por la mañana y otra
+            antes de dormir.
+          </p>
 
-        <p style={paso(3)} className="lp-entrada mt-6 max-w-lg text-xl leading-relaxed text-brand-tinta/80">
-          Una crema para tu día y otra para tu noche.
-        </p>
+          {/* Donde no caben las notas alrededor del producto, van aquí. */}
+          <ul className="pm-notas-compactas mt-6 flex-wrap justify-center gap-2 md:justify-start">
+            {NOTAS.map((n) => (
+              <li key={n.texto} className="pm-glass rounded-full px-4 py-1.5 font-display text-[15px] italic">
+                {n.texto}
+              </li>
+            ))}
+          </ul>
 
-        <a
-          href="#rutina"
-          style={paso(4)}
-          className="lp-entrada lp-bajar mt-12 inline-flex flex-col items-center gap-2"
-        >
-          <span className="text-sm font-extrabold uppercase tracking-[.14em] text-brand-tinta/70">
-            Conoce la rutina
-          </span>
-          <span className="lp-bajar-circulo inline-flex h-12 w-12 items-center justify-center rounded-full border border-brand-tinta/15 bg-white/70 text-brand-coral-deep backdrop-blur">
-            <IconArrowDown size={20} />
-          </span>
-        </a>
-      </div>
+          <a href="#rutina" className="pm-cta mt-8">
+            Conocer la rutina
+            <IconArrowRight size={16} className="lp-flecha" />
+          </a>
+        </motion.div>
+      </motion.div>
+
+      {/* Se desvanece con el resto: si no, al empezar a bajar subía justo
+          por delante del producto. */}
+      <motion.a
+        href="#problema"
+        style={{ opacity: opacidadFlecha }}
+        className="absolute bottom-7 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
+      >
+        <span className="pm-etiqueta pm-suave">Descubre la rutina</span>
+        <span className="pm-respira inline-flex h-11 w-11 items-center justify-center rounded-full pm-glass">
+          <IconArrowDown size={18} />
+        </span>
+      </motion.a>
     </section>
+  )
+}
+
+/**
+ * Una nota sensorial, unida al producto por una línea fina que se dibuja.
+ * Termina en un punto crema con borde coral y un halo.
+ */
+function Nota({ texto, estiloTexto, inicio, punto, indice }) {
+  return (
+    <>
+      <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+        <motion.line
+          x1={inicio[0]}
+          y1={inicio[1]}
+          x2={punto[0]}
+          y2={punto[1]}
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeOpacity="0.45"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 1.4, ease: SUAVE, delay: 1.1 + indice * 0.2 }}
+        />
+      </svg>
+      <motion.span
+        className="pm-nota-punto"
+        style={{ left: punto[0], top: punto[1] }}
+        initial={{ opacity: 0, scale: 0.4 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, ease: SUAVE, delay: 2.2 + indice * 0.2 }}
+      />
+      <motion.span
+        className="pm-nota"
+        style={{ ...estiloTexto, transform: 'translateY(-50%)' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, ease: SUAVE, delay: 1.5 + indice * 0.2 }}
+      >
+        {texto}
+      </motion.span>
+    </>
   )
 }
