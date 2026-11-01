@@ -40,11 +40,11 @@ export const WHATSAPP_PHONE = '573105676187'
  * quien entra a comprar.
  */
 export const COMERCIANTE = {
-  razonSocial: 'POR DEFINIR — nombre o razón social registrada',
-  nit: 'POR DEFINIR — NIT o cédula',
+  razonSocial: 'Pom Ass',
+  nit: '1032441826-6',
   direccion: 'POR DEFINIR — dirección física',
   ciudad: 'Bogotá, Colombia',
-  correo: 'jusga.adarve@gmail.com',
+  correo: 'Pompass2026@gmail.com',
   telefono: '+57 310 567 6187',
 }
 

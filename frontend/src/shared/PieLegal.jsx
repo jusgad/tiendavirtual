@@ -64,15 +64,19 @@ export default function PieLegal({ sobreOscuro = false, dejarSitioAbajo = false 
           ? COMERCIANTE.ciudad
           : `${COMERCIANTE.razonSocial} · NIT ${COMERCIANTE.nit} · ${COMERCIANTE.ciudad}`}
       </p>
-      <p className="mt-1">Hecho por {CREDITO.autor}</p>
       {/* El correo en su propia línea y escrito entero: en un pie, un enlace
           que solo dice «escríbenos» obliga a pasar el ratón por encima para
-          saber a dónde va, y desde el móvil ni eso. */}
+          saber a dónde va, y desde el móvil ni eso.
+
+          Es el del comerciante, no el de quien hizo el sitio: aquí escribe
+          quien compra, y el artículo 50 pide el contacto de quien vende. El
+          crédito del desarrollador queda debajo, solo con el nombre. */}
       <p>
-        <a href={`mailto:${CREDITO.correo}`} className={`${enlace} font-bold`}>
-          {CREDITO.correo}
+        <a href={`mailto:${COMERCIANTE.correo}`} className={`${enlace} font-bold`}>
+          {COMERCIANTE.correo}
         </a>
       </p>
+      <p className="mt-1">Hecho por {CREDITO.autor}</p>
     </footer>
   )
 }
