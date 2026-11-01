@@ -70,11 +70,19 @@ export default function Combo() {
 
           <Bloque retraso={0.3}>
             <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
-              <a href="/checkout.html" className={`${btnPrimario} w-full sm:w-auto`}>
+              {/* `whitespace-nowrap`: en pantallas medianas los dos botones
+                  se reparten la columna y «Comprar el combo» se partía en
+                  dos líneas. Antes de partir el texto, que se bajen. */}
+              <a href="/checkout.html" className={`${btnPrimario} w-full whitespace-nowrap sm:w-auto`}>
                 Comprar el combo
                 <IconArrowRight size={18} className="lp-flecha" />
               </a>
-              <a href={whatsappUrl()} target="_blank" rel="noreferrer" className="pm-cta">
+              <a
+                href={whatsappUrl()}
+                target="_blank"
+                rel="noreferrer"
+                className="pm-cta whitespace-nowrap"
+              >
                 <IconWhatsApp size={18} className="text-[#128C4A]" />
                 Dudas por WhatsApp
                 <span className="sr-only"> (se abre en otra pestaña)</span>
