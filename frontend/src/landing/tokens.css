@@ -210,19 +210,43 @@
   }
 }
 
-/* El origen, en la apertura: un sello, no una línea más de texto. */
-.pm-origen {
+/*
+ * Precio regular tachado, al lado del de lanzamiento.
+ *
+ * Deliberadamente discreto: es el precio que NO se paga. Si pesara igual que
+ * el otro, habría que leer dos veces para saber cuál cobran. La raya va con
+ * `text-decoration-thickness` propio porque la de por defecto en Fraunces es
+ * tan fina que a este tamaño casi no se ve.
+ */
+.pm-antes {
+  font-family: var(--pm-sans);
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+/* En la barra fija no hay sitio: a 15 px el tachado se iba a una segunda
+   línea debajo del precio y la barra crecía. */
+.pm-antes-compacto {
+  font-size: 13px;
+}
+.pm-antes s {
+  text-decoration-thickness: 2px;
+  text-decoration-color: color-mix(in srgb, currentColor 70%, transparent);
+}
+
+/* La nota del lanzamiento: un sello, como el del origen, pero con el acento
+   de fondo para que se lea como lo que es (una condición temporal).
+   Sin versalitas ni interletrado: en versalitas la frase entera no cabía en
+   una línea y la píldora salía partida en dos. */
+.pm-lanzamiento {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid color-mix(in srgb, var(--pm-acento-texto) 40%, transparent);
   border-radius: 999px;
-  padding: 7px 14px;
+  background: color-mix(in srgb, var(--pm-acento-texto) 12%, transparent);
+  padding: 6px 13px;
   font-family: var(--pm-sans);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--pm-acento-texto);
 }
 
@@ -419,8 +443,10 @@
   grid-template-columns: 1fr;
   /* La fila del medio es el hueco del producto 3D. 25svh y no 40: con 40,
      el precio y el botón de compra caían por debajo del primer pantallazo
-     en un móvil de 812 px de alto. El tamaño del producto se ajusta aparte,
-     en `ESTADOS_MOVIL` (historia.js): el hueco solo lo coloca. */
+     en un móvil de 812 px de alto. Lo que añadieron el precio tachado y el
+     sello de lanzamiento lo devolvió quitar el sello de origen de debajo del
+     logotipo. El tamaño del producto se ajusta aparte, en `ESTADOS_MOVIL`
+     (historia.js): el hueco solo lo coloca. */
   grid-template-rows: auto 25svh auto;
   gap: 0;
   padding: 68px 20px 88px;

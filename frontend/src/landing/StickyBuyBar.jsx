@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { CURRENCY, NOMBRE_COMBO } from '../site.js'
-import { usePrecio } from './precio.js'
+import { NOMBRE_COMBO } from '../site.js'
 import { useBarraDeCompraVisible } from './hooks.js'
 import { IconArrowRight } from './icons.jsx'
+import Precio from './Precio.jsx'
 import { btnPrimario } from './ui.js'
 
 /**
@@ -20,7 +20,6 @@ import { btnPrimario } from './ui.js'
 export default function StickyBuyBar() {
   const barra = useRef(null)
   const visible = useBarraDeCompraVisible()
-  const precio = usePrecio()
 
   // Escondida no debe recibir el foco del teclado: se marca `inert`.
   useEffect(() => {
@@ -39,9 +38,9 @@ export default function StickyBuyBar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <div className="min-w-0">
           <p className="truncate text-sm font-extrabold">Combo {NOMBRE_COMBO}</p>
-          <p className="font-display text-xl font-semibold leading-tight">
-            {precio} <span className="font-sans text-xs font-bold text-brand-tinta/70">{CURRENCY}</span>
-          </p>
+          {/* Sin la nota del lanzamiento: aquí no cabe y el tachado ya dice
+              que el precio es temporal. */}
+          <Precio tamano="text-xl" nota={false} compacto />
         </div>
         <a href="/checkout.html" className={`${btnPrimario} !min-h-[48px] !px-6`}>
           Comprar

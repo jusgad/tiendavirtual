@@ -3,6 +3,27 @@
 export const PRICE = '$89.900'
 export const CURRENCY = 'COP'
 
+/**
+ * Precio regular del combo, y hasta cuándo dura el precio de lanzamiento.
+ *
+ * El precio que se cobra NO está aquí: lo pone el panel de administración y lo
+ * lee la landing de la API (ver `landing/precio.js`). Esto es solo el «antes»
+ * que se tacha al lado, y la fecha en que deja de ser un lanzamiento.
+ *
+ * ⚠️ El tachado es publicidad: el artículo 33 del Estatuto del Consumidor
+ * obliga a que el precio tachado sea el que de verdad se va a cobrar cuando
+ * acabe la promoción. Por eso `ofertaLanzamiento()` solo lo enseña mientras la
+ * fecha no haya pasado y mientras el precio de la API sea realmente menor; si
+ * el 1 de diciembre el panel no ha subido el precio, el tachado desaparece
+ * solo en vez de quedarse mintiendo.
+ *
+ * La hora va en -05:00 (hora de Colombia) a propósito: con una Z, en Colombia
+ * la promoción se habría acabado a las 7 de la tarde del día 30.
+ */
+export const PRECIO_REGULAR = 117500
+export const LANZAMIENTO_HASTA = '2026-11-30T23:59:59-05:00'
+export const LANZAMIENTO_TEXTO = 'Precio de lanzamiento · hasta el 30 de noviembre'
+
 export const WHATSAPP_PHONE = '573105676187'
 
 /**

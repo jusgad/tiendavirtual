@@ -1,7 +1,7 @@
-import { COMBO, CURRENCY, NOMBRE_COMBO, whatsappUrl } from '../site.js'
-import { usePrecio } from './precio.js'
+import { COMBO, NOMBRE_COMBO, whatsappUrl } from '../site.js'
 import { IconArrowRight, IconBox, IconCheck, IconLock, IconTruck, IconWhatsApp } from './icons.jsx'
 import { Bloque, Grupo, Item } from './Movimiento.jsx'
+import Precio from './Precio.jsx'
 import { btnPrimario } from './ui.js'
 
 /**
@@ -21,7 +21,6 @@ import { btnPrimario } from './ui.js'
  * «Día + Noche», como pide el manual.
  */
 export default function Combo() {
-  const precio = usePrecio()
   return (
     <section id="comprar" aria-labelledby="combo-titulo" className="pm-cierre scroll-mt-24 px-5 pb-6 sm:px-8 lg:px-16">
       {/* En móvil el producto va arriba, sobre el combo: este es su hueco. */}
@@ -43,11 +42,12 @@ export default function Combo() {
           </Bloque>
 
           <Bloque retraso={0.16}>
-            <p className="mt-6 flex items-baseline justify-center gap-2 lg:justify-start">
-              <span className="font-display text-5xl font-semibold">{precio}</span>
-              <span className="pm-suave font-bold">{CURRENCY}</span>
-            </p>
-            <p className="pm-suave mt-1.5 text-sm">El envío se calcula al pagar, antes de confirmar.</p>
+            <Precio
+              tamano="text-5xl"
+              fila="justify-center lg:justify-start"
+              texto="mt-6 text-center lg:text-left"
+            />
+            <p className="pm-suave mt-3 text-sm">El envío se calcula al pagar, antes de confirmar.</p>
           </Bloque>
 
           <Grupo className="mx-auto mt-8 max-w-md space-y-3 lg:mx-0" retraso={0.2}>

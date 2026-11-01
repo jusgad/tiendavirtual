@@ -23,7 +23,10 @@ const HECHOS = [
   {
     Icono: IconHeart,
     titulo: 'Hecha en Colombia',
-    texto: 'Marca colombiana, creada por Pao Díaz.',
+    // Esta línea estuvo debajo del logotipo en la apertura y se trajo aquí
+    // por decisión del cliente: es el sitio donde la página habla de quién
+    // está detrás, y ahí el origen sí se lee como dato de confianza.
+    texto: 'Marca colombiana, creada por una mujer colombiana.',
   },
   {
     Icono: IconBox,

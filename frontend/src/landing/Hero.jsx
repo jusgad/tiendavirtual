@@ -1,8 +1,8 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { CATALOGO, CURRENCY } from '../site.js'
+import { CATALOGO } from '../site.js'
 import { IconArrowDown, IconArrowRight } from './icons.jsx'
-import { usePrecio } from './precio.js'
+import Precio from './Precio.jsx'
 import { btnPrimario } from './ui.js'
 
 /**
@@ -64,7 +64,6 @@ const SUAVE = [0.22, 1, 0.36, 1]
 
 export default function Hero() {
   const seccion = useRef(null)
-  const precio = usePrecio()
   const { scrollYProgress } = useScroll({ target: seccion, offset: ['start start', 'end start'] })
   const opacidad = useTransform(scrollYProgress, [0, 0.75], [1, 0])
   const opacidadFlecha = useTransform(scrollYProgress, [0, 0.12], [1, 0])
@@ -104,17 +103,10 @@ export default function Hero() {
           <p className="pm-etiqueta pm-eslogan pm-acento mt-5 text-center md:text-left">
             Confianza en todo momento.
           </p>
-
-          {/* El origen sube aquí, junto a la marca, y como sello: antes era
-              media línea perdida en la etiqueta del relato («Cuidado íntimo ·
-              Hecho en Colombia»), donde no lo veía nadie. Quién la hizo es
-              un dato de confianza verificable, no una promesa. */}
-          <p className="mt-6 flex justify-center md:justify-start">
-            <span className="pm-origen">Hecho en Colombia</span>
-          </p>
-          <p className="pm-cuerpo pm-suave mx-auto mt-3 max-w-[30ch] text-center text-[15px] md:mx-0 md:text-left">
-            Marca colombiana creada por una mujer colombiana.
-          </p>
+          {/* Debajo del logotipo no va nada más: el sello «Hecho en
+              Colombia» y la línea de la marca colombiana estuvieron aquí y se
+              quitaron por decisión del cliente. El origen sigue contándose en
+              la banda de confianza, en la tarjeta «Hecha en Colombia». */}
         </motion.div>
 
         {/* Columna 2 · sitio para el producto, que pinta la escena 3D */}
@@ -147,10 +139,11 @@ export default function Hero() {
 
           {/* Precio y compra, lo que la revisión de usabilidad echaba en
               falta en el primer pantallazo del móvil. */}
-          <p className="mt-6 flex items-baseline justify-center gap-2 md:justify-start">
-            <span className="font-display text-[34px] font-semibold leading-none">{precio}</span>
-            <span className="pm-suave text-sm font-bold">{CURRENCY}</span>
-          </p>
+          <Precio
+            tamano="text-[34px]"
+            fila="justify-center md:justify-start"
+            texto="mt-6 text-center md:text-left"
+          />
           <a href="/checkout.html" className={`${btnPrimario} mt-5`}>
             Comprar el combo
             <IconArrowRight size={18} className="lp-flecha" />
