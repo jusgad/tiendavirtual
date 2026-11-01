@@ -90,13 +90,15 @@ export default function Hero() {
               noche»), que además es el texto más grande en pantalla. */}
           {/* `fetchpriority="high"`: es lo primero que se ve y, por tanto,
               el candidato a ser el elemento más grande del primer pintado
-              (LCP). Sin esto el navegador lo trata como una imagen más. */}
+              (LCP). Sin esto el navegador lo trata como una imagen más. Va
+              en minúscula porque React 18 no conoce `fetchPriority` en
+              camelCase —eso llegó con React 19— y lo descartaba avisando. */}
           <img
             src="/images/logo.png"
             alt="PomAss by Pao Díaz"
             width="636"
             height="208"
-            fetchPriority="high"
+            fetchpriority="high"
             className="mx-auto h-[clamp(54px,7vw,104px)] w-auto md:mx-0"
           />
           <p className="pm-etiqueta pm-acento mt-5 block text-center md:text-left">
