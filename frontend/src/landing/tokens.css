@@ -250,14 +250,6 @@
   color: var(--pm-acento-texto);
 }
 
-/*
- * Marcador de dato que falta. El prompt pide que se note: un hueco silencioso
- * se publica sin que nadie se dé cuenta.
- */
-.pm-pendiente {
-  border-bottom: 1px dashed rgba(52, 53, 83, 0.4);
-}
-
 /* ---- Revelado de titulares palabra a palabra ---- */
 
 .pm-palabra {

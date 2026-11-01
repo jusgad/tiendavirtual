@@ -100,18 +100,32 @@ export const REDES = [
 /** Las redes que ya tienen URL: las únicas que se muestran. */
 export const redesActivas = () => REDES.filter((r) => r.url.trim() !== '')
 
+/*
+ * Los beneficios de cada crema. El primero de cada lista es el titular de su
+ * banda; los demás la acompañan.
+ *
+ * Están escritos como ganchos y no como etiquetas de catálogo. Los de antes
+ * («Ideal para usar en el gimnasio», «Ideal para tu rutina diaria», «Uso
+ * nocturno para mejores resultados») decían dos veces lo mismo con otras
+ * palabras y repetían el titular de su propia tarjeta. Lo que se promete no
+ * cambió: lo que cambió es que ahora cada línea aporta algo.
+ *
+ * Al editarlos, dos límites: nada de lenguaje médico ni de prometer
+ * resultados —el manual lo prohíbe y el Estatuto del Consumidor lo sanciona—,
+ * y ninguna línea debe repetir el titular que lleva encima.
+ */
 export const DAY_BENEFITS = [
   { icon: 'leaf', text: 'Neutraliza olores indeseados' },
-  { icon: 'sun', text: 'Ideal para usar en el gimnasio' },
-  { icon: 'heart', text: 'Mayor confianza en momentos íntimos' },
-  { icon: 'check', text: 'Ideal para tu rutina diaria' },
+  { icon: 'sun', text: 'Aguanta el sudor y las horas' },
+  { icon: 'heart', text: 'Para la ropa ajustada y el calor' },
+  { icon: 'check', text: 'Una capa fina y listo' },
 ]
 
 export const NIGHT_BENEFITS = [
   { icon: 'droplet', text: 'Crema íntima blanqueadora' },
-  { icon: 'sparkle', text: 'Ayuda a blanquear la zona anal' },
-  { icon: 'moon', text: 'Uso nocturno para mejores resultados' },
-  { icon: 'shield', text: 'Fórmula suave y segura para ti' },
+  { icon: 'sparkle', text: 'Ayuda a aclarar la zona anal' },
+  { icon: 'moon', text: 'Poco a poco, no de un día para otro' },
+  { icon: 'shield', text: 'Fórmula suave para una zona delicada' },
 ]
 
 /**

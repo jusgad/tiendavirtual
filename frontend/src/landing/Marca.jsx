@@ -1,5 +1,5 @@
 import { TESTIMONIOS } from '../site.js'
-import { IconBox, IconHeart, IconSun } from './icons.jsx'
+import { IconBox, IconCheck, IconHeart } from './icons.jsx'
 import { Bloque, Grupo, Item, Titular } from './Movimiento.jsx'
 
 /**
@@ -14,10 +14,17 @@ import { Bloque, Grupo, Item, Titular } from './Movimiento.jsx'
  * sí tiene es algo que ellas no: una persona con nombre y un país. Todo lo
  * que se afirma aquí es verificable.
  *
- * **Testimonios.** No hay todavía. Mientras `TESTIMONIOS` esté vacío, en
- * producción no se muestra nada —un marcador entre corchetes publicado en la
- * tienda espantaría más que no tener reseñas—, y en desarrollo aparece un
- * marcador visible para que no se olvide.
+ * **Testimonios.** No hay todavía. Mientras `TESTIMONIOS` esté vacío no se
+ * muestra nada: un marcador entre corchetes publicado en la tienda espantaría
+ * más que no tener reseñas. Hubo uno visible en desarrollo y se quitó porque
+ * se coló en las revisiones y parecía parte de la página.
+ *
+ * **Las tarjetas son ganchos, no un resumen.** Antes repetían lo que ya dicen
+ * otras bandas —el empaque discreto sale en las preguntas y en el cierre, y
+ * los dos pasos, en el titular de la apertura y en el ritual entero—. Quien
+ * llega aquí ya leyó eso; repetírselo no le da una razón nueva para comprar.
+ * Cada tarjeta dice ahora algo que no está en ninguna otra parte, y lo dice
+ * como se lo diría una persona.
  */
 const HECHOS = [
   {
@@ -30,13 +37,13 @@ const HECHOS = [
   },
   {
     Icono: IconBox,
-    titulo: 'Llega sin marca visible',
-    texto: 'Si lo pides al pagar, nadie sabe qué hay dentro de la caja. No es un extra: es parte de por qué existe PomAss.',
+    titulo: 'Nadie tiene por qué saberlo',
+    texto: 'La caja llega sin una sola palabra por fuera. Lo que te cuidas es asunto tuyo.',
   },
   {
-    Icono: IconSun,
-    titulo: 'Una rutina de dos pasos',
-    texto: 'Uno en la mañana y uno antes de dormir. Nada más que aprender.',
+    Icono: IconCheck,
+    titulo: 'Para cualquier cuerpo',
+    texto: 'Hombres, mujeres, quien sea. El cuerpo cambia igual para todo el mundo.',
   },
 ]
 
@@ -79,7 +86,7 @@ export default function Marca() {
           ))}
         </Grupo>
 
-        {testimonio ? (
+        {testimonio && (
           <Bloque className="pm-glass mt-12 rounded-[28px] p-8 sm:p-12">
             <figure>
               <blockquote className="font-display text-[clamp(22px,2.2vw,32px)] italic leading-snug">
@@ -88,12 +95,6 @@ export default function Marca() {
               <figcaption className="pm-etiqueta pm-suave mt-5">{testimonio.autora}</figcaption>
             </figure>
           </Bloque>
-        ) : (
-          import.meta.env.DEV && (
-            <p className="pm-pendiente mt-12 inline-block font-display text-xl italic pm-suave">
-              [Testimonio real de una clienta — se publica solo cuando exista]
-            </p>
-          )
         )}
       </div>
     </section>
