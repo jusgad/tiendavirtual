@@ -136,7 +136,11 @@ export const ESTADOS_ESCENA = [
  * tarjetas del ritual.
  */
 export const ESTADOS_MOVIL = [
-  { ancla: 'apertura', camara: [0, 0, 9.2], producto: { pos: [0, 0.9, 0], escala: 1.35, opacidad: 1 } },
+  // 0.95 y no 1.35: el hueco de la apertura en móvil se redujo a 25svh para
+  // que el precio y el botón de compra entren en el primer pantallazo, y el
+  // ancla solo coloca el producto —no lo encoge—, así que a 1.35 se salía
+  // del hueco y pisaba el titular.
+  { ancla: 'apertura', camara: [0, 0, 9.2], producto: { pos: [0, 0.9, 0], escala: 0.95, opacidad: 1 } },
   { camara: [0, 0, 9.4], producto: { pos: [0, 2.1, -0.4], escala: 0.72, opacidad: 0 } },
   { camara: [0, 0, 9.6], producto: { pos: [1.5, 2.3, -1.2], escala: 0.55, opacidad: 0 } },
   { camara: [0, 0, 9.6], producto: { pos: [1.5, 2.3, -1.2], escala: 0.55, opacidad: 0 } },

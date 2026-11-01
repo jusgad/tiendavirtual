@@ -384,9 +384,13 @@
   display: grid;
   min-height: 100svh;
   grid-template-columns: 1fr;
-  grid-template-rows: auto 40svh auto;
+  /* La fila del medio es el hueco del producto 3D. 25svh y no 40: con 40,
+     el precio y el botón de compra caían por debajo del primer pantallazo
+     en un móvil de 812 px de alto. El tamaño del producto se ajusta aparte,
+     en `ESTADOS_MOVIL` (historia.js): el hueco solo lo coloca. */
+  grid-template-rows: auto 25svh auto;
   gap: 0;
-  padding: 92px 20px 120px;
+  padding: 68px 20px 88px;
 }
 @media (min-width: 900px) {
   .pm-hero-rejilla {
@@ -416,6 +420,14 @@
 }
 .pm-notas-compactas {
   display: flex;
+}
+/* En un móvil estrecho no caben: entre ellas y el precio, el botón de
+   compra se iba por debajo del primer pantallazo. Los mismos beneficios
+   están, uno por uno, en la banda del ritual. */
+@media (max-width: 599px) {
+  .pm-notas-compactas {
+    display: none;
+  }
 }
 @media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
   .pm-notas {

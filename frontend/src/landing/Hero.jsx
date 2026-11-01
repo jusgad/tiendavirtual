@@ -1,7 +1,9 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { CATALOGO } from '../site.js'
+import { CATALOGO, CURRENCY } from '../site.js'
 import { IconArrowDown, IconArrowRight } from './icons.jsx'
+import { usePrecio } from './precio.js'
+import { btnPrimario } from './ui.js'
 
 /**
  * Estado 0 · La apertura. Amanecer.
@@ -11,15 +13,21 @@ import { IconArrowDown, IconArrowRight } from './icons.jsx'
  * deja sitio) y el relato a la derecha. En móvil, la marca arriba, el
  * producto en medio y el relato debajo.
  *
- * Lo que NO lleva, a propósito:
+ * **Precio y compra en la apertura.** Antes no estaban: el precio vivía solo
+ * en el combo, por una crítica de diseño que señaló que se repetía. La
+ * revisión de usabilidad lo revirtió —en móvil había que bajar casi un
+ * pantallazo entero para ver qué cuesta y dónde se compra—, así que la
+ * apertura lleva ahora propuesta, precio y botón de compra. El precio sigue
+ * saliendo del panel de administración (`usePrecio`), no escrito a mano.
  *
- * - **Precio.** El prompt lo ponía aquí. Esta página lo tiene una sola vez,
- *   en el combo, por la crítica de diseño que señaló que se repetía; y la
- *   apertura quedó desde entonces solo para la promesa de marca. Se
- *   conserva esa decisión.
- * - **Las frases de perfume del prompt** («aroma que se expande en el
- *   aire»). PomAss no es un perfume: las notas que rodean al producto son
- *   sus beneficios reales, tomados del catálogo.
+ * El botón de compra es el único con relleno; explorar la rutina se queda en
+ * la flecha de abajo, que ya decía «Descubre la rutina». Antes había además
+ * un botón «Conocer la rutina» que competía con la compra y la empujaba
+ * fuera de la pantalla.
+ *
+ * Lo que NO lleva, a propósito: **las frases de perfume del prompt**
+ * («aroma que se expande en el aire»). PomAss no es un perfume: las notas
+ * que rodean al producto son sus beneficios reales, del catálogo.
  *
  * Al bajar, el contenido se desvanece y sube: la escena se queda y el texto
  * se aparta para la siguiente banda.
@@ -56,6 +64,7 @@ const SUAVE = [0.22, 1, 0.36, 1]
 
 export default function Hero() {
   const seccion = useRef(null)
+  const precio = usePrecio()
   const { scrollYProgress } = useScroll({ target: seccion, offset: ['start start', 'end start'] })
   const opacidad = useTransform(scrollYProgress, [0, 0.75], [1, 0])
   const opacidadFlecha = useTransform(scrollYProgress, [0, 0.12], [1, 0])
@@ -72,21 +81,27 @@ export default function Hero() {
           transition={{ duration: 1.1, ease: SUAVE }}
         >
           {/* La marca es el logotipo, no un texto en Fraunces: el manual
-              prohíbe redibujarlo. Va como imagen y sin enlace, para que el
-              titular se lea «PomAss by Pao Díaz. Confianza en todo
-              momento.» y no arrastre un «ir al inicio» por medio. */}
-          <h1 id="hero-titulo">
-            <img
-              src="/images/logo.png"
-              alt="PomAss by Pao Díaz."
-              width="1281"
-              height="419"
-              className="mx-auto h-[clamp(54px,7vw,104px)] w-auto md:mx-0"
-            />
-            <span className="pm-etiqueta pm-acento mt-5 block text-center md:text-left">
-              Confianza en todo momento.
-            </span>
-          </h1>
+              prohíbe redibujarlo. Va como imagen y sin enlace, para no
+              arrastrar un «ir al inicio» en la propia portada.
+
+              Ya NO es el <h1>: un encabezado principal que solo dice la
+              marca no le cuenta a un buscador de qué va la página. El h1 es
+              ahora la propuesta («Una crema para tu día y otra para tu
+              noche»), que además es el texto más grande en pantalla. */}
+          {/* `fetchpriority="high"`: es lo primero que se ve y, por tanto,
+              el candidato a ser el elemento más grande del primer pintado
+              (LCP). Sin esto el navegador lo trata como una imagen más. */}
+          <img
+            src="/images/logo.png"
+            alt="PomAss by Pao Díaz"
+            width="636"
+            height="208"
+            fetchPriority="high"
+            className="mx-auto h-[clamp(54px,7vw,104px)] w-auto md:mx-0"
+          />
+          <p className="pm-etiqueta pm-acento mt-5 block text-center md:text-left">
+            Confianza en todo momento.
+          </p>
         </motion.div>
 
         {/* Columna 2 · sitio para el producto, que pinta la escena 3D */}
@@ -106,7 +121,9 @@ export default function Hero() {
           transition={{ duration: 1.1, ease: SUAVE, delay: 0.7 }}
         >
           <p className="pm-etiqueta pm-acento">Cuidado íntimo · Hecho en Colombia</p>
-          <p className="pm-titular-hero mt-4">Una crema para tu día y otra para tu noche.</p>
+          <h1 id="hero-titulo" className="pm-titular-hero mt-4">
+            Una crema para tu día y otra para tu noche.
+          </h1>
           <p className="pm-cuerpo pm-suave mx-auto mt-5 max-w-[380px] md:mx-0">
             Dos cremas íntimas de 50 ml que se usan como se vive un día: una por la mañana y otra
             antes de dormir.
@@ -121,19 +138,29 @@ export default function Hero() {
             ))}
           </ul>
 
-          <a href="#rutina" className="pm-cta mt-8">
-            Conocer la rutina
-            <IconArrowRight size={16} className="lp-flecha" />
+          {/* Precio y compra, lo que la revisión de usabilidad echaba en
+              falta en el primer pantallazo del móvil. */}
+          <p className="mt-6 flex items-baseline justify-center gap-2 md:justify-start">
+            <span className="font-display text-[34px] font-semibold leading-none">{precio}</span>
+            <span className="pm-suave text-sm font-bold">{CURRENCY}</span>
+          </p>
+          <a href="/checkout.html" className={`${btnPrimario} mt-5`}>
+            Comprar el combo
+            <IconArrowRight size={18} className="lp-flecha" />
           </a>
         </motion.div>
       </motion.div>
 
       {/* Se desvanece con el resto: si no, al empezar a bajar subía justo
-          por delante del producto. */}
+          por delante del producto.
+
+          Oculta en móvil estrecho: ahí abajo va ahora el botón de compra y
+          la flecha se le montaba encima. Que la página sigue hacia abajo se
+          entiende igual, y en pantallas anchas la flecha se mantiene. */}
       <motion.a
         href="#problema"
         style={{ opacity: opacidadFlecha }}
-        className="absolute bottom-7 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
+        className="absolute bottom-7 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 min-[600px]:flex"
       >
         <span className="pm-etiqueta pm-suave">Descubre la rutina</span>
         <span className="pm-respira inline-flex h-11 w-11 items-center justify-center rounded-full pm-glass">

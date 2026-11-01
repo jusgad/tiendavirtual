@@ -23,7 +23,7 @@ const HECHOS = [
   {
     Icono: IconHeart,
     titulo: 'Hecha en Colombia',
-    texto: 'Marca colombiana, de una mujer colombiana.',
+    texto: 'Marca colombiana, creada por Pao Díaz.',
   },
   {
     Icono: IconBox,

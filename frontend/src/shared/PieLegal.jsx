@@ -1,5 +1,8 @@
 import { COMERCIANTE, CREDITO, sinDefinir } from '../site.js'
 
+/** Enlace del pie con un objetivo táctil de 44 px de alto. */
+const enlace = 'inline-flex min-h-[44px] items-center px-1 hover:underline'
+
 /**
  * Pie con los enlaces legales y quién vende.
  *
@@ -28,17 +31,21 @@ export default function PieLegal({ sobreOscuro = false, dejarSitioAbajo = false 
         dejarSitioAbajo ? 'pb-[150px] min-[900px]:pb-7' : ''
       }`}
     >
-      <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-bold">
-        <a href="/legal.html#datos" className="hover:underline">
+      {/* `enlace` da 44 px de alto a cada enlace: escritos a 12 px, el área
+          que se podía tocar medía unos 19 px y fallar el toque en un pie es
+          justo donde más molesta. El alto va de relleno, no de letra, así
+          que el pie se ve igual. */}
+      <nav className="flex flex-wrap items-center justify-center gap-x-3 font-bold">
+        <a href="/legal.html#datos" className={enlace}>
           Tratamiento de datos
         </a>
-        <a href="/legal.html#terminos" className="hover:underline">
+        <a href="/legal.html#terminos" className={enlace}>
           Términos y condiciones
         </a>
-        <a href="/legal.html#devoluciones" className="hover:underline">
+        <a href="/legal.html#devoluciones" className={enlace}>
           Devoluciones y garantía
         </a>
-        <a href="/track.html" className="hover:underline">
+        <a href="/track.html" className={enlace}>
           Seguir mi pedido
         </a>
       </nav>
@@ -55,8 +62,8 @@ export default function PieLegal({ sobreOscuro = false, dejarSitioAbajo = false 
       {/* El correo en su propia línea y escrito entero: en un pie, un enlace
           que solo dice «escríbenos» obliga a pasar el ratón por encima para
           saber a dónde va, y desde el móvil ni eso. */}
-      <p className="mt-0.5">
-        <a href={`mailto:${CREDITO.correo}`} className="font-bold hover:underline">
+      <p>
+        <a href={`mailto:${CREDITO.correo}`} className={`${enlace} font-bold`}>
           {CREDITO.correo}
         </a>
       </p>

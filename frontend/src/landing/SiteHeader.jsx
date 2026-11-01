@@ -58,7 +58,9 @@ export default function SiteHeader() {
           ))}
         </ul>
       </nav>
-      <a href="/checkout.html" className="pm-cta !min-h-[40px] !px-5">
+      {/* 44 px de alto, no 40: es el objetivo táctil mínimo cómodo (criterio
+          AAA de WCAG 2.2). Más alto engordaría la píldora de la barra. */}
+      <a href="/checkout.html" className="pm-cta !min-h-[44px] !px-5">
         Comprar
       </a>
     </header>

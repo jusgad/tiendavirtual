@@ -40,12 +40,16 @@ services:
       POSTGRES_PASSWORD: pomass_pass
       POSTGRES_DB: pomass
     ports:
-      # 55432 y no 5432: en esta máquina hay un Postgres nativo ocupando el
+      # 15432 y no 5432: en esta máquina hay un Postgres nativo ocupando el
       # puerto estándar, y las conexiones desde fuera acababan en él en vez de
       # aquí, fallando con un error de credenciales que no decía nada de eso.
+      # Tampoco 55432, el que había antes: Windows reserva rangos dinámicos
+      # para Hyper-V (55334-55433 entre ellos) y, al reiniciar Docker, el
+      # arranque moría con «ports are not available ... forbidden by its
+      # access permissions». 15432 queda fuera de esos rangos.
       # La API no usa este puerto: dentro de compose habla con `db:5432`.
-      # Para psql, Prisma Studio o los tests de integración: localhost:55432.
-      - "55432:5432"
+      # Para psql, Prisma Studio o los tests de integración: localhost:15432.
+      - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

@@ -133,7 +133,7 @@ export const DOCUMENTOS = [
       {
         titulo: 'Cuentas',
         parrafos: [
-          'Puedes comprar como invitada o crear una cuenta. Si creas cuenta, eres responsable de mantener tu contraseña en reserva. Si crees que alguien accedió a ella, cámbiala desde «Olvidé mi contraseña».',
+          'Puedes comprar como invitado o crear una cuenta. Si creas cuenta, eres responsable de mantener tu contraseña en reserva. Si crees que alguien accedió a ella, cámbiala desde «Olvidé mi contraseña».',
         ],
       },
       {
