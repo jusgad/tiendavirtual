@@ -27,22 +27,25 @@ export const LANZAMIENTO_TEXTO = 'Precio de lanzamiento · hasta el 30 de noviem
 export const WHATSAPP_PHONE = '573105676187'
 
 /**
- * Datos del comerciante.
+ * Datos del comerciante. Los textos legales de `legal.html` y el pie de todas
+ * las páginas leen de aquí, así que se editan una sola vez.
  *
- * ⚠️ HAY QUE COMPLETARLOS ANTES DE PUBLICAR. El artículo 50 de la Ley 1480 de
- * 2011 (Estatuto del Consumidor) obliga a que una tienda en línea muestre de
- * forma clara quién vende: identificación, dirección y datos de contacto. Los
- * textos legales de `legal.html` leen de aquí, así que se edita una sola vez.
+ * ⚠️ SIN DIRECCIÓN, POR DECISIÓN DEL CLIENTE. El artículo 50 de la Ley 1480
+ * de 2011 pide identificación, NIT, **dirección de notificación judicial**,
+ * teléfono y correo. Lo que se publica hoy cumple todo menos la dirección.
+ * Para reponerla basta con añadir aquí `direccion: '…'` y la línea
+ * correspondiente en `legal/textos.js`.
  *
- * Mientras digan «POR DEFINIR» siguen viéndose así en `legal.html`: es a
- * propósito, para que no se olvide. El pie de las demás páginas sí los
- * oculta mientras no estén, para no enseñarle un marcador de posición a
+ * `sinDefinir` sigue aquí para cualquier dato que se añada a medias: un
+ * «POR DEFINIR» se ve en `legal.html` a propósito, para que no se olvide,
+ * mientras que el pie lo oculta para no enseñarle un marcador de posición a
  * quien entra a comprar.
  */
 export const COMERCIANTE = {
   razonSocial: 'Pom Ass',
   nit: '1032441826-6',
-  direccion: 'POR DEFINIR — dirección física',
+  // Sin dirección física: la quitó el cliente. Queda la ciudad, el correo y
+  // el teléfono como canales de contacto. Ver el aviso de arriba.
   ciudad: 'Bogotá, Colombia',
   correo: 'Pompass2026@gmail.com',
   telefono: '+57 310 567 6187',
