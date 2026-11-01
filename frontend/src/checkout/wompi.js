@@ -8,18 +8,40 @@
 // es lo que hace el entorno de Docker para poder recorrer una compra sin
 // credenciales de sandbox (ver `backend/scripts/wompi-widget-falso.mjs`).
 // En producción nadie define esta variable y queda la URL de Wompi.
-const WIDGET_SRC = import.meta.env.VITE_WOMPI_WIDGET_URL || 'https://checkout.wompi.co/widget.js'
+const WIDGET_WOMPI = 'https://checkout.wompi.co/widget.js'
+const WIDGET_SRC = import.meta.env.VITE_WOMPI_WIDGET_URL || WIDGET_WOMPI
+
+/**
+ * ¿Se está usando el widget simulado en vez del de Wompi? Importa porque el
+ * simulado se traga cualquier llave pública, y el real no (ver abajo).
+ */
+export const WIDGET_SIMULADO = WIDGET_SRC !== WIDGET_WOMPI
 
 let loadPromise = null
 
 /**
- * Llave pública de marcador de posición: la que trae `.env.example` cuando aún
- * no se han puesto las credenciales reales de Wompi. Con ella el widget no
- * funciona, así que conviene detectarla y decirlo claramente en vez de dejar
- * que falle de forma confusa.
+ * ¿Esta llave pública sirve para abrir el widget REAL de Wompi?
+ *
+ * Una llave de Wompi es `pub_test_` o `pub_prod_` seguido de una ristra larga
+ * de letras y números, sin guiones bajos. No vale cualquier otra cosa:
+ *
+ * - la de `.env.example`, que son puros ceros;
+ * - la del stack de pruebas (`pub_test_simulacion_local`), que solo entiende
+ *   el widget falso de `backend/scripts/wompi-widget-falso.mjs`;
+ * - cualquier otra inventada.
+ *
+ * Importa detectarlas porque el widget real NO avisa: le pide el comercio a la
+ * API de Wompi, recibe «Formato inválido» y se queda con su velo oscuro y el
+ * giro de carga para siempre, sin mensaje y sin forma de cerrarlo. Mejor no
+ * abrirlo y decir en la página que faltan las credenciales.
  */
-export function isPlaceholderKey(publicKey) {
-  return !publicKey || /^pub_(test|prod)_0+$/.test(publicKey)
+const FORMATO_LLAVE = /^pub_(test|prod)_[A-Za-z0-9]{20,}$/
+
+export function isUnusableKey(publicKey) {
+  if (!publicKey) return true
+  // Los ceros pasan el formato por longitud, así que se miran aparte.
+  if (/^pub_(test|prod)_0+$/.test(publicKey)) return true
+  return !FORMATO_LLAVE.test(publicKey)
 }
 
 /** Carga el script una sola vez y resuelve con el constructor del widget. */

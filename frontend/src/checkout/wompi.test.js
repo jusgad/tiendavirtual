@@ -30,23 +30,32 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('isPlaceholderKey', () => {
+describe('isUnusableKey', () => {
   it('detecta la llave de ejemplo de .env.example', async () => {
-    const { isPlaceholderKey } = await loadModule()
-    expect(isPlaceholderKey('pub_test_000000000000000000000000')).toBe(true)
-    expect(isPlaceholderKey('pub_prod_00000000')).toBe(true)
+    const { isUnusableKey } = await loadModule()
+    expect(isUnusableKey('pub_test_000000000000000000000000')).toBe(true)
+    expect(isUnusableKey('pub_prod_00000000')).toBe(true)
   })
 
   it('trata como no configurado un valor vacío', async () => {
-    const { isPlaceholderKey } = await loadModule()
-    expect(isPlaceholderKey('')).toBe(true)
-    expect(isPlaceholderKey(undefined)).toBe(true)
+    const { isUnusableKey } = await loadModule()
+    expect(isUnusableKey('')).toBe(true)
+    expect(isUnusableKey(undefined)).toBe(true)
+  })
+
+  it('rechaza la llave del stack de pruebas y cualquier otra inventada', async () => {
+    const { isUnusableKey } = await loadModule()
+    // Con esta, el widget real se queda cargando para siempre: solo la
+    // entiende el widget falso del stack de pruebas.
+    expect(isUnusableKey('pub_test_simulacion_local')).toBe(true)
+    expect(isUnusableKey('pub_test_corta')).toBe(true)
+    expect(isUnusableKey('no_es_una_llave')).toBe(true)
   })
 
   it('acepta una llave real', async () => {
-    const { isPlaceholderKey } = await loadModule()
-    expect(isPlaceholderKey('pub_test_aB3xY9kLmN2pQ7rS4tU6')).toBe(false)
-    expect(isPlaceholderKey('pub_prod_9zX8wV7uT6sR5qP4oN3m')).toBe(false)
+    const { isUnusableKey } = await loadModule()
+    expect(isUnusableKey('pub_test_aB3xY9kLmN2pQ7rS4tU6')).toBe(false)
+    expect(isUnusableKey('pub_prod_9zX8wV7uT6sR5qP4oN3m')).toBe(false)
   })
 })
 

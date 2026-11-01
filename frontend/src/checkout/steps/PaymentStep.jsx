@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, formatCOP } from '../api'
-import { isPlaceholderKey, openWompiCheckout } from '../wompi'
+import { WIDGET_SIMULADO, isUnusableKey, openWompiCheckout } from '../wompi'
 import { Card, ErrorBanner, PrimaryButton, SecondaryButton } from '../components/ui'
 
 // Cada cuánto y cuántas veces se pregunta al backend si el pago ya se confirmó.
@@ -132,7 +132,10 @@ export default function PaymentStep({ order, contactEmail, onPaid }) {
     )
   }
 
-  const sinConfigurar = isPlaceholderKey(checkout?.publicKey)
+  // Con el widget simulado la llave da igual: el stack de pruebas trae una
+  // inventada a propósito y la compra se recorre igual. El aviso es solo
+  // para el widget real, que con una llave así se queda cargando sin fin.
+  const sinConfigurar = !WIDGET_SIMULADO && isUnusableKey(checkout?.publicKey)
 
   return (
     <Card className="mx-auto max-w-md">
@@ -170,7 +173,11 @@ export default function PaymentStep({ order, contactEmail, onPaid }) {
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <p className="font-bold">Wompi no está configurado todavía</p>
           <p className="mt-1">
-            El backend está devolviendo la llave pública de ejemplo. Pon tus credenciales de{' '}
+            La llave pública que devuelve el backend no tiene el formato de Wompi
+            (<code className="rounded bg-amber-100 px-1">{checkout?.publicKey || 'vacía'}</code>).
+            Si estás con el stack de pruebas, la compra se recorre en{' '}
+            <code className="rounded bg-amber-100 px-1">http://localhost:5173</code>, que trae el
+            widget simulado. Para pagar de verdad, pon tus credenciales de{' '}
             <a
               href="https://comercios.wompi.co"
               target="_blank"
