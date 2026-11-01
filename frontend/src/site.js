@@ -139,7 +139,9 @@ export const PRODUCTOS = {
     tipo: 'Crema íntima',
     beneficio: 'Crema íntima blanqueadora.',
     cuando: 'Antes de dormir, cuando la piel descansa y tiene tiempo de absorber.',
-    enCombo: 'Crema íntima blanqueadora · 50 ml',
+    // Sin repetir «crema íntima»: ya lo dice la línea de Día justo encima,
+    // y el nombre del combo lo encabeza.
+    enCombo: 'Blanqueadora · 50 ml',
     imagen: '/images/tubo_noche.png',
     beneficios: NIGHT_BENEFITS.slice(1),
     icono: 'moon',

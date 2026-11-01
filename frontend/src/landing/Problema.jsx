@@ -33,16 +33,24 @@ export default function Problema() {
         </div>
 
         <div className="mt-14 max-w-[560px] lg:ml-[18%] lg:mt-24">
+          {/* Sin «el ciclo» ni «le pasa a casi todas»: el cuerpo cambia por
+              el calor, el roce y los años le toque a quien le toque, y
+              acotarlo a la menstruación dejaba fuera a media clientela. El
+              producto es para cualquiera. */}
           <Bloque>
             <p className="pm-cuerpo-lg pm-suave">
-              El olor cambia con el calor, el ejercicio, la ropa y el ciclo. El tono de la piel
-              también cambia con el roce y con los años. Le pasa a casi todas y casi nadie lo
+              El olor cambia con el calor, el ejercicio y la ropa. El tono de la piel también
+              cambia con el roce y con los años. Le pasa a casi todo el mundo y casi nadie lo
               menciona.
             </p>
           </Bloque>
+          {/* El gancho de la banda. Va en el tamaño de un titular y no en el
+              del cuerpo: era la frase que más pesa de la sección y se leía
+              igual que el párrafo de encima. */}
           <Bloque retraso={0.15}>
-            <p className="pm-cuerpo-lg mt-7">
-              PomAss existe para eso: <strong className="font-extrabold">para que dejes de pensarlo.</strong>
+            <p className="pm-titular-lg mt-10">
+              PomAss existe para eso:{' '}
+              <span className="lp-grad-text italic">para que dejes de pensarlo.</span>
             </p>
           </Bloque>
         </div>

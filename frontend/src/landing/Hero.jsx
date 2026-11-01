@@ -101,8 +101,19 @@ export default function Hero() {
             fetchpriority="high"
             className="mx-auto h-[clamp(54px,7vw,104px)] w-auto md:mx-0"
           />
-          <p className="pm-etiqueta pm-acento mt-5 block text-center md:text-left">
+          <p className="pm-etiqueta pm-eslogan pm-acento mt-5 text-center md:text-left">
             Confianza en todo momento.
+          </p>
+
+          {/* El origen sube aquí, junto a la marca, y como sello: antes era
+              media línea perdida en la etiqueta del relato («Cuidado íntimo ·
+              Hecho en Colombia»), donde no lo veía nadie. Quién la hizo es
+              un dato de confianza verificable, no una promesa. */}
+          <p className="mt-6 flex justify-center md:justify-start">
+            <span className="pm-origen">Hecho en Colombia</span>
+          </p>
+          <p className="pm-cuerpo pm-suave mx-auto mt-3 max-w-[30ch] text-center text-[15px] md:mx-0 md:text-left">
+            Marca colombiana creada por una mujer colombiana.
           </p>
         </motion.div>
 
@@ -122,23 +133,17 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease: SUAVE, delay: 0.7 }}
         >
-          <p className="pm-etiqueta pm-acento">Cuidado íntimo · Hecho en Colombia</p>
+          <p className="pm-etiqueta pm-acento">Cuidado íntimo</p>
           <h1 id="hero-titulo" className="pm-titular-hero mt-4">
             Una crema para tu día y otra para tu noche.
           </h1>
+          {/* Sin repetir «una por la mañana y otra antes de dormir»: eso ya
+              lo dice el titular justo encima, y la banda del ritual lo
+              explica entera más abajo. */}
           <p className="pm-cuerpo pm-suave mx-auto mt-5 max-w-[380px] md:mx-0">
-            Dos cremas íntimas de 50 ml que se usan como se vive un día: una por la mañana y otra
-            antes de dormir.
+            Dos cremas íntimas de 50 ml, para usar a diario sin complicarse la vida.
           </p>
 
-          {/* Donde no caben las notas alrededor del producto, van aquí. */}
-          <ul className="pm-notas-compactas mt-6 flex-wrap justify-center gap-2 md:justify-start">
-            {NOTAS.map((n) => (
-              <li key={n.texto} className="pm-glass rounded-full px-4 py-1.5 font-display text-[15px] italic">
-                {n.texto}
-              </li>
-            ))}
-          </ul>
 
           {/* Precio y compra, lo que la revisión de usabilidad echaba en
               falta en el primer pantallazo del móvil. */}

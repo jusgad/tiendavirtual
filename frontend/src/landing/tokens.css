@@ -193,6 +193,39 @@
   letter-spacing: 0.26em;
 }
 
+/* El eslogan bajo el logotipo. Más grande que una etiqueta normal y con el
+   interletrado algo menor: a 12 px y 0.26em se leía como un pie de foto, no
+   como la promesa de la marca. El ancho se limita al del logotipo y se
+   centra con él, en vez de estirarse por toda la columna. */
+.pm-eslogan {
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  line-height: 1.5;
+  max-width: 19ch;
+  margin-inline: auto;
+}
+@media (min-width: 900px) {
+  .pm-eslogan {
+    margin-inline: 0;
+  }
+}
+
+/* El origen, en la apertura: un sello, no una línea más de texto. */
+.pm-origen {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--pm-acento-texto) 40%, transparent);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-family: var(--pm-sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pm-acento-texto);
+}
+
 /*
  * Marcador de dato que falta. El prompt pide que se note: un hueco silencioso
  * se publica sin que nadie se dé cuenta.
@@ -414,27 +447,17 @@
   }
 }
 
-/* Notas alrededor del producto: solo donde caben sin pisar el texto. */
+/* Notas alrededor del producto: solo donde caben sin pisar el texto.
+   Donde no caben no hay sustituto. Antes había unas píldoras con los
+   mismos beneficios en la columna del relato, pero repetían lo que ya
+   dicen el titular y la banda del ritual, y en móvil empujaban el botón
+   de compra fuera del primer pantallazo. */
 .pm-notas {
   display: none;
-}
-.pm-notas-compactas {
-  display: flex;
-}
-/* En un móvil estrecho no caben: entre ellas y el precio, el botón de
-   compra se iba por debajo del primer pantallazo. Los mismos beneficios
-   están, uno por uno, en la banda del ritual. */
-@media (max-width: 599px) {
-  .pm-notas-compactas {
-    display: none;
-  }
 }
 @media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
   .pm-notas {
     display: block;
-  }
-  .pm-notas-compactas {
-    display: none;
   }
 }
 .pm-nota {

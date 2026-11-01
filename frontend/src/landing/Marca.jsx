@@ -54,9 +54,12 @@ export default function Marca() {
             enfasis={3}
           />
           <Bloque retraso={0.2}>
+            {/* Ya no repite «marca colombiana» ni «dos cremas de 50 ml»: lo
+                primero está ahora en el sello de la apertura y lo segundo,
+                en el titular y en la banda del ritual. Aquí queda lo que
+                solo se puede contar aquí: quién es. */}
             <p className="pm-cuerpo-lg pm-suave mt-6">
-              PomAss es una marca colombiana creada por Pao Díaz. Dos cremas de 50 ml, pensadas para
-              usarse a diario sin complicarse la vida.
+              Pao Díaz la creó por una razón sencilla: lo que buscaba no existía en el país.
             </p>
           </Bloque>
         </div>
