@@ -1,4 +1,5 @@
 import { COMERCIANTE, CREDITO, sinDefinir } from '../site.js'
+import Redes from './Redes.jsx'
 
 /** Enlace del pie con un objetivo táctil de 44 px de alto. */
 const enlace = 'inline-flex min-h-[44px] items-center px-1 hover:underline'
@@ -49,6 +50,11 @@ export default function PieLegal({ sobreOscuro = false, dejarSitioAbajo = false 
           Seguir mi pedido
         </a>
       </nav>
+
+      {/* Los cuadros de redes. No pinta nada mientras ninguna tenga URL en
+          `site.js`, así que no deja un hueco raro entretanto. */}
+      <Redes className="mt-5" sobreOscuro={sobreOscuro} />
+
       {/* Mientras no haya razón social ni NIT solo se muestra la ciudad: un
           «POR DEFINIR» delante de quien va a comprar no informa de nada y
           resta confianza justo donde hace falta. El recordatorio de que

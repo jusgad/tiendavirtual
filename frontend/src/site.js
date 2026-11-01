@@ -55,6 +55,27 @@ export function whatsappUrl(
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`
 }
 
+/**
+ * Redes sociales de la marca.
+ *
+ * ⚠️ HAY QUE RELLENAR LAS URL ANTES DE PUBLICAR. Cada red con `url` vacía
+ * **no se pinta**: es mejor no enseñar el icono que llevar a un perfil que
+ * no existe o que es de otra persona. Así la fila crece sola conforme
+ * Paola vaya abriendo cuentas, sin tocar ningún componente.
+ *
+ * La URL va completa (`https://instagram.com/<usuario>`), porque es la que
+ * se abre al picar. WhatsApp no está aquí: tiene su propio botón flotante y
+ * su propio mensaje, y sale de `whatsappUrl()`.
+ */
+export const REDES = [
+  { id: 'instagram', nombre: 'Instagram', url: '' },
+  { id: 'facebook', nombre: 'Facebook', url: '' },
+  { id: 'tiktok', nombre: 'TikTok', url: '' },
+]
+
+/** Las redes que ya tienen URL: las únicas que se muestran. */
+export const redesActivas = () => REDES.filter((r) => r.url.trim() !== '')
+
 export const DAY_BENEFITS = [
   { icon: 'leaf', text: 'Neutraliza olores indeseados' },
   { icon: 'sun', text: 'Ideal para usar en el gimnasio' },
