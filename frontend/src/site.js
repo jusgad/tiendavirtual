@@ -1,6 +1,6 @@
 // Central place for business content so copy / price / contact are edited once.
 
-export const PRICE = '$89.900'
+export const PRICE = '$94.000'
 export const CURRENCY = 'COP'
 
 /**

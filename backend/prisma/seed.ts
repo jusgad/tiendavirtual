@@ -96,7 +96,7 @@ async function main() {
         'fórmula suave y segura para ti.',
       brandId: brand.id,
       categoryId: category.id,
-      price: 89900,
+      price: 94000,
       currency: 'COP',
       presentation: 'Estuche Día + Noche · 2 tubos de 50 ml',
       sizeMl: 100,
