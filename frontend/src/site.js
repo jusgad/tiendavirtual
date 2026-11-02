@@ -190,7 +190,10 @@ export const PRODUCTOS = {
     icono: 'moon',
     color: '#9C1A9C',
     momento: 3,
-    envase: { imagen: '/images/tubo_noche.png', sellado: 36, tapa: 522 },
+    // Cotas remedidas a mano sobre la foto real del producto (Pao la pasó
+    // el 2 de noviembre): el sellado donde acaba el rizado de arriba, la
+    // tapa donde empieza el plástico oscuro de abajo.
+    envase: { imagen: '/images/tubo_noche.png', sellado: 34, tapa: 488 },
   },
 }
 
