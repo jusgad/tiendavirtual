@@ -32,7 +32,8 @@ Necesitas tres valores distintos:
 | Variable | Restricción |
 |---|---|
 | `JWT_ACCESS_SECRET` | ≥ 16 caracteres. Usa 48 bytes aleatorios |
-| `PAYMENTS_WEBHOOK_SECRET` | ≥ 8 caracteres. Debe coincidir con el que configures en la pasarela |
+| `WOMPI_INTEGRITY_SECRET` | ≥ 8 caracteres. El de tu cuenta de Wompi, no uno inventado: firma el monto que ve el widget |
+| `WOMPI_EVENTS_SECRET` | ≥ 8 caracteres. El de tu cuenta de Wompi: debe coincidir con el que registres en su panel |
 | `ADMIN_PASSWORD` | ≥ 8 caracteres |
 
 ### 2. Configura las variables de entorno
@@ -59,7 +60,12 @@ CORS_ORIGIN=https://tudominio.com,https://www.tudominio.com
 SHIPPING_FLAT_RATE=12900
 FREE_SHIPPING_THRESHOLD=150000
 
-PAYMENTS_WEBHOOK_SECRET=<el que generaste>
+WOMPI_PUBLIC_KEY=<la de tu cuenta de Wompi>
+WOMPI_PRIVATE_KEY=<la de tu cuenta de Wompi>
+WOMPI_INTEGRITY_SECRET=<la de tu cuenta de Wompi>
+WOMPI_EVENTS_SECRET=<la de tu cuenta de Wompi>
+WOMPI_REDIRECT_URL=https://tudominio.com/track.html
+PAYMENTS_SANDBOX=false
 
 ADMIN_EMAIL=admin@tudominio.com
 ADMIN_PASSWORD=<el que generaste>
@@ -68,7 +74,8 @@ ADMIN_PASSWORD=<el que generaste>
 Tres detalles que la aplicación **hace cumplir por sí misma** con
 `NODE_ENV=production` — si te los saltas, no arranca:
 
-- `PAYMENTS_WEBHOOK_SECRET` no puede ser `dev_webhook_secret_change_me`.
+- `WOMPI_INTEGRITY_SECRET` y `WOMPI_EVENTS_SECRET` no pueden ser los de ejemplo.
+- Con `WOMPI_PUBLIC_KEY`/`WOMPI_PRIVATE_KEY` de sandbox (`pub_test_`/`prv_test_`), hay que declarar `PAYMENTS_SANDBOX=true` — si no, el arranque falla porque ningún pago real entraría.
 - `ADMIN_PASSWORD` no puede ser `Admin123*`.
 - `CORS_ORIGIN` no puede ser `*`.
 
@@ -259,7 +266,9 @@ banner rojo de conexión, revisa `VITE_API_URL` y `CORS_ORIGIN`.
 ```
 [ ] NODE_ENV=production
 [ ] JWT_ACCESS_SECRET propio, largo y aleatorio
-[ ] PAYMENTS_WEBHOOK_SECRET propio
+[ ] WOMPI_INTEGRITY_SECRET y WOMPI_EVENTS_SECRET propios, los de tu cuenta de Wompi
+[ ] WOMPI_REDIRECT_URL apuntando al dominio real del frontend
+[ ] URL de Eventos registrada en el panel de Wompi: https://TU-BACKEND/api/payments/webhook/wompi
 [ ] ADMIN_PASSWORD propio
 [ ] CORS_ORIGIN con los orígenes reales, nunca *
 [ ] TRUST_PROXY=1 si hay balanceador o CDN delante
@@ -306,7 +315,7 @@ conocidos de [modelo de datos](referencia-modelo-datos.md#huecos-conocidos) y
 
 El log inmediatamente anterior lista los campos exactos. En producción las
 causas típicas son los tres valores de ejemplo prohibidos
-(`PAYMENTS_WEBHOOK_SECRET`, `ADMIN_PASSWORD`, `CORS_ORIGIN=*`).
+(`WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`, `ADMIN_PASSWORD`, `CORS_ORIGIN=*`).
 
 ### Todos los usuarios reciben 429 a la vez
 
