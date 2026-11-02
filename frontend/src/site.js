@@ -173,9 +173,9 @@ export const PRODUCTOS = {
     icono: 'sun',
     color: '#F26B0F',
     momento: 1,
-    // Cotas remedidas a mano sobre la foto real del producto (Pao la pasó
-    // el 2 de noviembre), igual que se hizo con la de Noche.
-    envase: { imagen: '/images/tubo_dia.png', sellado: 32, tapa: 486 },
+    // Cotas remedidas sobre la foto real del producto (Pao la pasó una
+    // nueva toma el 2 de noviembre), igual que se hizo con la de Noche.
+    envase: { imagen: '/images/tubo_dia.png', sellado: 49, tapa: 724 },
   },
   noche: {
     id: 'noche',
@@ -192,10 +192,11 @@ export const PRODUCTOS = {
     icono: 'moon',
     color: '#9C1A9C',
     momento: 3,
-    // Cotas remedidas a mano sobre la foto real del producto (Pao la pasó
-    // el 2 de noviembre): el sellado donde acaba el rizado de arriba, la
-    // tapa donde empieza el plástico oscuro de abajo.
-    envase: { imagen: '/images/tubo_noche.png', sellado: 34, tapa: 488 },
+    // Cotas remedidas sobre la foto real del producto (Pao la pasó una
+    // nueva toma el 2 de noviembre): el sellado donde acaba el rizado de
+    // arriba; la tapa de esta toma es oscura y no la detecta la heurística
+    // de gris claro, así que se usa el 15 % inferior reservado para ese caso.
+    envase: { imagen: '/images/tubo_noche.png', sellado: 49, tapa: 761 },
   },
 }
 
