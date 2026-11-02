@@ -28,8 +28,10 @@ Reúne esto en una pestaña aparte:
       con el dominio verificado, para que los correos de pedido salgan de
       verdad y no se queden solo en el log.
 
-En este documento, **`tudominio.com` es un marcador**: cámbialo por tu
-dominio real en cada paso.
+Este documento ya usa tu dominio real, **`pomassoficial.com`**. El único
+marcador que queda es `TU-BACKEND.up.railway.app`: ese lo genera Railway
+solo cuando creas el servicio (paso 1.6), así que no se puede saber de
+antemano.
 
 ---
 
@@ -94,7 +96,7 @@ PASSWORD_RESET_TTL_MIN=30
 
 # El dominio real del FRONTEND (Vercel), no el del backend. Se ajusta en el
 # paso 4 si todavía no sabes el dominio final.
-CORS_ORIGIN=https://tudominio.com,https://www.tudominio.com
+CORS_ORIGIN=https://pomassoficial.com,https://www.pomassoficial.com
 
 SHIPPING_FLAT_RATE=12900
 FREE_SHIPPING_THRESHOLD=150000
@@ -103,17 +105,17 @@ WOMPI_PUBLIC_KEY=<la pub_prod_... de tu cuenta de Wompi>
 WOMPI_PRIVATE_KEY=<la prv_prod_... de tu cuenta de Wompi>
 WOMPI_INTEGRITY_SECRET=<la de tu cuenta de Wompi>
 WOMPI_EVENTS_SECRET=<la de tu cuenta de Wompi>
-WOMPI_REDIRECT_URL=https://tudominio.com/track.html
+WOMPI_REDIRECT_URL=https://pomassoficial.com/track.html
 PAYMENTS_SANDBOX=false
 
-ADMIN_EMAIL=admin@tudominio.com
+ADMIN_EMAIL=admin@pomassoficial.com
 ADMIN_PASSWORD=<genera uno, ver abajo>
 
 # Opcional: si no lo pones, los correos quedan en el log y la tienda
 # funciona igual, pero nadie recibe el «confirmamos tu pedido».
 RESEND_API_KEY=<de resend.com → API Keys>
-EMAIL_FROM=PomAss <pedidos@tudominio.com>
-FRONTEND_URL=https://tudominio.com
+EMAIL_FROM=PomAss <pedidos@pomassoficial.com>
+FRONTEND_URL=https://pomassoficial.com
 ```
 
 **Genera `JWT_ACCESS_SECRET` y `ADMIN_PASSWORD`** con este comando, una vez
@@ -151,10 +153,10 @@ curl https://TU-BACKEND.up.railway.app/health
 
 Debe responder `{"status":"ok","timestamp":"…"}`.
 
-> **¿Dominio propio para el backend, tipo `api.tudominio.com`?** Es opcional:
+> **¿Dominio propio para el backend, tipo `api.pomassoficial.com`?** Es opcional:
 > el dominio de Railway funciona perfecto para el checkout y para el webhook
 > de Wompi, y es un paso de DNS menos. Si igual lo quieres, en la misma
-> pantalla **Networking** → **Custom Domain**, escribe `api.tudominio.com` y
+> pantalla **Networking** → **Custom Domain**, escribe `api.pomassoficial.com` y
 > Railway te muestra el registro CNAME exacto que debes crear en tu panel de
 > DNS (cópialo tal cual lo muestra la pantalla, no de aquí).
 
@@ -178,7 +180,7 @@ si te equivocas de orden con el paso 1.4.
 ### 1.8 Entra al panel de administración y cambia la contraseña
 
 El `ADMIN_PASSWORD` que pusiste en las variables es la contraseña inicial.
-Entra a `https://tudominio.com/admin.html` (una vez el frontend esté
+Entra a `https://pomassoficial.com/admin.html` (una vez el frontend esté
 desplegado, paso 2) con `ADMIN_EMAIL` y esa contraseña, y considera rotarla
 desde el panel si la compartiste con alguien al configurar esto.
 
@@ -204,7 +206,7 @@ Antes de desplegar, abre **Environment Variables** y añade una sola:
 VITE_API_URL = https://TU-BACKEND.up.railway.app/api
 ```
 
-(o `https://api.tudominio.com/api` si configuraste el dominio propio del
+(o `https://api.pomassoficial.com/api` si configuraste el dominio propio del
 paso 1.6).
 
 **No definas `VITE_WOMPI_WIDGET_URL`.** Esa variable solo existe para que el
@@ -226,15 +228,15 @@ precio del combo aparece (si sale el de respaldo fijo en vez del real, revisa
 
 ### 3.1 Añádelo en Vercel
 
-Proyecto → **Settings** → **Domains** → escribe `tudominio.com` → **Add**.
-Repite con `www.tudominio.com` si quieres que ambos funcionen (Vercel suele
+Proyecto → **Settings** → **Domains** → escribe `pomassoficial.com` → **Add**.
+Repite con `www.pomassoficial.com` si quieres que ambos funcionen (Vercel suele
 ofrecer redirigir uno al otro automáticamente; acepta esa opción).
 
 ### 3.2 Configura el DNS
 
 Vercel te muestra, para cada dominio que agregaste, **el registro exacto**
 que debes crear: normalmente un registro `A` para el dominio raíz
-(`tudominio.com`) y un `CNAME` para `www`. **Copia esos valores de la propia
+(`pomassoficial.com`) y un `CNAME` para `www`. **Copia esos valores de la propia
 pantalla de Vercel en el momento**, no de ningún valor fijo: pueden cambiar.
 
 En el panel de DNS de donde compraste el dominio:
@@ -252,7 +254,7 @@ registros, y emite el certificado TLS solo — no hay nada que instalar a mano.
 ### 3.3 Verifica
 
 ```bash
-curl -I https://tudominio.com
+curl -I https://pomassoficial.com
 ```
 
 Debe responder `200` (o `308`/`301` si redirige `www` ↔ raíz) con un
@@ -267,9 +269,9 @@ marcador o todavía no lo tenías, actualiza ahora en Railway (servicio del
 backend → **Variables**):
 
 ```
-CORS_ORIGIN=https://tudominio.com,https://www.tudominio.com
-WOMPI_REDIRECT_URL=https://tudominio.com/track.html
-FRONTEND_URL=https://tudominio.com
+CORS_ORIGIN=https://pomassoficial.com,https://www.pomassoficial.com
+WOMPI_REDIRECT_URL=https://pomassoficial.com/track.html
+FRONTEND_URL=https://pomassoficial.com
 ```
 
 Guardar las variables dispara un redespliegue solo. Confirma en los logs que
@@ -303,7 +305,7 @@ para siempre: el backend nunca se entera de que Wompi lo aprobó.
    https://TU-BACKEND.up.railway.app/api/payments/webhook/wompi
    ```
 
-   (o `https://api.tudominio.com/api/payments/webhook/wompi` si usas el
+   (o `https://api.pomassoficial.com/api/payments/webhook/wompi` si usas el
    dominio propio del backend). La ruta termina en `/wompi`, no en
    `/webhook` a secas.
 
@@ -325,7 +327,7 @@ pago).
 En este orden, con el sitio real:
 
 1. **Salud**: `curl https://TU-BACKEND.up.railway.app/health` → `200`.
-2. **Catálogo**: abre `https://tudominio.com` y confirma que el precio y los
+2. **Catálogo**: abre `https://pomassoficial.com` y confirma que el precio y los
    productos cargan (vienen de la API, no del valor de respaldo).
 3. **Checkout de invitado**: agrega el combo, pasa por envío, llega a pago.
 4. **El widget que se abre es el real de Wompi** (no el de los tres botones
@@ -337,9 +339,9 @@ En este orden, con el sitio real:
    llegó y el paso 5 quedó bien hecho.
 6. **Correo**: si configuraste Resend, debe llegar el de «recibimos tu
    pedido» y, poco después, el de «pago confirmado».
-7. **Seguimiento**: `https://tudominio.com/track.html` con el número de
+7. **Seguimiento**: `https://pomassoficial.com/track.html` con el número de
    pedido y el correo usado, y debe mostrar el pedido en `PAID`.
-8. **Panel de administración**: `https://tudominio.com/admin.html`, entra y
+8. **Panel de administración**: `https://pomassoficial.com/admin.html`, entra y
    confirma que el pedido aparece ahí también.
 
 Si el paso 5 se queda colgado en «Verificando tu pago…» y nunca confirma, el
