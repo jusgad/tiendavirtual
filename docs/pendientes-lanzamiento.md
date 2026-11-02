@@ -190,4 +190,5 @@ hacer apenas el backend tenga dirección pública.
 
 - [Análisis de brechas](analisis-brechas-blueprint.md) — el detalle técnico de cada hueco
 - [Montar la base en Supabase](howto-supabase.md)
+- [Desplegar en Railway + Vercel, paso a paso](howto-desplegar-railway-vercel.md)
 - [Cómo desplegar](howto-desplegar.md)

@@ -59,6 +59,7 @@ Orientadas a tareas. Asumen que ya conoces lo básico.
 | [Cómo agregar un módulo nuevo al backend](howto-agregar-modulo.md) | Las cuatro capas, el cableado, los tests y la lista de comprobación |
 | [Cómo probar el flujo de pagos](howto-probar-pagos.md) | Firmar y enviar un webhook HMAC a mano; comprobar la idempotencia |
 | [Cómo desplegar a producción](howto-desplegar.md) | Secretos, migraciones, publicación y checklist de producción |
+| [Cómo desplegar en Railway + Vercel, con tu dominio](howto-desplegar-railway-vercel.md) | Instructivo detallado paso a paso: proyecto, variables, DNS y webhook de Wompi |
 
 ---
 
