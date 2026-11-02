@@ -83,6 +83,18 @@ export const envSchema = z
       .url()
       .default('http://localhost:5173')
       .transform((v) => v.replace(/\/+$/, '')),
+
+    // ---- Almacenamiento de imágenes (Supabase Storage) ----
+    // Las tres son opcionales: sin ellas, la app arranca igual y el panel de
+    // administración sigue aceptando imágenes por URL como siempre — solo
+    // el botón «Subir imagen» responde con el error de `NotConfiguredImageStorage`
+    // en vez de la URL pública. No es un requisito de arranque (como el JWT o
+    // Wompi) porque subir fotos no es indispensable para que la tienda venda.
+    SUPABASE_URL: z.string().url().optional(),
+    // La «service role», no la `anon`: necesita permiso de escritura en el
+    // bucket. Nunca viaja al navegador, solo vive en el servidor.
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+    SUPABASE_STORAGE_BUCKET: z.string().min(1).default('product-images'),
   })
   // Endurecimiento en PRODUCCIÓN: prohíbe secretos por defecto y CORS abierto.
   .superRefine((cfg, ctx) => {
@@ -155,6 +167,23 @@ export const envSchema = z
         path: ['FRONTEND_URL'],
         message:
           'Define FRONTEND_URL con la dirección pública de la tienda: los enlaces de los correos salen de ahí y con localhost no abren nada.',
+      })
+    }
+  })
+  // A diferencia del bloque de arriba, esta comprobación no es solo de
+  // producción: una de las dos puesta y la otra no es casi siempre un
+  // despiste al copiar el `.env` (falta una línea), y mejor que la app
+  // avise fuerte a que el botón «Subir imagen» falle en silencio para quien
+  // administra sin decir por qué.
+  .superRefine((cfg, ctx) => {
+    const tieneUrl = Boolean(cfg.SUPABASE_URL)
+    const tieneLlave = Boolean(cfg.SUPABASE_SERVICE_ROLE_KEY)
+    if (tieneUrl !== tieneLlave) {
+      const faltante = tieneUrl ? 'SUPABASE_SERVICE_ROLE_KEY' : 'SUPABASE_URL'
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [faltante],
+        message: `Falta ${faltante}: para subir imágenes hacen falta las dos variables de Supabase Storage juntas, o ninguna.`,
       })
     }
   })

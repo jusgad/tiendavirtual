@@ -144,6 +144,53 @@ async function attempt(path, { method, body, auth }) {
   }
 }
 
+async function attemptUpload(path, file) {
+  const headers = {}
+  const token = getAccessToken()
+  if (token) headers.Authorization = `Bearer ${token}`
+  // Sin `Content-Type`: el navegador lo pone solo al mandar `FormData`, con
+  // el `boundary` del multipart incluido. Si lo fijáramos a mano, el
+  // backend no sabría dónde empieza y acaba cada parte.
+  const formData = new FormData()
+  formData.append('imagen', file)
+
+  try {
+    return await fetch(`${BASE_URL}${path}`, { method: 'POST', headers, body: formData })
+  } catch {
+    throw new ApiError(
+      `No se pudo conectar con la API (${BASE_URL}). ¿Está el backend corriendo?`,
+      0,
+    )
+  }
+}
+
+/**
+ * Sube un archivo como `multipart/form-data`, aparte de `request()` porque
+ * ese siempre manda JSON. Mismo manejo de sesión (401 → renovar → un solo
+ * reintento) para que subir una foto no cierre la sesión del panel por las
+ * buenas si el access token venció justo en ese momento.
+ */
+export async function uploadImage(path, file) {
+  let res = await attemptUpload(path, file)
+
+  if (res.status === 401 && getRefreshToken()) {
+    const renovado = await refreshAccessToken()
+    if (renovado) {
+      res = await attemptUpload(path, file)
+    } else {
+      clearSession()
+      onSessionExpired?.()
+    }
+  }
+
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const message = data?.error?.message || `Error ${res.status}`
+    throw new ApiError(message, res.status, data?.error)
+  }
+  return data
+}
+
 export async function request(path, { method = 'GET', body, auth = true } = {}) {
   const options = { method, body, auth }
   let res = await attempt(path, options)

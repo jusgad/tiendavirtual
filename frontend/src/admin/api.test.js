@@ -106,6 +106,36 @@ describe('adminApi · catálogo', () => {
     expect(JSON.parse(opciones.body)).toEqual({ name: 'Nuevo' })
   })
 
+  it('sube una imagen como multipart, no como JSON', async () => {
+    const { adminApi } = await loadAdminApi()
+    globalThis.fetch = vi.fn().mockResolvedValue(json(201, { url: 'https://cdn.test/foto.jpg' }))
+    const archivo = new File(['contenido'], 'foto.jpg', { type: 'image/jpeg' })
+
+    const resultado = await adminApi.uploadProductImage(archivo)
+
+    const [url, opciones] = globalThis.fetch.mock.calls[0]
+    expect(url).toContain('/products/images')
+    expect(opciones.method).toBe('POST')
+    // Nunca Content-Type a mano: lo pone el navegador con el boundary, y si
+    // este cliente lo fijara, el backend no sabría separar las partes.
+    expect(opciones.headers['Content-Type']).toBeUndefined()
+    expect(opciones.body).toBeInstanceOf(FormData)
+    expect(opciones.body.get('imagen')).toBe(archivo)
+    expect(resultado).toEqual({ url: 'https://cdn.test/foto.jpg' })
+  })
+
+  it('si falla la subida, propaga el mensaje de error del backend', async () => {
+    const { adminApi } = await loadAdminApi()
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(json(503, { error: { message: 'Subir imágenes no está configurado' } }))
+    const archivo = new File(['x'], 'foto.png', { type: 'image/png' })
+
+    await expect(adminApi.uploadProductImage(archivo)).rejects.toThrow(
+      'Subir imágenes no está configurado',
+    )
+  })
+
   it('lista categorías y marcas incluyendo las inactivas', async () => {
     const { adminApi } = await loadAdminApi()
     globalThis.fetch = vi.fn().mockResolvedValue(json(200, { categories: [] }))

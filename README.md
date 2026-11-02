@@ -25,7 +25,7 @@ lector:
 |---|---|
 | 🎓 [Tutorial: tu primer pedido](docs/tutorial-primer-pedido.md) | De cero a un pedido pagado, en 15 minutos |
 | 🔧 [Guías how-to](docs/README.md#guías-how-to) | Entorno local · agregar un módulo · probar pagos · desplegar |
-| 📖 [Referencia](docs/README.md#referencia) | API (48 endpoints) · modelo de datos · configuración · frontend |
+| 📖 [Referencia](docs/README.md#referencia) | API (49 endpoints) · modelo de datos · configuración · frontend |
 | 💡 [Explicación](docs/README.md#explicación) | Decisiones de diseño · modelo de seguridad |
 
 Índice completo en **[docs/README.md](docs/README.md)**.

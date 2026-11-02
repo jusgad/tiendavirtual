@@ -127,6 +127,43 @@ registerPaths({
       responses: { 204: { description: 'Eliminado' }, 404: { description: 'No encontrado' } },
     },
   },
+  '/products/images': {
+    post: {
+      tags: ['Catálogo'],
+      summary: 'Subir una imagen de producto (admin)',
+      description:
+        'Sube el archivo a Supabase Storage y devuelve su URL pública, lista para añadir al ' +
+        'arreglo `images` de un producto (en el `create` o `update`). Si el servidor no tiene ' +
+        'configurado `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`, responde 503.',
+      security: admin,
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              properties: { imagen: { type: 'string', format: 'binary' } },
+              required: ['imagen'],
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: 'Imagen subida',
+          content: {
+            'application/json': {
+              schema: { type: 'object', properties: { url: { type: 'string', format: 'uri' } } },
+            },
+          },
+        },
+        400: { description: 'Archivo faltante, tipo no permitido o más de 5 MB' },
+        401: { description: 'No autenticado' },
+        403: { description: 'Requiere admin' },
+        503: { description: 'El almacenamiento de imágenes no está configurado' },
+      },
+    },
+  },
   '/categories': {
     get: {
       tags: ['Catálogo'],

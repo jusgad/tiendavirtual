@@ -146,6 +146,41 @@ siendo el de ejemplo, así que este paso no se puede saltar por descuido.
 
 ---
 
+## 6. Subir fotos de producto desde el panel (opcional)
+
+Sin esto, el panel sigue aceptando imágenes **por URL** como siempre — este
+paso es solo para que el botón «Cargar foto» (subir el archivo directo desde
+el computador) funcione.
+
+1. En el panel de Supabase, **Storage** → **New bucket**.
+2. Nómbralo `product-images` (o el que vayas a poner en
+   `SUPABASE_STORAGE_BUCKET`).
+3. Márcalo **Public bucket**. Sin esto, la URL que el panel de administración
+   guarda en el producto no abriría para quien visita la tienda — Supabase
+   la serviría solo a quien esté autenticado contra ese proyecto, que no es
+   el caso de un visitante cualquiera.
+4. En `backend/.env`, añade:
+
+   ```bash
+   SUPABASE_URL=https://TU-PROYECTO.supabase.co
+   # Settings → API → Project API keys → `service_role`, NO la `anon`.
+   # Esta nunca viaja al navegador: solo el backend la usa, para poder
+   # escribir en el bucket.
+   SUPABASE_SERVICE_ROLE_KEY=<la service_role>
+   SUPABASE_STORAGE_BUCKET=product-images
+   ```
+
+5. Reinicia el backend. El botón «Cargar foto» del formulario de producto ya
+   sube el archivo y rellena la URL solo.
+
+Las dos primeras variables van **juntas o ninguna**: el arranque rechaza
+tener una sin la otra, porque es casi siempre un despiste al copiar el
+`.env` (ver `tests/unit/shared/env.test.ts`). Sin ellas, el botón sigue
+ahí pero responde con un aviso claro («Subir imágenes no está configurado
+todavía…») en vez de fallar en silencio.
+
+---
+
 ## Si algo sale mal
 
 **«Can't reach database server» o se queda colgado**

@@ -133,3 +133,25 @@ export interface CatalogCache {
   setJson<T>(key: string, value: T, ttlSeconds: number): Promise<void>
   invalidate(): Promise<void>
 }
+
+export interface UploadedImageInput {
+  buffer: Buffer
+  mimeType: string
+}
+
+export interface UploadedImage {
+  url: string
+}
+
+/**
+ * Puerto de almacenamiento de imágenes (implementado con Supabase Storage).
+ *
+ * Solo sube bytes y devuelve la URL pública; no decide qué producto la usa
+ * —eso lo hace quien llama, guardando esa URL en `images` al crear o
+ * actualizar el producto, igual que si la hubiera pegado a mano—. Separarlo
+ * así deja la subida reutilizable el día que otra cosa necesite imágenes
+ * (el logo de una marca, por ejemplo) sin tocar el catálogo.
+ */
+export interface ImageStorage {
+  upload(input: UploadedImageInput): Promise<UploadedImage>
+}

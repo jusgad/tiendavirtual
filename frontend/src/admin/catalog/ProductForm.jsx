@@ -71,6 +71,28 @@ export default function ProductForm({ producto, onCerrar, onGuardado }) {
       images: f.images.map((img, j) => (j === i ? { ...img, [k]: v } : img)),
     }))
 
+  // Estado de la subida de archivos, aparte de `form`: es ephemeral de la
+  // pantalla (qué fila está subiendo, qué falló), no algo que se guarde con
+  // el producto. `subiendoIndice` admite como mucho una subida a la vez:
+  // no hay necesidad real de subir dos fotos en paralelo, y así la fila que
+  // está subiendo no se puede tocar por accidente mientras tanto.
+  const [subiendoIndice, setSubiendoIndice] = useState(null)
+  const [errorSubida, setErrorSubida] = useState('')
+
+  const subirArchivo = async (i, archivo) => {
+    if (!archivo) return
+    setSubiendoIndice(i)
+    setErrorSubida('')
+    try {
+      const { url } = await adminApi.uploadProductImage(archivo)
+      cambiarImagen(i, 'url', url)
+    } catch (err) {
+      setErrorSubida(err.message)
+    } finally {
+      setSubiendoIndice(null)
+    }
+  }
+
   const guardar = async (e) => {
     e.preventDefault()
     const errs = validarProducto(form)
@@ -159,12 +181,15 @@ export default function ProductForm({ producto, onCerrar, onGuardado }) {
         <div>
           <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-[#8A6A4A]">Imágenes</p>
           <p className="mb-3 text-xs text-[#8A6A4A]">
-            Se guardan por dirección web: sube la foto donde la alojes y pega aquí el enlace.
+            Carga la foto desde tu computador, o pega el enlace si ya está alojada en otro sitio.
             La primera es la que se ve en el catálogo.
           </p>
 
           {errores.images && (
             <p className="mb-2 text-xs font-semibold text-red-600">{errores.images}</p>
+          )}
+          {errorSubida && (
+            <p className="mb-2 text-xs font-semibold text-red-600">{errorSubida}</p>
           )}
 
           <div className="space-y-3">
@@ -176,11 +201,37 @@ export default function ProductForm({ producto, onCerrar, onGuardado }) {
                   )}
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
-                  <Input
-                    value={img.url}
-                    onChange={(e) => cambiarImagen(i, 'url', e.target.value)}
-                    placeholder="https://…/foto.png"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={img.url}
+                      onChange={(e) => cambiarImagen(i, 'url', e.target.value)}
+                      placeholder="https://…/foto.png"
+                    />
+                    {/* El input de archivo real va oculto: un <input type="file">
+                        sin estilos no se puede hacer ver como el resto del
+                        panel, así que la etiqueta hace de botón y dispara el
+                        clic sobre el input escondido. */}
+                    <label
+                      className={`flex shrink-0 cursor-pointer items-center rounded-lg border border-[#E7D9C4] px-3 text-xs font-bold text-[#6A3A1C] hover:bg-[#FFF3DE] ${
+                        subiendoIndice === i ? 'pointer-events-none opacity-60' : ''
+                      }`}
+                    >
+                      {subiendoIndice === i ? 'Subiendo…' : 'Cargar foto'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        disabled={subiendoIndice !== null}
+                        onChange={(e) => {
+                          subirArchivo(i, e.target.files?.[0])
+                          // Limpia el valor: sin esto, volver a elegir EL
+                          // MISMO archivo dos veces seguidas no dispara
+                          // `onChange` la segunda vez.
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                  </div>
                   <Input
                     value={img.alt}
                     onChange={(e) => cambiarImagen(i, 'alt', e.target.value)}

@@ -7,9 +7,11 @@ import {
   GetProductUseCase,
   ListProductsUseCase,
   UpdateProductUseCase,
+  UploadProductImageUseCase,
 } from '../../../src/modules/catalog/application/productUseCases'
 import {
   FakeCatalogCache,
+  FakeImageStorage,
   InMemoryBrandRepository,
   InMemoryCategoryRepository,
   InMemoryProductRepository,
@@ -32,6 +34,7 @@ function makeController() {
     new CreateProductUseCase(products, brands, categories, cache),
     new UpdateProductUseCase(products, cache),
     new DeleteProductUseCase(products, cache),
+    new UploadProductImageUseCase(new FakeImageStorage()),
   )
   const listSpy = jest.spyOn(products, 'list')
   return { controller, listSpy }

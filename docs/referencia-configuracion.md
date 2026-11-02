@@ -89,6 +89,19 @@ Empieza con las de sandbox y cámbialas por las de producción al lanzar.
 > `PAYMENTS_WEBHOOK_SECRET` **ya no existe**: lo reemplazan los dos secretos de
 > Wompi. Si lo tienes en tu `.env`, puedes borrarlo.
 
+### Almacenamiento de imágenes · Supabase Storage (opcional)
+
+Sin estas tres, el panel sigue aceptando imágenes por URL como siempre; solo
+el botón «Cargar foto» (subir el archivo) deja de funcionar y responde con un
+aviso claro en vez de fallar en silencio. Paso a paso para crear el bucket:
+[howto-supabase.md](howto-supabase.md#6-subir-fotos-de-producto-desde-el-panel-opcional).
+
+| Variable | Tipo | Default | Descripción |
+|---|---|---|---|
+| `SUPABASE_URL` | URL | — | La del proyecto de Supabase. Va **junto con** `SUPABASE_SERVICE_ROLE_KEY`: una sin la otra, el arranque falla |
+| `SUPABASE_SERVICE_ROLE_KEY` | string | — | La `service_role`, no la `anon` — necesita permiso de escritura en el bucket. Nunca viaja al navegador |
+| `SUPABASE_STORAGE_BUCKET` | string | `product-images` | Debe existir de antes y estar marcado **público** en el panel de Supabase |
+
 ### Seed
 
 | Variable | Tipo | Default | Descripción |

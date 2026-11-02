@@ -1,10 +1,12 @@
 import { Request, Response } from 'express'
+import { BadRequestError } from '../../../../shared/errors/AppError'
 import {
   CreateProductUseCase,
   DeleteProductUseCase,
   GetProductUseCase,
   ListProductsUseCase,
   UpdateProductUseCase,
+  UploadProductImageUseCase,
 } from '../../application/productUseCases'
 import {
   CreateCategoryUseCase,
@@ -27,6 +29,7 @@ export class ProductController {
     private readonly createProduct: CreateProductUseCase,
     private readonly updateProduct: UpdateProductUseCase,
     private readonly deleteProduct: DeleteProductUseCase,
+    private readonly uploadProductImage: UploadProductImageUseCase,
   ) {}
 
   list = async (req: Request, res: Response) => {
@@ -66,6 +69,19 @@ export class ProductController {
   remove = async (req: Request, res: Response) => {
     await this.deleteProduct.execute(req.params.id)
     res.status(204).send()
+  }
+
+  // `req.file` lo llena el middleware `multer` (ver catalog.module.ts), no
+  // la validación de Zod: un archivo subido no es JSON, así que no pasa por
+  // `validate({ body })` como el resto de las rutas.
+  uploadImage = async (req: Request, res: Response) => {
+    const file = req.file
+    if (!file) throw new BadRequestError('Falta el archivo de la imagen (campo "imagen")')
+    const resultado = await this.uploadProductImage.execute({
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+    })
+    res.status(201).json(resultado)
   }
 }
 

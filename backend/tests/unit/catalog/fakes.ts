@@ -5,11 +5,14 @@ import {
   Category,
   CategoryRepository,
   CreateProductData,
+  ImageStorage,
   Paginated,
   Product,
   ProductFilter,
   ProductRepository,
   UpdateProductData,
+  UploadedImage,
+  UploadedImageInput,
 } from '../../../src/modules/catalog/domain/ports'
 
 let seq = 0
@@ -145,5 +148,14 @@ export class FakeCatalogCache implements CatalogCache {
   async invalidate(): Promise<void> {
     this.invalidateCalls++
     this.store.clear()
+  }
+}
+
+export class FakeImageStorage implements ImageStorage {
+  recibido: UploadedImageInput | null = null
+  respuesta: UploadedImage = { url: 'https://fake.test/img.jpg' }
+  async upload(input: UploadedImageInput): Promise<UploadedImage> {
+    this.recibido = input
+    return this.respuesta
   }
 }

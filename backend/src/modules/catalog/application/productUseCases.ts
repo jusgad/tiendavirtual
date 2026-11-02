@@ -5,11 +5,14 @@ import {
   CatalogCache,
   CategoryRepository,
   CreateProductData,
+  ImageStorage,
   Paginated,
   Product,
   ProductFilter,
   ProductRepository,
   UpdateProductData,
+  UploadedImage,
+  UploadedImageInput,
 } from '../domain/ports'
 
 const LIST_TTL = 120 // seg
@@ -126,5 +129,30 @@ export class DeleteProductUseCase {
 
     await this.products.delete(id)
     await this.cache.invalidate()
+  }
+}
+
+// Validación de defensa en profundidad: nunca confiar solo en lo que ya
+// filtró `multer` en la capa HTTP (`fileFilter` + `limits`). Si un día se
+// llama a este caso de uso desde otro sitio —un import masivo, por
+// ejemplo—, estas reglas se aplican igual.
+const TIPOS_DE_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
+const TAMANO_MAXIMO_BYTES = 5 * 1024 * 1024 // 5 MB
+
+/** Sube una imagen de producto al almacenamiento y devuelve su URL pública. */
+export class UploadProductImageUseCase {
+  constructor(private readonly storage: ImageStorage) {}
+
+  async execute(input: UploadedImageInput): Promise<UploadedImage> {
+    if (!TIPOS_DE_IMAGEN_PERMITIDOS.includes(input.mimeType)) {
+      throw new BadRequestError('Solo se aceptan imágenes JPG, PNG o WEBP')
+    }
+    if (input.buffer.length === 0) {
+      throw new BadRequestError('El archivo llegó vacío')
+    }
+    if (input.buffer.length > TAMANO_MAXIMO_BYTES) {
+      throw new BadRequestError('La imagen no puede pesar más de 5 MB')
+    }
+    return this.storage.upload(input)
   }
 }

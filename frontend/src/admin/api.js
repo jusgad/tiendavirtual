@@ -1,7 +1,7 @@
 // Endpoints de administración. El motor HTTP (sesión, renovación, reintento)
 // es el mismo que usa el checkout.
 
-import { request } from '../shared/httpClient.js'
+import { request, uploadImage } from '../shared/httpClient.js'
 import { limitesConsulta } from './reports/reportsModel.js'
 
 export const adminApi = {
@@ -35,6 +35,10 @@ export const adminApi = {
   createProduct: (datos) => request('/products', { method: 'POST', body: datos }),
   updateProduct: (id, datos) => request(`/products/${id}`, { method: 'PATCH', body: datos }),
   deleteProduct: (id) => request(`/products/${id}`, { method: 'DELETE' }),
+  // Devuelve { url }: la URL pública ya lista para meter en `images`. Si el
+  // servidor no tiene Supabase Storage configurado, `uploadImage` lanza con
+  // el mensaje que puso el backend (ver `ProductForm.jsx`).
+  uploadProductImage: (file) => uploadImage('/products/images', file),
 
   listCategories: () => request('/categories?includeInactive=true'),
   createCategory: (datos) => request('/categories', { method: 'POST', body: datos }),

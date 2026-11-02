@@ -110,3 +110,41 @@ describe('env — endurecimiento de producción', () => {
     expect(errorPaths({ ...base, FRONTEND_URL: 'http://localhost:5173' })).toContain('FRONTEND_URL')
   })
 })
+
+/**
+ * A diferencia de las de arriba, esta comprobación no está gateada a
+ * producción: una de las dos variables de Supabase Storage puesta y la otra
+ * no es casi siempre un despiste al copiar el `.env`, en cualquier entorno.
+ */
+describe('env — SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY van juntas', () => {
+  it('pasa sin ninguna de las dos (sube imágenes por URL, como siempre)', () => {
+    expect(envSchema.safeParse(base).success).toBe(true)
+  })
+
+  it('pasa con las dos puestas', () => {
+    const r = envSchema.safeParse({
+      ...base,
+      SUPABASE_URL: 'https://proyecto.supabase.co',
+      SUPABASE_SERVICE_ROLE_KEY: 'un-secreto-real',
+    })
+    expect(r.success).toBe(true)
+  })
+
+  it('rechaza SUPABASE_URL sin la llave', () => {
+    expect(errorPaths({ ...base, SUPABASE_URL: 'https://proyecto.supabase.co' })).toContain(
+      'SUPABASE_SERVICE_ROLE_KEY',
+    )
+  })
+
+  it('rechaza la llave sin SUPABASE_URL', () => {
+    expect(errorPaths({ ...base, SUPABASE_SERVICE_ROLE_KEY: 'un-secreto-real' })).toContain(
+      'SUPABASE_URL',
+    )
+  })
+
+  it('se exige igual fuera de producción', () => {
+    expect(
+      errorPaths({ ...base, NODE_ENV: 'development', SUPABASE_URL: 'https://proyecto.supabase.co' }),
+    ).toContain('SUPABASE_SERVICE_ROLE_KEY')
+  })
+})

@@ -322,6 +322,27 @@ producto sin fotos.
 
 ---
 
+### `POST /products/images` 🔒👑
+
+Sube una imagen a Supabase Storage y devuelve su URL pública, lista para
+meter en el `images` de `POST`/`PATCH /products`. No crea ni modifica ningún
+producto por sí sola — solo sube el archivo.
+
+**Cuerpo**: `multipart/form-data` con un único campo, `imagen` (el archivo).
+No pasa por `validate({ body })` como el resto: lo procesa `multer`, no Zod.
+
+**Restricciones**: JPG, PNG o WEBP; hasta 5 MB.
+
+**`201 Created`**: `{ "url": "https://…/storage/v1/object/public/…" }`
+
+**Errores**: `400 BAD_REQUEST` (falta el archivo, tipo no permitido, o pesa
+más de 5 MB) · `503 SERVICE_UNAVAILABLE` si el servidor no tiene
+`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` configuradas (ver
+[howto-supabase.md](howto-supabase.md#6-subir-fotos-de-producto-desde-el-panel-opcional))
+o si Supabase Storage no responde.
+
+---
+
 ### `GET /categories` · `GET /brands`
 
 Públicos. Por defecto devuelven solo los activos; con `?includeInactive=true`

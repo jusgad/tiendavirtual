@@ -69,7 +69,7 @@ Orientada a consultar. Descripción exacta, derivada del código.
 
 | Documento | Cubre |
 |---|---|
-| [API REST](referencia-api.md) | Los 48 endpoints: autenticación, contratos de entrada y salida, códigos de error, límites |
+| [API REST](referencia-api.md) | Los 49 endpoints: autenticación, contratos de entrada y salida, códigos de error, límites |
 | [Modelo de datos](referencia-modelo-datos.md) | 12 modelos Prisma, 5 enums, relaciones, índices, migraciones y seed |
 | [Configuración](referencia-configuracion.md) | Todas las variables de entorno, scripts npm, Docker, CI y puertos |
 | [Frontend](referencia-frontend.md) | Landing y demo de checkout, componentes, cliente de API, sistema de diseño |
