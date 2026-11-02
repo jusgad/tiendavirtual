@@ -63,7 +63,7 @@ crítico.
 | 8 | Landing → checkout real | ⚠️ ~60 % | ⚠️ Sin cambios. Ver [abajo](#step-8-está-hecho-a-medias) |
 | 9 | Imágenes a Supabase Storage | ❌ | ⚠️ **Código listo**: el seed ya crea 2 `ProductImage` con base configurable por `PRODUCT_IMAGE_BASE_URL`. Falta el bucket |
 | 10 | Variables de entorno de producción | ❌ | ⚠️ **Declaradas y validadas** en `env.ts` y `.env.example`. Faltan los valores reales |
-| 11 | Desplegar backend en Railway | ❌ | ❌ **Pendiente** |
+| 11 | Desplegar backend en Render | ❌ | ❌ **Pendiente** |
 | 12 | Desplegar frontend en Vercel | ❌ | ❌ **Pendiente** |
 | 13 | QA end-to-end en sandbox | ❌ | ❌ **Pendiente** |
 | 14 | Wompi a llaves de producción | ❌ | ❌ **Pendiente** |
@@ -230,7 +230,7 @@ checkout.
 
 Es una decisión deliberada del diseño original (un carrito que pierde productos
 en silencio es peor que un error visible), pero cambia de categoría cuando Redis
-pasa a estar en el camino crítico de todas las ventas. Al desplegar en Railway
+pasa a estar en el camino crítico de todas las ventas. Al desplegar en Render
 (Step 11) conviene tratarlo como servicio crítico: monitoreo, alertas y un plan
 para su indisponibilidad.
 
@@ -312,7 +312,7 @@ Verificado ejecutando los comandos, no por lectura:
 
 Y coincide con lo que el blueprint da por bueno:
 
-- **`Dockerfile` listo para Railway** (Step 11): multietapa, poda dependencias de desarrollo, fija `NODE_ENV=production` y corre como el usuario no-root `node`.
+- **`Dockerfile` listo para Render** (Step 11): multietapa, poda dependencias de desarrollo, fija `NODE_ENV=production` y corre como el usuario no-root `node`.
 - **Build multipágina listo para Vercel** (Step 12): las dos entradas ya están declaradas en `vite.config.js`, sin cambios de configuración.
 - **`env.ts` rechaza secretos por defecto en producción** (§5.7): confirmado, incluidos `PAYMENTS_WEBHOOK_SECRET`, `ADMIN_PASSWORD` y `CORS_ORIGIN=*`.
 - **Checkout de invitado completo** (§2 item 2): `Order.userId` nullable + `guestEmail`, `optionalAuth` en `POST /orders` y `POST /payments`.
@@ -345,7 +345,7 @@ Ajuste propuesto al Build Order, insertando el paso que falta:
 | 6 | Step 7 — vista de seguimiento | Ya con estados reales que mostrar |
 | 7 | Step 8 — landing → checkout | Solo `FloatingCta.jsx` + decisión sobre los botones de WhatsApp |
 | 8 | Steps 1, 2, 9 — Supabase, seed real, imágenes | Independientes; se pueden adelantar en paralelo |
-| 9 | Steps 10-12 — env, Railway, Vercel | |
+| 9 | Steps 10-12 — env, Render, Vercel | |
 | 10 | Steps 13-14 — QA sandbox y llaves reales | |
 | 11 | Step 15 — emails | Opcional, pero ver nota abajo |
 

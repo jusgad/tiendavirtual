@@ -1,8 +1,8 @@
 # Cómo desplegar a producción
 
-> **¿Vas a usar Railway para el backend y Vercel para el frontend?** Hay una
+> **¿Vas a usar Render para el backend y Vercel para el frontend?** Hay una
 > versión mucho más detallada, paso a paso con capturas de qué pantalla toca
-> en cada sitio: [howto-desplegar-railway-vercel.md](howto-desplegar-railway-vercel.md).
+> en cada sitio: [howto-desplegar-render-vercel.md](howto-desplegar-render-vercel.md).
 > Este documento es la versión general, que cubre cualquier plataforma.
 
 Al terminar tendrás el backend sirviendo la API con secretos propios y el

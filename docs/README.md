@@ -59,7 +59,7 @@ Orientadas a tareas. Asumen que ya conoces lo básico.
 | [Cómo agregar un módulo nuevo al backend](howto-agregar-modulo.md) | Las cuatro capas, el cableado, los tests y la lista de comprobación |
 | [Cómo probar el flujo de pagos](howto-probar-pagos.md) | Firmar y enviar un webhook HMAC a mano; comprobar la idempotencia |
 | [Cómo desplegar a producción](howto-desplegar.md) | Secretos, migraciones, publicación y checklist de producción |
-| [Cómo desplegar en Railway + Vercel, con tu dominio](howto-desplegar-railway-vercel.md) | Instructivo detallado paso a paso: base de datos en Supabase, variables de Railway y Vercel, DNS y webhook de Wompi |
+| [Cómo desplegar en Render + Vercel, con tu dominio](howto-desplegar-render-vercel.md) | Instructivo detallado paso a paso: base de datos en Supabase, variables de Render y Vercel, DNS y webhook de Wompi |
 
 ---
 
@@ -95,7 +95,7 @@ funciona el sistema, sino hacia dónde va.
 
 | Documento | Cubre |
 |---|---|
-| [Blueprint de finalización](pomass-tiendavirtual-blueprint.md) | Plan de 15 pasos hasta producción: Wompi, Supabase, Railway, Vercel, seguimiento de pedido sin cuenta |
+| [Blueprint de finalización](pomass-tiendavirtual-blueprint.md) | Plan de 15 pasos hasta producción: Wompi, Supabase, Render, Vercel, seguimiento de pedido sin cuenta |
 | [Análisis de brechas](analisis-brechas-blueprint.md) | Contraste del blueprint contra el código real: qué está hecho, qué falta, qué el blueprint no cubre |
 
 ---

@@ -44,9 +44,9 @@ Antes de escribir una sola línea de código, lee `README.md`, `ARCHITECTURE.md`
 | 6 | Base de datos | Postgres local (Docker) | Migrar a **Supabase Postgres administrado** |
 | 7 | Imágenes de producto | Locales / placeholder | Migrar a **Supabase Storage** |
 | 8 | Catálogo sembrado (`seed.ts`) | Datos genéricos de ejemplo (3 marcas, categorías tipo "lubricantes", "higiene masculina") que no reflejan el negocio real | Re-sembrar con: 1 marca (PomAss), 1 producto real (Estuche Día + Noche) |
-| 9 | Hosting | No configurado | Backend → **Railway** (confirmado). Frontend → **Vercel** |
+| 9 | Hosting | No configurado | Backend → **Render** (confirmado). Frontend → **Vercel** |
 | 10 | Emails transaccionales (confirmación de compra + link de seguimiento) | ❌ No existe módulo de email | Agregar (Resend) — ver Build Order, paso opcional pero recomendado |
-| 11 | Escalabilidad de base | Ya bien encaminada: backend sin estado en memoria (carrito invitado en Redis), stock decrementado atómicamente, caché de catálogo versionada en Redis | Falta: pooling de conexiones Postgres para Supabase (ver §6), y desplegar el backend como contenedor sin estado para poder escalar horizontalmente en Railway |
+| 11 | Escalabilidad de base | Ya bien encaminada: backend sin estado en memoria (carrito invitado en Redis), stock decrementado atómicamente, caché de catálogo versionada en Redis | Falta: pooling de conexiones Postgres para Supabase (ver §6), y desplegar el backend como contenedor sin estado para poder escalar horizontalmente en Render |
 
 ---
 
@@ -55,7 +55,7 @@ Antes de escribir una sola línea de código, lee `README.md`, `ARCHITECTURE.md`
 | Decisión | Elegido | Por qué |
 |---|---|---|
 | CTA de la landing | Reemplazar WhatsApp por el checkout real | El dueño quiere una tienda real, no un catálogo con desvío a WhatsApp. WhatsApp queda solo como canal de soporte/dudas si se desea, no de venta. |
-| Hosting backend | Railway | Despliega el `Dockerfile` que ya existe casi sin cambios, soporta procesos persistentes (necesarios por Redis + Postgres vía Prisma), plan gratuito suficiente para arrancar y escala verticalmente/horizontalmente después sin migrar de plataforma. |
+| Hosting backend | Render | Despliega el `Dockerfile` que ya existe casi sin cambios, soporta procesos persistentes (necesarios por Redis + Postgres vía Prisma), plan gratuito suficiente para arrancar (con cold start; el plan Starter lo evita) y escala verticalmente/horizontalmente después sin migrar de plataforma. |
 | Base de datos | Supabase Postgres | Managed, con backups automáticos, panel de administración, y Storage incluido para las imágenes de producto — sin tener que operar Postgres tú mismo. |
 | Rol de Supabase | **Solo** Postgres administrado + Storage. El backend Express/Prisma sigue siendo la única fuente de lógica de negocio. | El frontend **no** habla directo con Supabase (ni Auth ni API REST de Supabase). Si lo hiciera, perderías el stock atómico, los cupones y el checkout transaccional que ya están bien resueltos en el backend — reconstruirlo como reglas RLS en SQL sería más frágil y duplicaría lógica. |
 | Pasarela de pago | Wompi (Widget de Checkout) | Pedido explícito del dueño + resuelve de raíz el problema de PCI-DSS: el número de tarjeta nunca toca tu servidor. Cubre tarjeta, Nequi, PSE y Bancolombia en un solo proveedor — no hace falta un adaptador por método como hoy. |
@@ -105,7 +105,7 @@ No se elimina la capacidad del modelo de tener múltiples productos/marcas/categ
 
 1. Crear proyecto en Supabase (región más cercana a Colombia disponible, ej. `us-east-1`).
 2. Copiar **dos** cadenas de conexión del panel de Supabase (Settings → Database):
-   - **Connection pooling (puerto 6543, PgBouncer)** → usar como `DATABASE_URL` en producción (Railway). Necesaria porque contenedores/serverless abren muchas conexiones cortas; sin pooler se agota el límite de Postgres rápido al escalar.
+   - **Connection pooling (puerto 6543, PgBouncer)** → usar como `DATABASE_URL` en producción (Render). Necesaria porque contenedores/serverless abren muchas conexiones cortas; sin pooler se agota el límite de Postgres rápido al escalar.
    - **Direct connection (puerto 5432)** → usar como `DIRECT_URL`, solo para migraciones (`prisma migrate deploy`), porque el pooler en modo transacción no soporta bien los comandos DDL de las migraciones.
 3. En `backend/prisma/schema.prisma`, el bloque `datasource db` necesita el campo `directUrl`:
    ```prisma
@@ -118,7 +118,7 @@ No se elimina la capacidad del modelo de tener múltiples productos/marcas/categ
 4. Correr `npx prisma migrate deploy` apuntando a Supabase (usa `DIRECT_URL` automáticamente para esto gracias al paso 3).
 5. Correr el seed (`npm run prisma:seed`) ya actualizado con los datos reales (§4.3).
 6. **Storage:** crear un bucket público `product-images` en Supabase Storage, subir las fotos reales del estuche (las que ya existen en `frontend/src/assets/products/`), y usar las URLs públicas resultantes en `ProductImage.url` del seed.
-7. Confirmar `NODE_ENV=production` en Railway — `shared/config/env.ts` ya rechaza automáticamente secretos por defecto inseguros (`PAYMENTS_WEBHOOK_SECRET`, `ADMIN_PASSWORD`) y `CORS_ORIGIN=*` en ese modo; no lo desactives.
+7. Confirmar `NODE_ENV=production` en Render — `shared/config/env.ts` ya rechaza automáticamente secretos por defecto inseguros (`WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`, `ADMIN_PASSWORD`) y `CORS_ORIGIN=*` en ese modo; no lo desactives.
 
 No se toca Prisma Client, no se instala el SDK de Supabase en el backend — Prisma sigue hablando con Supabase igual que con cualquier Postgres, es solo una cadena de conexión distinta.
 
@@ -210,19 +210,19 @@ Cambiar los CTA de `OfferCard.jsx`, `FloatingCta.jsx`, `StickyBar.jsx` para apun
 Crear bucket público, subir las fotos reales del producto, actualizar las URLs en el seed del Step 2, correr el seed ya sí contra Supabase.
 
 **Step 10 — Variables de entorno de producción.**
-Generar secretos fuertes y únicos para: `JWT_ACCESS_SECRET`, `PAYMENTS_WEBHOOK_SECRET` → reemplazar por las llaves reales de Wompi (pública/privada/integridad/eventos), `ADMIN_PASSWORD`, `DATABASE_URL`/`DIRECT_URL` (Supabase), `CORS_ORIGIN` (dominio real del frontend en Vercel), `REDIS_URL` (el que dé Railway). Confirmar `NODE_ENV=production`.
+Generar secretos fuertes y únicos para: `JWT_ACCESS_SECRET`, `PAYMENTS_WEBHOOK_SECRET` → reemplazar por las llaves reales de Wompi (pública/privada/integridad/eventos), `ADMIN_PASSWORD`, `DATABASE_URL`/`DIRECT_URL` (Supabase), `CORS_ORIGIN` (dominio real del frontend en Vercel), `REDIS_URL` (el que dé Render). Confirmar `NODE_ENV=production`.
 
-**Step 11 — Desplegar backend en Railway.**
-Usar el `Dockerfile` existente. Agregar plugin de Redis de Railway. Configurar las variables del Step 10. Correr `prisma migrate deploy` como parte del release (o manualmente la primera vez).
+**Step 11 — Desplegar backend en Render.**
+Usar el `Dockerfile` existente, con el Root Directory en `backend` y el comando de arranque sobrescrito a `sh -c "npx prisma migrate deploy && node dist/main.js"` (el `Dockerfile` por sí solo no migra). Agregar un servicio Key Value (Redis) de Render en la misma región. Configurar las variables del Step 10.
 
 **Step 12 — Desplegar frontend en Vercel.**
-Configurar build de Vite (ya multi-página, no requiere cambios de config), variable `VITE_API_URL` apuntando al backend de Railway, dominio custom si ya existe.
+Configurar build de Vite (ya multi-página, no requiere cambios de config), variable `VITE_API_URL` apuntando al backend de Render, dominio custom si ya existe.
 
 **Step 13 — QA end-to-end en sandbox de Wompi.**
 Flujo completo: comprar como invitado → pagar con tarjeta/Nequi de prueba en el widget → confirmar que el webhook mueve el pedido a `PAID` → seguimiento de pedido muestra el estado correcto → el pedido aparece en el panel admin con el reporte de ventas.
 
 **Step 14 — Pasar Wompi a llaves de producción.**
-Reemplazar llaves de sandbox por las reales en Railway. Hacer una compra real de bajo monto para confirmar el flujo completo con dinero real antes de anunciar la tienda.
+Reemplazar llaves de sandbox por las reales en Render. Hacer una compra real de bajo monto para confirmar el flujo completo con dinero real antes de anunciar la tienda.
 
 **Step 15 (opcional, recomendado) — Emails transaccionales.**
 Agregar Resend (o similar) para enviar confirmación de compra + link de seguimiento al correo del cliente al pasar a `PAID`. No es bloqueante para lanzar, pero mejora mucho la experiencia de un cliente sin cuenta que solo tiene el link como referencia — sin email, el único lugar donde ve el link es la pantalla de confirmación al momento de comprar.
@@ -240,7 +240,7 @@ Agregar Resend (o similar) para enviar confirmación de compra + link de seguimi
 | `WOMPI_INTEGRITY_SECRET` | Para firmar la referencia+monto que ve el widget | Nueva — reemplaza el rol de `PAYMENTS_WEBHOOK_SECRET` para el widget |
 | `WOMPI_EVENTS_SECRET` | Para verificar el checksum de los webhooks de Wompi | Nueva — reemplaza `PAYMENTS_WEBHOOK_SECRET` |
 | `SUPABASE_STORAGE_URL` / bucket público | Base para las URLs de imágenes de producto | Nueva (o simplemente hardcodear la URL pública del bucket en el seed, no hace falta una variable si no cambia por ambiente) |
-| `VITE_API_URL` (frontend) | URL del backend en Railway | Ya existe la variable, cambia el valor |
+| `VITE_API_URL` (frontend) | URL del backend en Render | Ya existe la variable, cambia el valor |
 | `PAYMENTS_WEBHOOK_SECRET` | — | **Se elimina**, reemplazado por los dos secretos de Wompi de arriba |
 
 Todo lo demás en `backend/.env.example` (`JWT_ACCESS_SECRET`, `SHIPPING_FLAT_RATE`, `ADMIN_EMAIL`/`ADMIN_PASSWORD`, etc.) se mantiene igual, solo se les debe poner valores reales de producción en el Step 10.
@@ -258,10 +258,10 @@ Todo lo demás en `backend/.env.example` (`JWT_ACCESS_SECRET`, `SHIPPING_FLAT_RA
 
 ## 12. Escalabilidad — por qué esto no se va a estancar
 
-- El backend ya es **sin estado**: el carrito de invitado vive en Redis (no en memoria del proceso), así que se pueden correr múltiples instancias detrás de Railway sin pegajosidad de sesión.
+- El backend ya es **sin estado**: el carrito de invitado vive en Redis (no en memoria del proceso), así que se pueden correr múltiples instancias detrás de Render sin pegajosidad de sesión.
 - El stock se descuenta con `UPDATE ... WHERE stock >= cantidad` (sin locks), y los cupones con el mismo patrón — soporta compras concurrentes sin condiciones de carrera, sea 1 instancia o 10.
 - La caché de catálogo es versionada (`INCR` de un contador, nunca `KEYS` sobre Redis) — invalidar no se vuelve más lento a medida que crece el catálogo.
-- Con el pooler de Supabase (§5) configurado desde el día uno, agregar réplicas del backend en Railway no agota las conexiones de Postgres.
+- Con el pooler de Supabase (§5) configurado desde el día uno, agregar réplicas del backend en Render no agota las conexiones de Postgres.
 - Vercel y Supabase Storage ya sirven detrás de CDN — las imágenes de producto no dependen de tu servidor.
 - Cuando el catálogo crezca más allá de un producto, no hay que rediseñar nada: `catalog`, `cart`, `orders` ya están escritos para múltiples productos/marcas/categorías — el seed de hoy es minimalista porque el negocio de hoy lo es, no porque el modelo esté limitado.
 

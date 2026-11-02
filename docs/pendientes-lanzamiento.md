@@ -63,7 +63,7 @@ medida que se cierra cada punto. Ordenada por dependencia, no por tamaño.
   [howto-supabase.md](howto-supabase.md), incluido cómo **desactivar la Data
   API**, que no es opcional.
 
-  Falta: Redis (lo da Railway), desplegar backend en Railway y frontend en
+  Falta: Redis (lo da Render), desplegar backend en Render y frontend en
   Vercel. Verificado: la conexión directa de Supabase es IPv6 y no resuelve
   desde esta máquina — las dos cadenas van por el pooler, y el script lo
   impone.
@@ -169,7 +169,7 @@ credenciales y datos tuyos.
 | Variable | De dónde sale |
 |---|---|
 | `DATABASE_URL` y `DIRECT_URL` | Supabase → Connect. **Las dos por el pooler**: transacción (6543, con `?pgbouncer=true`) y sesión (5432). Ver [howto-supabase.md](howto-supabase.md). |
-| `REDIS_URL` | Railway → añadir Redis al proyecto. |
+| `REDIS_URL` | Render → crear un servicio Key Value (Redis) en la misma región. |
 | `FRONTEND_URL` | La dirección pública de la tienda. En producción no puede quedar en `localhost`: el arranque falla si se intenta. |
 | `CORS_ORIGIN` | La misma dirección. En producción `*` está prohibido. |
 | `RESEND_API_KEY` | resend.com → API Keys. |
@@ -190,5 +190,5 @@ hacer apenas el backend tenga dirección pública.
 
 - [Análisis de brechas](analisis-brechas-blueprint.md) — el detalle técnico de cada hueco
 - [Montar la base en Supabase](howto-supabase.md)
-- [Desplegar en Railway + Vercel, paso a paso](howto-desplegar-railway-vercel.md)
+- [Desplegar en Render + Vercel, paso a paso](howto-desplegar-render-vercel.md)
 - [Cómo desplegar](howto-desplegar.md)
