@@ -69,7 +69,7 @@ export default function Marca() {
                 en el titular y en la banda del ritual. Aquí queda lo que
                 solo se puede contar aquí: quién es. */}
             <p className="pm-cuerpo-lg pm-suave mt-6">
-              Pao Díaz la creó por una razón sencilla: lo que buscaba no existía en el país.
+              Paola Díaz la creó por una razón sencilla: lo que buscaba no existía en el país.
             </p>
           </Bloque>
         </div>
