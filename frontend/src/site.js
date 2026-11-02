@@ -92,9 +92,14 @@ export function whatsappUrl(
  * su propio mensaje, y sale de `whatsappUrl()`.
  */
 export const REDES = [
-  { id: 'instagram', nombre: 'Instagram', url: '' },
+  // Sin el `?srtk=…` con el que llegó el enlace: es el identificador que
+  // Instagram pega al compartir desde la app, sirve para medir quién compartió
+  // qué y no hace falta para abrir el perfil. Publicarlo en la web sería
+  // mandarle ese dato a Instagram en cada visita.
+  { id: 'instagram', nombre: 'Instagram', url: 'https://www.instagram.com/pomass_bypaodiaz' },
+  // Sin cuenta todavía: mientras la URL esté vacía, el cuadro no se pinta.
   { id: 'facebook', nombre: 'Facebook', url: '' },
-  { id: 'tiktok', nombre: 'TikTok', url: '' },
+  { id: 'tiktok', nombre: 'TikTok', url: 'https://www.tiktok.com/@paodiazpompass' },
 ]
 
 /** Las redes que ya tienen URL: las únicas que se muestran. */
