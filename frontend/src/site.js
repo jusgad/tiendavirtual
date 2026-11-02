@@ -173,7 +173,9 @@ export const PRODUCTOS = {
     icono: 'sun',
     color: '#F26B0F',
     momento: 1,
-    envase: { imagen: '/images/tubo_dia.png', sellado: 30, tapa: 508 },
+    // Cotas remedidas a mano sobre la foto real del producto (Pao la pasó
+    // el 2 de noviembre), igual que se hizo con la de Noche.
+    envase: { imagen: '/images/tubo_dia.png', sellado: 32, tapa: 486 },
   },
   noche: {
     id: 'noche',
