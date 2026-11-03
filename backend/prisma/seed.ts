@@ -115,14 +115,20 @@ async function main() {
   // ----- Imágenes del producto -----
   // `position` es la clave estable para re-sembrar sin duplicar (ProductImage
   // no tiene restricción de unicidad propia).
-  // PNG con fondo transparente, a 400px de ancho (~250-310 KB). El ancho sale
-  // de dónde se muestran: 150px en la landing y ~300px en la tarjeta del
-  // checkout, así que 400 deja margen para pantallas retina sin cargar de más.
-  // Los originales rondaban los 5 MB, inviables como miniatura en datos
-  // móviles, que es como se compra esto.
+  // PNG con fondo transparente, a 400-480px de ancho (~250-345 KB). El ancho
+  // sale de dónde se muestran: 150px en la landing y ~300px en la tarjeta del
+  // checkout, así que ese rango deja margen para pantallas retina sin cargar
+  // de más. Los originales rondaban los 5 MB, inviables como miniatura en
+  // datos móviles, que es como se compra esto.
+  //
+  // La posición 0 es la que se ve en la tarjeta del catálogo (checkout) y en
+  // el listado del admin — un solo tubo ahí no representaba el estuche que
+  // de verdad se vende, así que es el combo de los dos. Las posiciones 1 y 2
+  // quedan como fotos individuales, por si algún día hay una galería.
   const images = [
-    { position: 0, url: `${IMAGE_BASE}/tubo_dia.png`, alt: 'Estuche PomAss · crema Día' },
-    { position: 1, url: `${IMAGE_BASE}/tubo_noche.png`, alt: 'Estuche PomAss · crema Noche' },
+    { position: 0, url: `${IMAGE_BASE}/estuche_combo.png`, alt: 'Estuche PomAss · Día + Noche' },
+    { position: 1, url: `${IMAGE_BASE}/tubo_dia.png`, alt: 'Estuche PomAss · crema Día' },
+    { position: 2, url: `${IMAGE_BASE}/tubo_noche.png`, alt: 'Estuche PomAss · crema Noche' },
   ]
   for (const img of images) {
     const existing = await prisma.productImage.findFirst({
