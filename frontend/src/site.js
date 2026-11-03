@@ -117,14 +117,14 @@ export const redesActivas = () => REDES.filter((r) => r.url.trim() !== '')
  */
 export const DAY_BENEFITS = [
   { icon: 'leaf', text: 'Neutraliza olores indeseados' },
-  { icon: 'sun', text: 'Aguanta el sudor y las horas' },
-  { icon: 'heart', text: 'Para la ropa ajustada y el calor' },
-  { icon: 'check', text: 'Una capa fina y listo' },
+  { icon: 'sun', text: 'Dura toda la jornada' },
+  { icon: 'heart', text: 'Textura ligera, no mancha la ropa' },
+  { icon: 'check', text: 'Se aplica en segundos, sin enjuague' },
 ]
 
 export const NIGHT_BENEFITS = [
   { icon: 'droplet', text: 'Crema íntima blanqueadora' },
-  { icon: 'sparkle', text: 'Ayuda a aclarar la zona anal' },
+  { icon: 'sparkle', text: 'Uniformiza el tono de la piel' },
   { icon: 'moon', text: 'Poco a poco, no de un día para otro' },
   { icon: 'shield', text: 'Fórmula suave para una zona delicada' },
 ]
