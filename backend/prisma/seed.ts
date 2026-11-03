@@ -194,7 +194,7 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log(
     `✅ Seed completado: admin, marca PomAss, categoría "Cuidado íntimo", ` +
-      `1 producto (stock ${INITIAL_STOCK}), 1 borrador oculto, 2 imágenes y cupón BIENVENIDA10.` +
+      `1 producto (stock ${INITIAL_STOCK}), 1 borrador oculto, ${images.length} imágenes y cupón BIENVENIDA10.` +
       (desactivados > 0 ? ` Se desactivaron ${desactivados} productos de ejemplo antiguos.` : ''),
   )
 }
