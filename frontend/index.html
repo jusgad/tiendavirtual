@@ -16,7 +16,7 @@
       name="description"
       content="Combo de dos cremas íntimas: Día neutraliza olores indeseados y Noche aclara la zona íntima. Envío a todo el país con empaque discreto. Hecho en Colombia."
     />
-    <link rel="canonical" href="https://pomassoficial.com/" />
+    <link rel="canonical" href="https://www.pomassoficial.com/" />
 
     <!-- Cómo se ve al compartir el enlace por WhatsApp, que es por donde
          llega la mayor parte del tráfico de esta tienda. -->
@@ -28,8 +28,8 @@
       property="og:description"
       content="Dos cremas íntimas para tu rutina. Confianza en todo momento. Envío a todo el país con empaque discreto."
     />
-    <meta property="og:url" content="https://pomassoficial.com/" />
-    <meta property="og:image" content="https://pomassoficial.com/images/logo.png" />
+    <meta property="og:url" content="https://www.pomassoficial.com/" />
+    <meta property="og:image" content="https://www.pomassoficial.com/images/logo.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,6 +37,23 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Nunito:wght@400;600;700;800;900&display=swap"
       rel="stylesheet"
     />
+    <!-- Identidad de marca para Google (panel de conocimiento, sitelinks).
+         Valores estáticos a propósito: son datos de marca, no de catálogo
+         (eso va en Combo.jsx, que sí puede leer site.js). Si REDES cambia en
+         site.js, actualizar aquí también. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "PomAss by Pao Díaz",
+        "url": "https://www.pomassoficial.com/",
+        "logo": "https://www.pomassoficial.com/images/logo.png",
+        "sameAs": [
+          "https://www.instagram.com/pomass_bypaodiaz",
+          "https://www.tiktok.com/@paodiazpompass"
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

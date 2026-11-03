@@ -1,8 +1,35 @@
-import { COMBO, NOMBRE_COMBO, whatsappUrl } from '../site.js'
+import { COMBO, CURRENCY, NOMBRE_COMBO, PRICE, whatsappUrl } from '../site.js'
 import { IconArrowRight, IconBox, IconCheck, IconLock, IconTruck, IconWhatsApp } from './icons.jsx'
 import { Bloque, Grupo, Item } from './Movimiento.jsx'
 import Precio from './Precio.jsx'
 import { btnPrimario } from './ui.js'
+
+/**
+ * Datos estructurados del combo, para rich snippets de producto (precio,
+ * disponibilidad) en los resultados de Google.
+ *
+ * El precio real lo pone el panel de admin y lo cobra el checkout (ver
+ * `precio.js`); aquí sale de `PRICE`, el mismo respaldo estático que usa la
+ * landing si la API no contesta — es una aproximación razonable para el
+ * buscador, no lo que se cobra. Si el precio cambia de forma duradera,
+ * actualiza `PRICE` en `site.js` (ya hay que hacerlo para el respaldo).
+ */
+const datosEstructuradosProducto = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: `Estuche PomAss ${NOMBRE_COMBO}`,
+  description:
+    'Combo de dos cremas íntimas: Día neutraliza olores indeseados y Noche aclara la zona íntima. 2 tubos de 50 ml.',
+  image: 'https://www.pomassoficial.com/images/logo.png',
+  brand: { '@type': 'Brand', name: 'PomAss by Pao Díaz' },
+  offers: {
+    '@type': 'Offer',
+    url: 'https://www.pomassoficial.com/#comprar',
+    priceCurrency: CURRENCY,
+    price: PRICE.replace(/[^0-9]/g, ''),
+    availability: 'https://schema.org/InStock',
+  },
+}
 
 /**
  * Estado 4 · El cierre. El único sitio de la página con precio y con compra.
@@ -23,6 +50,12 @@ import { btnPrimario } from './ui.js'
 export default function Combo() {
   return (
     <section id="comprar" aria-labelledby="combo-titulo" className="pm-cierre scroll-mt-24 px-5 pb-6 sm:px-8 lg:px-16">
+      <script
+        type="application/ld+json"
+        // El contenido sale de constantes de este archivo, no de nada que
+        // escriba quien visita la página.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(datosEstructuradosProducto) }}
+      />
       {/* En móvil el producto va arriba, sobre el combo: este es su hueco. */}
       <div aria-hidden="true" data-ancla-producto="cierre" className="mx-auto h-[38svh] max-w-6xl lg:hidden" />
       <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
