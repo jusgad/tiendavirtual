@@ -31,8 +31,6 @@ export const DOCUMENTOS = [
       {
         items: [
           `**Razón social:** ${c.razonSocial}`,
-          `**NIT / documento:** ${c.nit}`,
-          `**Ciudad:** ${c.ciudad}`,
           `**Correo de contacto:** ${c.correo}`,
           `**Teléfono / WhatsApp:** ${c.telefono}`,
         ],

@@ -55,15 +55,13 @@ export default function PieLegal({ sobreOscuro = false, dejarSitioAbajo = false 
           `site.js`, así que no deja un hueco raro entretanto. */}
       <Redes className="mt-5" sobreOscuro={sobreOscuro} />
 
-      {/* Mientras no haya razón social ni NIT solo se muestra la ciudad: un
+      {/* Mientras no haya razón social, no se muestra nada aquí: un
           «POR DEFINIR» delante de quien va a comprar no informa de nada y
           resta confianza justo donde hace falta. El recordatorio de que
-          faltan sigue en `legal.html` y en `site.js`. */}
-      <p className="mt-3">
-        {sinDefinir(COMERCIANTE.razonSocial)
-          ? COMERCIANTE.ciudad
-          : `${COMERCIANTE.razonSocial} · NIT ${COMERCIANTE.nit} · ${COMERCIANTE.ciudad}`}
-      </p>
+          falta sigue en `legal.html` y en `site.js`. */}
+      {!sinDefinir(COMERCIANTE.razonSocial) && (
+        <p className="mt-3">{COMERCIANTE.razonSocial}</p>
+      )}
       {/* El correo en su propia línea y escrito entero: en un pie, un enlace
           que solo dice «escríbenos» obliga a pasar el ratón por encima para
           saber a dónde va, y desde el móvil ni eso.

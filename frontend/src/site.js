@@ -30,11 +30,11 @@ export const WHATSAPP_PHONE = '573105676187'
  * Datos del comerciante. Los textos legales de `legal.html` y el pie de todas
  * las páginas leen de aquí, así que se editan una sola vez.
  *
- * ⚠️ SIN DIRECCIÓN, POR DECISIÓN DEL CLIENTE. El artículo 50 de la Ley 1480
- * de 2011 pide identificación, NIT, **dirección de notificación judicial**,
- * teléfono y correo. Lo que se publica hoy cumple todo menos la dirección.
- * Para reponerla basta con añadir aquí `direccion: '…'` y la línea
- * correspondiente en `legal/textos.js`.
+ * ⚠️ SIN DIRECCIÓN NI NIT, POR DECISIÓN DEL CLIENTE. El artículo 50 de la Ley
+ * 1480 de 2011 pide identificación, NIT, **dirección de notificación
+ * judicial**, teléfono y correo. Lo que se publica hoy cumple razón social,
+ * teléfono y correo; para reponer el NIT o la dirección basta con añadirlos
+ * aquí y la línea correspondiente en `legal/textos.js`.
  *
  * `sinDefinir` sigue aquí para cualquier dato que se añada a medias: un
  * «POR DEFINIR» se ve en `legal.html` a propósito, para que no se olvide,
@@ -43,10 +43,6 @@ export const WHATSAPP_PHONE = '573105676187'
  */
 export const COMERCIANTE = {
   razonSocial: 'Pom Ass',
-  nit: '1032441826-6',
-  // Sin dirección física: la quitó el cliente. Queda la ciudad, el correo y
-  // el teléfono como canales de contacto. Ver el aviso de arriba.
-  ciudad: 'Bogotá, Colombia',
   correo: 'Pompass2026@gmail.com',
   telefono: '+57 310 567 6187',
 }
