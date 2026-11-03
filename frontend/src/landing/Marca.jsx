@@ -29,7 +29,7 @@ import { Bloque, Grupo, Item, Titular } from './Movimiento.jsx'
 const HECHOS = [
   {
     Icono: IconHeart,
-    titulo: 'Hecha en Colombia',
+    titulo: 'Hecho en Colombia',
     // Esta línea estuvo debajo del logotipo en la apertura y se trajo aquí
     // por decisión del cliente: es el sitio donde la página habla de quién
     // está detrás, y ahí el origen sí se lee como dato de confianza.
