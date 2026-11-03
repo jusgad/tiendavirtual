@@ -23,13 +23,21 @@ const coupon = (over: Partial<CouponData> = {}): CouponData => ({
 
 describe('computeShipping', () => {
   it('cobra tarifa plana por debajo del umbral', () => {
-    expect(computeShipping(100000, 12900, 150000)).toBe(12900)
+    expect(computeShipping(100000, 12900, 150000, 'Medellín')).toBe(12900)
   })
   it('es gratis al alcanzar el umbral', () => {
-    expect(computeShipping(150000, 12900, 150000)).toBe(0)
+    expect(computeShipping(150000, 12900, 150000, 'Medellín')).toBe(0)
   })
-  it('con umbral 0 siempre cobra la tarifa', () => {
-    expect(computeShipping(999999, 12900, 0)).toBe(12900)
+  it('con umbral 0 siempre cobra la tarifa fuera de Bogotá', () => {
+    expect(computeShipping(999999, 12900, 0, 'Medellín')).toBe(12900)
+  })
+  it('es gratis en Bogotá sin importar el monto ni el umbral', () => {
+    expect(computeShipping(100, 12900, 0, 'Bogotá')).toBe(0)
+  })
+  it('reconoce Bogotá sin tildes, en mayúsculas o con D.C.', () => {
+    expect(computeShipping(100000, 12900, 0, 'bogota')).toBe(0)
+    expect(computeShipping(100000, 12900, 0, 'BOGOTA')).toBe(0)
+    expect(computeShipping(100000, 12900, 0, 'Bogotá D.C.')).toBe(0)
   })
 })
 

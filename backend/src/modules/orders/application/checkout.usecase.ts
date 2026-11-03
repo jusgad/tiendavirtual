@@ -91,11 +91,9 @@ export class CheckoutUseCase {
       appliedCoupon = { id: coupon.id, maxUses: coupon.maxUses, perUserLimit: coupon.perUserLimit }
     }
 
-    const net = subtotal - discountTotal
-    const shippingTotal = computeShipping(net, this.config.flatRate, this.config.freeThreshold)
-    const total = net + shippingTotal
-
     // ---- Dirección de envío ----
+    // Se resuelve antes del envío porque el precio del envío depende de la
+    // ciudad (gratis en Bogotá, ver `computeShipping`).
     let addressId: string | null = null
     let address: AddressSnapshot
     if (input.addressId && owner.type === 'user') {
@@ -116,6 +114,10 @@ export class CheckoutUseCase {
     } else {
       throw new BadRequestError('Debes indicar una dirección de envío')
     }
+
+    const net = subtotal - discountTotal
+    const shippingTotal = computeShipping(net, this.config.flatRate, this.config.freeThreshold, address.city)
+    const total = net + shippingTotal
 
     const placed = await this.orders.place({
       userId: owner.type === 'user' ? owner.id : null,

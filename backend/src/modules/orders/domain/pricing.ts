@@ -46,8 +46,32 @@ export function computeDiscount(coupon: CouponData, subtotal: number): number {
   return Math.min(subtotal, Math.round(raw))
 }
 
-/** Envío: tarifa plana, gratis si el neto alcanza el umbral. */
-export function computeShipping(net: number, flatRate: number, freeThreshold: number): number {
+/**
+ * ¿La ciudad escrita en la dirección es Bogotá? Compara sin tildes ni
+ * mayúsculas y por inclusión, para aceptar variantes como "Bogotá",
+ * "bogota", "Bogotá D.C." o "BOGOTA DC" sin mantener una lista exacta.
+ */
+function esBogota(ciudad: string): boolean {
+  const normalizada = ciudad
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+    .toLowerCase()
+  return normalizada.includes('bogota')
+}
+
+/**
+ * Envío: gratis en Bogotá (decisión de negocio: ahí el envío sale más
+ * barato que en el resto del país y se absorbe en el margen); en el resto
+ * del país, tarifa plana, gratis igual si el neto alcanza el umbral.
+ */
+export function computeShipping(
+  net: number,
+  flatRate: number,
+  freeThreshold: number,
+  ciudad: string,
+): number {
+  if (esBogota(ciudad)) return 0
   if (freeThreshold > 0 && net >= freeThreshold) return 0
   return flatRate
 }
