@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { CATALOGO } from '../site.js'
-import { IconArrowDown, IconArrowRight } from './icons.jsx'
+import { IconArrowDown, IconArrowRight, IconBox, IconLock, IconTruck } from './icons.jsx'
 import Precio from './Precio.jsx'
 import { btnPrimario } from './ui.js'
 
@@ -148,6 +148,30 @@ export default function Hero() {
             Comprar el combo
             <IconArrowRight size={18} className="lp-flecha" />
           </a>
+
+          {/* Las mismas tres señales que ya aparecen en el cierre (Combo),
+              aquí también: para que quien decide en el primer pantallazo —
+              antes de llegar a la banda de compra— ya sepa que el envío
+              llega a todo el país, que el empaque es discreto y que el pago
+              es seguro. No es información nueva, es la misma repetida donde
+              todavía puede resolver una duda. */}
+          {/* En columna en móvil angosto: en fila se le montaba encima el
+              botón flotante de WhatsApp, que es fijo y cae justo ahí cuando
+              el héroe ocupa el alto completo de la pantalla. */}
+          <ul className="pm-suave mt-5 flex flex-col items-center gap-1.5 text-sm font-bold sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 md:justify-start">
+            <li className="flex items-center gap-1.5">
+              <IconTruck size={15} />
+              Envío a todo el país
+            </li>
+            <li className="flex items-center gap-1.5">
+              <IconBox size={15} />
+              Empaque discreto
+            </li>
+            <li className="flex items-center gap-1.5">
+              <IconLock size={15} />
+              Pago seguro
+            </li>
+          </ul>
         </motion.div>
       </motion.div>
 
