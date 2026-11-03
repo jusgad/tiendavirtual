@@ -82,11 +82,6 @@ export default function CheckoutApp() {
     setStep(1)
   }
 
-  const handleSkipAuth = () => {
-    setSessionExpired(false)
-    setStep(1)
-  }
-
   const handleLogout = () => {
     clearSession()
     setUser(null)
@@ -146,8 +141,7 @@ export default function CheckoutApp() {
 
         {sessionExpired && (
           <div className="mx-auto mt-6 max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-            ⏱️ Tu sesión expiró. Vuelve a entrar para recuperar tu carrito, o
-            continúa como invitado y empieza uno nuevo.
+            ⏱️ Tu sesión expiró. Vuelve a entrar para recuperar tu carrito.
           </div>
         )}
 
@@ -155,7 +149,7 @@ export default function CheckoutApp() {
           {checkingSession ? (
             <div className="py-20 text-center text-[#8A7A65]">Cargando…</div>
           ) : step === 0 ? (
-            <AuthStep onAuthenticated={handleAuthenticated} onSkip={handleSkipAuth} />
+            <AuthStep onAuthenticated={handleAuthenticated} />
           ) : step === 1 ? (
             <ShopStep key={cartVersion} onContinue={() => setStep(2)} />
           ) : step === 2 ? (

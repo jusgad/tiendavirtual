@@ -11,7 +11,7 @@ const emptyForm = {
   ageConfirmed: false,
 }
 
-export default function AuthStep({ onAuthenticated, onSkip }) {
+export default function AuthStep({ onAuthenticated }) {
   const [mode, setMode] = useState('login') // 'login' | 'register'
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(false)
@@ -41,19 +41,6 @@ export default function AuthStep({ onAuthenticated, onSkip }) {
 
   return (
     <Card className="mx-auto max-w-md">
-      <div className="mb-5 rounded-2xl bg-[#FFF3DE] p-4 text-center">
-        <p className="text-sm text-[#6A3A1C]">
-          Puedes comprar sin crear una cuenta.
-        </p>
-        <button
-          type="button"
-          onClick={onSkip}
-          className="mt-2 text-sm font-extrabold text-[#C24E0A] underline underline-offset-2"
-        >
-          Continuar como invitado →
-        </button>
-      </div>
-
       <div className="mb-6 flex rounded-full bg-[#FFF3DE] p-1">
         {['login', 'register'].map((m) => (
           <button
